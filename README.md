@@ -23,7 +23,7 @@ Monitor your AI agents' spending, performance, and behavior. Self-hosted. Real-t
 
 | Dashboard | Cost Explorer |
 |-----------|---------------|
-| ![ClawWatch Dashboard](docs/screenshots/dashboard.jpg) | ![Cost Explorer](docs/screenshots/cost-explorer.jpg) |
+| ![ClawWatch Dashboard](.github/assets/dashboard.jpg) | ![Cost Explorer](.github/assets/cost-explorer.jpg) |
 
 *Track agent status, costs, and activity at a glance*
 
@@ -118,7 +118,7 @@ clawwatch/
 ├── src/                 # React frontend
 ├── convex/             # Database schema & functions
 ├── collector/          # Data collection service
-├── docs/screenshots/   # UI screenshots
+├── .github/assets/     # UI screenshots
 └── docker-compose.yml  # Production deployment
 ```
 
