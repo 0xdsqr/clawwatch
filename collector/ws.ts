@@ -11,7 +11,7 @@
 
 import { ConvexHttpClient } from "convex/browser";
 import { api } from "../convex/_generated/api.js";
-import { readdir } from "fs/promises";
+import { Glob } from "bun";
 import { join } from "path";
 
 // Config - all values must be provided via environment variables
@@ -123,21 +123,16 @@ async function scanHistoricalTranscripts(): Promise<void> {
   console.log("[ws] Scanning historical transcripts for backfill...");
 
   try {
-    const agentDirs = await readdir(SESSIONS_DIR);
+    const glob = new Glob("*/sessions/*.jsonl");
 
-    for (const agentDir of agentDirs) {
-      const sessionsPath = join(SESSIONS_DIR, agentDir, "sessions");
-      let files: string[];
-      try {
-        files = await readdir(sessionsPath);
-      } catch {
-        continue;
-      }
+    for await (const match of glob.scan(SESSIONS_DIR)) {
+      // match is e.g. "mimizuku/sessions/foo.jsonl"
+      const parts = match.split("/");
+      const agentDir = parts[0];
+      const file = parts[parts.length - 1];
+      const filePath = join(SESSIONS_DIR, match);
 
-      const jsonlFiles = files.filter((f) => f.endsWith(".jsonl"));
-
-      for (const file of jsonlFiles) {
-        const filePath = join(sessionsPath, file);
+      {
         const content = await Bun.file(filePath).text();
         const lines = content.split("\n").filter(Boolean);
 
@@ -255,7 +250,6 @@ async function scanHistoricalTranscripts(): Promise<void> {
         }
       }
     }
-
     lastHistoricalScan = Date.now();
   } catch (err) {
     console.error("[ws] Error scanning historical transcripts:", err);
