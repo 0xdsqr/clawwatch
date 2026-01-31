@@ -3,6 +3,7 @@ import {
   DollarSign,
   Bell,
   Activity,
+  MessageSquare,
   Settings,
   Radar,
   BarChart3,
@@ -14,6 +15,7 @@ const NAV_ITEMS = [
   { id: "metrics" as const, label: "Metrics", icon: BarChart3 },
   { id: "costs" as const, label: "Cost Explorer", icon: DollarSign },
   { id: "alerts" as const, label: "Alarms", icon: Bell },
+  { id: "sessions" as const, label: "Sessions", icon: MessageSquare },
   { id: "activity" as const, label: "Activity", icon: Activity },
   { id: "settings" as const, label: "Settings", icon: Settings },
 ];
@@ -23,6 +25,7 @@ type Page =
   | "metrics"
   | "costs"
   | "alerts"
+  | "sessions"
   | "activity"
   | "settings";
 
