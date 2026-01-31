@@ -1,0 +1,17 @@
+node_modules
+dist
+.git
+.github
+.env
+.env.*
+!.env.example
+*.md
+!README.md
+.vscode
+.idea
+.DS_Store
+.convex
+convex/_generated
+convex/tsconfig.tsbuildinfo
+tsconfig.tsbuildinfo
+bun.lock

@@ -1,39 +1,32 @@
-# Use Bun for faster builds and serving
+# Stage 1: Build
 FROM oven/bun:1 AS builder
 
-# Set working directory
 WORKDIR /app
 
-# Copy package files
-COPY package.json bun.lockb* ./
-
-# Install dependencies
+COPY package.json bun.lock* ./
 RUN bun install --frozen-lockfile
 
-# Copy source code
 COPY . .
 
-# Build args for environment variables
 ARG VITE_CONVEX_URL=http://127.0.0.1:3210
 ENV VITE_CONVEX_URL=$VITE_CONVEX_URL
 
-# Build the app
 RUN bun run build
 
-# Production image
+# Stage 2: Production — serve static files
 FROM oven/bun:1-slim
 
 WORKDIR /app
 
-# Copy built assets from builder stage
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/package.json ./
+# Install static file server
+RUN bun add serve && \
+    addgroup --system --gid 1001 clawwatch && \
+    adduser --system --uid 1001 --ingroup clawwatch clawwatch
 
-# Install serve for static file serving
-RUN bun add serve
+COPY --from=builder --chown=clawwatch:clawwatch /app/dist ./dist
 
-# Expose port
+USER clawwatch
+
 EXPOSE 5173
 
-# Start the server
 CMD ["bunx", "serve", "dist", "-p", "5173", "-s"]
