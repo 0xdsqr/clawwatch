@@ -18,10 +18,10 @@ ENV GATEWAY_URL=""
 ENV GATEWAY_TOKEN=""
 ENV CONVEX_URL="http://127.0.0.1:3210"
 ENV SESSIONS_DIR="/data/sessions"
-ENV POLL_INTERVAL="30000"
+ENV SESSION_POLL_INTERVAL="60000"
 
 # Create sessions directory
 RUN mkdir -p /data/sessions
 
 # Run the collector
-CMD ["bun", "run", "collector/poll.ts"]
+CMD ["bun", "run", "collector/ws.ts"]

@@ -62,7 +62,7 @@ services:
       - GATEWAY_TOKEN=${GATEWAY_TOKEN}
       - CONVEX_URL=${CONVEX_URL:-http://convex-backend:3210}
       - SESSIONS_DIR=${SESSIONS_DIR:-/data/sessions}
-      - POLL_INTERVAL=${POLL_INTERVAL:-30000}
+      - SESSION_POLL_INTERVAL=${SESSION_POLL_INTERVAL:-60000}
     volumes:
       - sessions-data:/data/sessions
     depends_on:
