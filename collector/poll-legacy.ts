@@ -10,7 +10,7 @@
 
 import { ConvexHttpClient } from "convex/browser";
 import { api } from "../convex/_generated/api.js";
-import { readdir, readFile } from "fs/promises";
+import { readdir, readFile, stat, open } from "fs/promises";
 import { join } from "path";
 
 // Config - all values must be provided via environment variables
@@ -55,6 +55,84 @@ function cleanupIngestedCosts(): void {
   }
 }
 
+// ── Incremental file state tracking ──────────────────────────────────────────
+// Track per-file read positions so we only process new lines each cycle.
+interface FileState {
+  /** File size at last read (bytes) */
+  size: number;
+  /** File mtime at last read (ms epoch) */
+  mtimeMs: number;
+  /** Byte offset we've read up to */
+  lastPosition: number;
+  /** Trailing partial line from the previous read (no newline yet) */
+  partial: string;
+}
+
+const fileStates = new Map<string, FileState>();
+
+/**
+ * Read only the *new* bytes appended to a file since our last read.
+ * Returns the new complete lines (excluding any trailing partial line
+ * which is saved for the next cycle).
+ */
+async function readNewLines(filePath: string): Promise<string[] | null> {
+  let info;
+  try {
+    info = await stat(filePath);
+  } catch {
+    return null; // File gone — skip
+  }
+
+  const prev = fileStates.get(filePath);
+
+  // Fast path — file hasn't changed since last read
+  if (prev && info.size === prev.size && info.mtimeMs === prev.mtimeMs) {
+    return null;
+  }
+
+  // File was truncated / rotated — reset and re-read from the start
+  const startPos = prev && info.size >= prev.lastPosition ? prev.lastPosition : 0;
+  const prevPartial = startPos === 0 ? "" : (prev?.partial ?? "");
+
+  if (startPos >= info.size) {
+    // Size unchanged (or file got smaller — already handled above)
+    fileStates.set(filePath, {
+      size: info.size,
+      mtimeMs: info.mtimeMs,
+      lastPosition: startPos,
+      partial: prevPartial,
+    });
+    return null;
+  }
+
+  // Read only the new bytes
+  const bytesToRead = info.size - startPos;
+  const buf = Buffer.alloc(bytesToRead);
+  const fh = await open(filePath, "r");
+  try {
+    await fh.read(buf, 0, bytesToRead, startPos);
+  } finally {
+    await fh.close();
+  }
+
+  const chunk = prevPartial + buf.toString("utf-8");
+  const parts = chunk.split("\n");
+
+  // Last element is either "" (line ended with \n) or a partial line
+  const trailing = parts.pop() ?? "";
+
+  fileStates.set(filePath, {
+    size: info.size,
+    mtimeMs: info.mtimeMs,
+    lastPosition: info.size,
+    partial: trailing,
+  });
+
+  // Return only non-empty complete lines
+  return parts.filter(Boolean);
+}
+
+// ── Gateway interaction ──────────────────────────────────────────────────────
 async function invokeGatewayTool(
   tool: string,
   args: Record<string, unknown> = {},
@@ -76,6 +154,8 @@ async function invokeGatewayTool(
   if (!data.ok) throw new Error(`Gateway tool error: ${JSON.stringify(data)}`);
   return data.result;
 }
+
+// ── Polling functions ────────────────────────────────────────────────────────
 
 async function pollSessions(): Promise<void> {
   console.log("[poll] Fetching sessions from gateway...");
@@ -135,7 +215,7 @@ async function pollSessions(): Promise<void> {
 }
 
 async function pollTranscripts(): Promise<void> {
-  console.log("[poll] Scanning transcripts for new cost data...");
+  console.log("[poll] Scanning transcripts for new data...");
 
   try {
     const agentDirs = await readdir(SESSIONS_DIR);
@@ -153,8 +233,10 @@ async function pollTranscripts(): Promise<void> {
 
       for (const file of jsonlFiles) {
         const filePath = join(sessionsPath, file);
-        const content = await readFile(filePath, "utf-8");
-        const lines = content.split("\n").filter(Boolean);
+
+        // ── Incremental: only read new lines ──
+        const newLines = await readNewLines(filePath);
+        if (newLines === null || newLines.length === 0) continue;
 
         const costEntries: Array<{
           agentName: string;
@@ -182,7 +264,7 @@ async function pollTranscripts(): Promise<void> {
           channel: string | undefined;
         }> = [];
 
-        for (const line of lines) {
+        for (const line of newLines) {
           try {
             const entry = JSON.parse(line);
             if (entry.type !== "message" || !entry.message?.usage?.cost)
