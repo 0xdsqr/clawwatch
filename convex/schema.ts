@@ -19,7 +19,9 @@ export default defineSchema({
         channel: v.optional(v.string()),
       }),
     ),
-  }).index("by_status", ["status"]),
+  })
+    .index("by_status", ["status"])
+    .index("by_name", ["name"]),
 
   // Session tracking
   sessions: defineTable({
@@ -137,7 +139,9 @@ export default defineSchema({
     details: v.optional(v.any()),
     sessionKey: v.optional(v.string()),
     channel: v.optional(v.string()),
-  }).index("by_agent", ["agentId"]),
+  })
+    .index("by_agent", ["agentId"])
+    .index("by_creation_time", ["_creationTime"]),
 
   // Health checks — periodic status snapshots
   healthChecks: defineTable({

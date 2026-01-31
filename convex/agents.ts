@@ -3,9 +3,21 @@ import { v } from "convex/values";
 
 // List all agents with their current status
 export const list = query({
-  args: {},
-  handler: async (ctx) => {
-    return await ctx.db.query("agents").collect();
+  args: { 
+    limit: v.optional(v.number()),
+    offset: v.optional(v.number()) 
+  },
+  handler: async (ctx, args) => {
+    const limit = args.limit ?? 50; // Default reasonable limit
+    const offset = args.offset ?? 0;
+    
+    const agents = await ctx.db
+      .query("agents")
+      .order("desc")
+      .skip(offset)
+      .take(limit);
+      
+    return agents;
   },
 });
 
@@ -37,7 +49,7 @@ export const upsert = mutation({
   handler: async (ctx, args) => {
     const existing = await ctx.db
       .query("agents")
-      .filter((q) => q.eq(q.field("name"), args.name))
+      .withIndex("by_name", (q) => q.eq("name", args.name))
       .first();
 
     const now = Date.now();

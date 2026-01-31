@@ -40,7 +40,7 @@ export const byTimeRange = query({
             .gte("timestamp", args.startTime)
             .lte("timestamp", args.endTime),
         )
-        .collect();
+        .take(1000); // Add reasonable limit
     }
 
     // All agents
@@ -52,7 +52,7 @@ export const byTimeRange = query({
           .gte("timestamp", args.startTime)
           .lte("timestamp", args.endTime),
       )
-      .collect();
+      .take(1000); // Add reasonable limit
   },
 });
 
