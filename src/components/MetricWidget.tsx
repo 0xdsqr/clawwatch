@@ -292,12 +292,12 @@ export function MetricWidget({
                   <stop
                     offset="5%"
                     stopColor={fillColor ?? color}
-                    stopOpacity={0.3}
+                    stopOpacity={0.5}
                   />
                   <stop
                     offset="95%"
                     stopColor={fillColor ?? color}
-                    stopOpacity={0}
+                    stopOpacity={0.05}
                   />
                 </linearGradient>
               </defs>
