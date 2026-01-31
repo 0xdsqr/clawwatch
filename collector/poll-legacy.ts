@@ -14,12 +14,11 @@ import { readdir, readFile, stat, open } from "fs/promises";
 import { join } from "path";
 
 // Config - all values must be provided via environment variables
-const GATEWAY_URL = process.env.GATEWAY_URL;
-const GATEWAY_TOKEN = process.env.GATEWAY_TOKEN;
-const CONVEX_URL = process.env.CONVEX_URL ?? "http://127.0.0.1:3210";
-const POLL_INTERVAL_MS = parseInt(process.env.POLL_INTERVAL ?? "30000"); // 30 seconds
-const SESSIONS_DIR =
-  process.env.SESSIONS_DIR ?? "/home/moltbot/.clawdbot/agents";
+const GATEWAY_URL = Bun.env.GATEWAY_URL;
+const GATEWAY_TOKEN = Bun.env.GATEWAY_TOKEN;
+const CONVEX_URL = Bun.env.CONVEX_URL ?? "http://127.0.0.1:3210";
+const POLL_INTERVAL_MS = parseInt(Bun.env.POLL_INTERVAL ?? "30000"); // 30 seconds
+const SESSIONS_DIR = Bun.env.SESSIONS_DIR ?? "/home/moltbot/.clawdbot/agents";
 
 if (!GATEWAY_URL) {
   console.error("❌ GATEWAY_URL environment variable is required");

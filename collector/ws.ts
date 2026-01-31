@@ -15,11 +15,11 @@ import { readdir, readFile } from "fs/promises";
 import { join } from "path";
 
 // Config - all values must be provided via environment variables
-const GATEWAY_URL = process.env.GATEWAY_URL;
-const GATEWAY_TOKEN = process.env.GATEWAY_TOKEN;
-const CONVEX_URL = process.env.CONVEX_URL ?? "http://127.0.0.1:3210";
-const SESSION_POLL_INTERVAL_MS = parseInt(process.env.SESSION_POLL_INTERVAL ?? "60000"); // 60 seconds
-const SESSIONS_DIR = process.env.SESSIONS_DIR ?? "/home/moltbot/.clawdbot/agents";
+const GATEWAY_URL = Bun.env.GATEWAY_URL;
+const GATEWAY_TOKEN = Bun.env.GATEWAY_TOKEN;
+const CONVEX_URL = Bun.env.CONVEX_URL ?? "http://127.0.0.1:3210";
+const SESSION_POLL_INTERVAL_MS = parseInt(Bun.env.SESSION_POLL_INTERVAL ?? "60000"); // 60 seconds
+const SESSIONS_DIR = Bun.env.SESSIONS_DIR ?? "/home/moltbot/.clawdbot/agents";
 
 // Connection management
 const INITIAL_RECONNECT_DELAY_MS = 1000;
