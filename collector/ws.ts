@@ -11,7 +11,7 @@
 
 import { ConvexHttpClient } from "convex/browser";
 import { api } from "../convex/_generated/api.js";
-import { readdir, readFile } from "fs/promises";
+import { readdir } from "fs/promises";
 import { join } from "path";
 
 // Config - all values must be provided via environment variables
@@ -138,7 +138,7 @@ async function scanHistoricalTranscripts(): Promise<void> {
 
       for (const file of jsonlFiles) {
         const filePath = join(sessionsPath, file);
-        const content = await readFile(filePath, "utf-8");
+        const content = await Bun.file(filePath).text();
         const lines = content.split("\n").filter(Boolean);
 
         const costEntries: Array<{

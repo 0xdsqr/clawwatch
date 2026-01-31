@@ -10,7 +10,7 @@
 
 import { ConvexHttpClient } from "convex/browser";
 import { api } from "../convex/_generated/api.js";
-import { readdir, readFile, stat, open } from "fs/promises";
+import { readdir, stat, open } from "fs/promises";
 import { join } from "path";
 
 // Config - all values must be provided via environment variables
