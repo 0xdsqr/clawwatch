@@ -1,11 +1,12 @@
 import { memo, useMemo, useCallback } from "react";
 import { useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
+import type { Id } from "../../convex/_generated/dataModel";
 import { cn, severityColor, timeAgo } from "@/lib/utils";
 import { AlertTriangle, CheckCircle, X } from "lucide-react";
 
 interface Alert {
-  _id: string;
+  _id: Id<"alerts">;
   _creationTime: number;
   severity: string;
   title: string;
@@ -23,8 +24,8 @@ const AlertRow = memo(function AlertRow({
   onResolve,
 }: {
   alert: Alert;
-  onAcknowledge: (id: string) => void;
-  onResolve: (id: string) => void;
+  onAcknowledge: (id: Id<"alerts">) => void;
+  onResolve: (id: Id<"alerts">) => void;
 }) {
   return (
     <div className="flex items-center justify-between text-sm">
@@ -69,12 +70,12 @@ export const AlertBanner = memo(function AlertBanner({ alerts }: Props) {
   const resolve = useMutation(api.alerting.resolve);
 
   const handleAcknowledge = useCallback(
-    (id: string) => acknowledge({ id: id as any }),
+    (id: Id<"alerts">) => acknowledge({ id }),
     [acknowledge],
   );
 
   const handleResolve = useCallback(
-    (id: string) => resolve({ id: id as any }),
+    (id: Id<"alerts">) => resolve({ id }),
     [resolve],
   );
 

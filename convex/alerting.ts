@@ -1,6 +1,5 @@
-import { query, mutation, action } from "./_generated/server";
+import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
-import { internal } from "./_generated/api";
 
 // List all alert rules
 export const listRules = query({
@@ -97,7 +96,7 @@ export const fire = mutation({
     ),
     title: v.string(),
     message: v.string(),
-    data: v.optional(v.any()),
+    data: v.optional(v.record(v.string(), v.union(v.string(), v.number(), v.boolean(), v.null()))),
     channels: v.array(v.string()),
   },
   handler: async (ctx, args) => {

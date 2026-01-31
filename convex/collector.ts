@@ -1,6 +1,5 @@
-import { mutation, action, internalMutation } from "./_generated/server";
+import { mutation } from "./_generated/server";
 import { v } from "convex/values";
-import { internal } from "./_generated/api";
 
 // Ingest session data from the Clawdbot gateway
 export const ingestSessions = mutation({

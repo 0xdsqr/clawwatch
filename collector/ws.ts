@@ -56,16 +56,16 @@ interface GatewayEvent {
   event?: string;
   id?: string;
   ok?: boolean;
-  payload?: any;
-  error?: any;
+  payload?: Record<string, unknown>;
+  error?: Record<string, unknown> | string;
   method?: string;
-  params?: any;
+  params?: Record<string, unknown>;
 }
 
 async function invokeGatewayTool(
   tool: string,
   args: Record<string, unknown> = {},
-): Promise<any> {
+): Promise<Record<string, unknown>> {
   const res = await fetch(`${GATEWAY_URL}/tools/invoke`, {
     method: "POST",
     headers: {
@@ -96,15 +96,15 @@ async function pollSessions(): Promise<void> {
     const responseTimeMs = Date.now() - startTime;
 
     // Map sessions to our format
-    const mapped = sessions.map((s: any) => ({
-      key: s.key,
-      kind: s.kind,
-      channel: s.channel !== "unknown" ? s.channel : undefined,
-      displayName: s.displayName,
-      model: s.model,
-      totalTokens: s.totalTokens ?? 0,
-      updatedAt: s.updatedAt ?? Date.now(),
-      agentId: s.key.split(":")[1], // "agent:mimizuku:..." → "mimizuku"
+    const mapped = sessions.map((s: Record<string, unknown>) => ({
+      key: String(s.key),
+      kind: String(s.kind),
+      channel: s.channel !== "unknown" ? String(s.channel) : undefined,
+      displayName: s.displayName ? String(s.displayName) : undefined,
+      model: s.model ? String(s.model) : undefined,
+      totalTokens: Number(s.totalTokens ?? 0),
+      updatedAt: Number(s.updatedAt ?? Date.now()),
+      agentId: String(s.key).split(":")[1], // "agent:mimizuku:..." → "mimizuku"
     }));
 
     // Ingest into Convex
@@ -294,38 +294,42 @@ async function handleEvent(event: GatewayEvent): Promise<void> {
   }
 }
 
-async function handleAgentEvent(payload: any): Promise<void> {
+async function handleAgentEvent(payload: Record<string, unknown>): Promise<void> {
   // Extract agent info from payload and ingest as activity
-  const agentName = payload.agent?.name || payload.agentName || "unknown";
-  const activityType = payload.type || "message_sent";
-  
+  const agent = payload.agent as Record<string, unknown> | undefined;
+  const agentName = String(agent?.name || payload.agentName || "unknown");
+  const activityType = String(payload.type || "message_sent");
+
   let summary = "Agent activity";
-  
-  if (payload.message?.content) {
-    const content = Array.isArray(payload.message.content) 
-      ? payload.message.content.map((c: any) => c.text || c.type || "").join(" ")
-      : String(payload.message.content);
+
+  const message = payload.message as Record<string, unknown> | undefined;
+  if (message?.content) {
+    const contentBlocks = message.content as Array<Record<string, string>> | string;
+    const content = Array.isArray(contentBlocks)
+      ? contentBlocks.map((c) => c.text || c.type || "").join(" ")
+      : String(contentBlocks);
     summary = content.slice(0, 80) + (content.length > 80 ? "..." : "");
   } else if (payload.tool) {
-    summary = `Tool call: ${payload.tool}`;
+    summary = `Tool call: ${String(payload.tool)}`;
   } else if (payload.activity) {
     summary = String(payload.activity).slice(0, 80);
   }
 
   // Ingest cost if available
-  if (payload.message?.usage?.cost) {
-    const usage = payload.message.usage;
+  const usage = (message?.usage as Record<string, unknown>) ?? undefined;
+  const usageCost = (usage?.cost as Record<string, unknown>) ?? undefined;
+  if (usage && usageCost) {
     const costEntry = {
       agentName,
-      sessionKey: payload.sessionKey,
-      provider: payload.message.provider || "unknown",
-      model: payload.message.model || "unknown",
-      inputTokens: usage.input || 0,
-      outputTokens: usage.output || 0,
-      cacheReadTokens: usage.cacheRead,
-      cacheWriteTokens: usage.cacheWrite,
-      totalCost: usage.cost.total || 0,
-      timestamp: payload.timestamp || Date.now(),
+      sessionKey: payload.sessionKey as string | undefined,
+      provider: String(message?.provider || "unknown"),
+      model: String(message?.model || "unknown"),
+      inputTokens: Number(usage.input || 0),
+      outputTokens: Number(usage.output || 0),
+      cacheReadTokens: usage.cacheRead != null ? Number(usage.cacheRead) : undefined,
+      cacheWriteTokens: usage.cacheWrite != null ? Number(usage.cacheWrite) : undefined,
+      totalCost: Number(usageCost.total || 0),
+      timestamp: Number(payload.timestamp || Date.now()),
     };
 
     await convex.mutation(api.collector.ingestCosts, {
@@ -337,75 +341,77 @@ async function handleAgentEvent(payload: any): Promise<void> {
   await convex.mutation(api.collector.ingestActivities, {
     activities: [{
       agentName,
-      type: activityType,
+      type: activityType as "message_sent" | "message_received" | "tool_call" | "error" | "heartbeat",
       summary,
-      sessionKey: payload.sessionKey,
-      channel: payload.channel,
+      sessionKey: payload.sessionKey as string | undefined,
+      channel: payload.channel as string | undefined,
     }],
   });
 }
 
-async function handleHealthEvent(payload: any): Promise<void> {
-  const agentName = payload.agent?.name || payload.agentName || "unknown";
-  
+async function handleHealthEvent(payload: Record<string, unknown>): Promise<void> {
+  const agent = payload.agent as Record<string, unknown> | undefined;
+  const agentName = String(agent?.name || payload.agentName || "unknown");
+
   await convex.mutation(api.collector.recordHealthCheck, {
     agentName,
-    responseTimeMs: payload.responseTimeMs || payload.latency,
-    activeSessionCount: payload.activeSessionCount || 0,
-    totalTokensLastHour: payload.totalTokensLastHour || 0,
-    costLastHour: payload.costLastHour || 0,
-    errorCount: payload.errorCount || 0,
+    responseTimeMs: Number(payload.responseTimeMs || payload.latency || 0),
+    activeSessionCount: Number(payload.activeSessionCount || 0),
+    totalTokensLastHour: Number(payload.totalTokensLastHour || 0),
+    costLastHour: Number(payload.costLastHour || 0),
+    errorCount: Number(payload.errorCount || 0),
   });
 }
 
-async function handleHeartbeatEvent(payload: any): Promise<void> {
-  const agentName = payload.agent?.name || payload.agentName || "unknown";
-  
-  // Record as activity
+async function handleHeartbeatEvent(payload: Record<string, unknown>): Promise<void> {
+  const agent = payload.agent as Record<string, unknown> | undefined;
+  const agentName = String(agent?.name || payload.agentName || "unknown");
+
   await convex.mutation(api.collector.ingestActivities, {
     activities: [{
       agentName,
-      type: "heartbeat",
+      type: "heartbeat" as const,
       summary: "Agent heartbeat",
-      sessionKey: payload.sessionKey,
-      channel: payload.channel,
+      sessionKey: payload.sessionKey as string | undefined,
+      channel: payload.channel as string | undefined,
     }],
   });
 }
 
-async function handlePresenceEvent(payload: any): Promise<void> {
-  const agentName = payload.agent?.name || payload.agentName || "unknown";
-  const status = payload.status || payload.presence || "unknown";
-  
-  // Record as activity
+async function handlePresenceEvent(payload: Record<string, unknown>): Promise<void> {
+  const agent = payload.agent as Record<string, unknown> | undefined;
+  const agentName = String(agent?.name || payload.agentName || "unknown");
+  const status = String(payload.status || payload.presence || "unknown");
+
   await convex.mutation(api.collector.ingestActivities, {
     activities: [{
       agentName,
-      type: status === "online" ? "session_started" : "session_ended",
+      type: status === "online" ? ("session_started" as const) : ("session_ended" as const),
       summary: `Agent ${status}`,
-      sessionKey: payload.sessionKey,
-      channel: payload.channel,
+      sessionKey: payload.sessionKey as string | undefined,
+      channel: payload.channel as string | undefined,
     }],
   });
 }
 
-async function handleChatEvent(payload: any): Promise<void> {
-  const agentName = payload.agent?.name || payload.agentName || "unknown";
-  
+async function handleChatEvent(payload: Record<string, unknown>): Promise<void> {
+  const agent = payload.agent as Record<string, unknown> | undefined;
+  const agentName = String(agent?.name || payload.agentName || "unknown");
+
   let summary = "Chat message";
-  if (payload.message?.content) {
-    const content = String(payload.message.content);
+  const message = payload.message as Record<string, unknown> | undefined;
+  if (message?.content) {
+    const content = String(message.content);
     summary = content.slice(0, 80) + (content.length > 80 ? "..." : "");
   }
 
-  // Record as activity
   await convex.mutation(api.collector.ingestActivities, {
     activities: [{
       agentName,
-      type: payload.direction === "outbound" ? "message_sent" : "message_received",
+      type: payload.direction === "outbound" ? ("message_sent" as const) : ("message_received" as const),
       summary,
-      sessionKey: payload.sessionKey,
-      channel: payload.channel,
+      sessionKey: payload.sessionKey as string | undefined,
+      channel: payload.channel as string | undefined,
     }],
   });
 }

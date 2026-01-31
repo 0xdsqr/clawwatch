@@ -136,7 +136,7 @@ async function readNewLines(filePath: string): Promise<string[] | null> {
 async function invokeGatewayTool(
   tool: string,
   args: Record<string, unknown> = {},
-): Promise<any> {
+): Promise<Record<string, unknown>> {
   const res = await fetch(`${GATEWAY_URL}/tools/invoke`, {
     method: "POST",
     headers: {
@@ -170,15 +170,15 @@ async function pollSessions(): Promise<void> {
     const responseTimeMs = Date.now() - startTime;
 
     // Map sessions to our format
-    const mapped = sessions.map((s: any) => ({
-      key: s.key,
-      kind: s.kind,
-      channel: s.channel !== "unknown" ? s.channel : undefined,
-      displayName: s.displayName,
-      model: s.model,
-      totalTokens: s.totalTokens ?? 0,
-      updatedAt: s.updatedAt ?? Date.now(),
-      agentId: s.key.split(":")[1], // "agent:mimizuku:..." → "mimizuku"
+    const mapped = sessions.map((s: Record<string, unknown>) => ({
+      key: String(s.key),
+      kind: String(s.kind),
+      channel: s.channel !== "unknown" ? String(s.channel) : undefined,
+      displayName: s.displayName ? String(s.displayName) : undefined,
+      model: s.model ? String(s.model) : undefined,
+      totalTokens: Number(s.totalTokens ?? 0),
+      updatedAt: Number(s.updatedAt ?? Date.now()),
+      agentId: String(s.key).split(":")[1], // "agent:mimizuku:..." → "mimizuku"
     }));
 
     // Ingest into Convex

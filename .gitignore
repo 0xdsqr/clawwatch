@@ -21,5 +21,8 @@ dist/
 .convex/
 convex/_generated/
 
+# TypeScript build info
+*.tsbuildinfo
+
 # Docker volumes
 infra/data/
