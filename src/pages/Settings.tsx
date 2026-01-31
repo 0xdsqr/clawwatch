@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { Card } from "@/components/Card";
-import { Bell, Plus, Trash2, DollarSign, Shield } from "lucide-react";
+import { Bell, Plus, Trash2, DollarSign } from "lucide-react";
 import { cn, formatCost } from "@/lib/utils";
 
 export function Settings() {

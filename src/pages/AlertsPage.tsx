@@ -6,7 +6,6 @@ import {
   Bell,
   CheckCircle,
   X,
-  Plus,
   Shield,
   DollarSign,
   Wifi,

@@ -13,7 +13,7 @@ import {
 } from "recharts";
 import { Card } from "./Card";
 import { cn } from "@/lib/utils";
-import type { MetricPoint } from "@/lib/mockMetrics";
+import type { MetricPoint } from "@/lib/utils";
 
 interface AlarmThreshold {
   value: number;

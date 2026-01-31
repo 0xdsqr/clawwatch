@@ -3,7 +3,7 @@ import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { MetricWidget } from "@/components/MetricWidget";
 import { Card } from "@/components/Card";
-import type { MetricPoint } from "@/lib/mockMetrics";
+import type { MetricPoint } from "@/lib/utils";
 
 type TimeRange = "1h" | "6h" | "24h" | "7d";
 
