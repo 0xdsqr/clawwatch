@@ -34,8 +34,26 @@ if (!GATEWAY_TOKEN) {
 const convex = new ConvexHttpClient(CONVEX_URL);
 
 // Track what we've already ingested (cost entries by timestamp)
-const ingestedCosts = new Set<string>();
+// Using Map to store both the key and when it was added for cleanup
+const ingestedCosts = new Map<string, number>();
 let lastPollTime = Date.now() - 86400000 * 3; // Start from 3 days ago for initial scan
+
+// Clean up old entries from ingestedCosts to prevent memory leaks
+function cleanupIngestedCosts(): void {
+  const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
+  let cleaned = 0;
+  
+  for (const [key, timestamp] of ingestedCosts.entries()) {
+    if (timestamp < sevenDaysAgo) {
+      ingestedCosts.delete(key);
+      cleaned++;
+    }
+  }
+  
+  if (cleaned > 0) {
+    console.log(`[cleanup] Removed ${cleaned} old cost entries from cache (${ingestedCosts.size} remaining)`);
+  }
+}
 
 async function invokeGatewayTool(
   tool: string,
@@ -192,7 +210,7 @@ async function pollTranscripts(): Promise<void> {
               timestamp: ts,
             });
 
-            ingestedCosts.add(costKey);
+            ingestedCosts.set(costKey, Date.now());
 
             // Extract activity
             if (msg.role === "assistant" && msg.content) {
@@ -277,6 +295,12 @@ async function runOnce(): Promise<void> {
   await pollSessions();
   await pollTranscripts();
   await evaluateAlerts();
+  
+  // Clean up old ingested cost entries every hour
+  if (Date.now() % (60 * 60 * 1000) < 30000) {
+    cleanupIngestedCosts();
+  }
+  
   lastPollTime = Date.now();
 }
 
