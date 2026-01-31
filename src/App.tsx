@@ -7,12 +7,16 @@ const MetricsPage = lazy(() => import("./pages/MetricsPage").then(m => ({ defaul
 const CostExplorer = lazy(() => import("./pages/CostExplorer").then(m => ({ default: m.CostExplorer })));
 const AlertsPage = lazy(() => import("./pages/AlertsPage").then(m => ({ default: m.AlertsPage })));
 const ActivityFeed = lazy(() => import("./pages/ActivityFeed").then(m => ({ default: m.ActivityFeed })));
+const SessionExplorer = lazy(() => import("./pages/SessionExplorer").then(m => ({ default: m.SessionExplorer })));
 const Settings = lazy(() => import("./pages/Settings").then(m => ({ default: m.Settings })));
+const ProvidersPage = lazy(() => import("./pages/ProvidersPage").then(m => ({ default: m.ProvidersPage })));
 
 type Page =
   | "dashboard"
   | "metrics"
   | "costs"
+  | "providers"
+  | "sessions"
   | "alerts"
   | "activity"
   | "settings";
@@ -32,6 +36,8 @@ export function App() {
           {page === "dashboard" && <Dashboard />}
           {page === "metrics" && <MetricsPage />}
           {page === "costs" && <CostExplorer />}
+          {page === "providers" && <ProvidersPage />}
+          {page === "sessions" && <SessionExplorer />}
           {page === "alerts" && <AlertsPage />}
           {page === "activity" && <ActivityFeed />}
           {page === "settings" && <Settings />}

@@ -6,6 +6,8 @@ import {
   Settings,
   Radar,
   BarChart3,
+  MonitorDot,
+  Building2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -13,6 +15,8 @@ const NAV_ITEMS = [
   { id: "dashboard" as const, label: "Dashboard", icon: LayoutDashboard },
   { id: "metrics" as const, label: "Metrics", icon: BarChart3 },
   { id: "costs" as const, label: "Cost Explorer", icon: DollarSign },
+  { id: "providers" as const, label: "Providers", icon: Building2 },
+  { id: "sessions" as const, label: "Sessions", icon: MonitorDot },
   { id: "alerts" as const, label: "Alarms", icon: Bell },
   { id: "activity" as const, label: "Activity", icon: Activity },
   { id: "settings" as const, label: "Settings", icon: Settings },
@@ -22,6 +26,8 @@ type Page =
   | "dashboard"
   | "metrics"
   | "costs"
+  | "providers"
+  | "sessions"
   | "alerts"
   | "activity"
   | "settings";
