@@ -108,7 +108,7 @@ npx convex dev --once
 bun run dev
 
 # Start collector (new terminal)
-bun run collector/poll.ts
+bun run collector/ws.ts
 ```
 
 ### Project Structure

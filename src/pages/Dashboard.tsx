@@ -1,13 +1,14 @@
 import { useMemo } from "react";
 import { useQuery } from "convex/react";
+import { Activity, AlertTriangle, DollarSign, Zap } from "lucide-react";
+
 import { api } from "../../convex/_generated/api";
-import { Card, StatCard } from "@/components/Card";
 import { AgentStatusCard } from "@/components/AgentStatusCard";
 import { AlertBanner } from "@/components/AlertBanner";
-import { MiniActivityFeed } from "@/components/MiniActivityFeed";
+import { Card, StatCard } from "@/components/Card";
 import { CostChart } from "@/components/CostChart";
+import { MiniActivityFeed } from "@/components/MiniActivityFeed";
 import { SnitchLeaderboard, SnitchScore } from "@/components/SnitchScore";
-import { DollarSign, Zap, Activity, AlertTriangle } from "lucide-react";
 import { formatCost, formatTokens } from "@/lib/utils";
 
 export function Dashboard() {
@@ -151,9 +152,6 @@ export function Dashboard() {
           {firstAgentId && <SnitchScore agentId={firstAgentId} />}
         </div>
       )}
-
-      {/* Snitch Leaderboard */}
-      <SnitchLeaderboard />
 
       {/* Agent cards */}
       <div>
