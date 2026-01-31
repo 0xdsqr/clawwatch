@@ -15,6 +15,7 @@ import { ConvexHttpClient } from "convex/browser";
 import { api } from "./convex/_generated/api.js";
 import { Glob } from "bun";
 import { join, resolve } from "path";
+import { existsSync } from "fs";
 
 // ── Config ───────────────────────────────────────────────────────────────────
 
@@ -163,11 +164,13 @@ async function pollSessions(): Promise<void> {
 async function readNewLines(filePath: string): Promise<string[] | null> {
   const file = Bun.file(filePath);
 
-  if (!(await file.exists())) return null;
+  // Bun.file().size is 0 for non-existent files
+  if (file.size === 0) {
+    return null;
+  }
 
   const size = file.size;
   const mtimeMs = file.lastModified;
-
   const prev = fileStates.get(filePath);
 
   if (prev && size === prev.size && mtimeMs === prev.mtimeMs) {
@@ -188,7 +191,8 @@ async function readNewLines(filePath: string): Promise<string[] | null> {
     return null;
   }
 
-  const chunk = prevPartial + await file.slice(startPos, size).text();
+  const newData = await file.slice(startPos, size).text();
+  const chunk = prevPartial + newData;
   const parts = chunk.split("\n");
   const trailing = parts.pop() ?? "";
 
