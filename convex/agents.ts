@@ -3,21 +3,16 @@ import { v } from "convex/values";
 
 // List all agents with their current status
 export const list = query({
-  args: { 
+  args: {
     limit: v.optional(v.number()),
-    offset: v.optional(v.number()) 
   },
   handler: async (ctx, args) => {
-    const limit = args.limit ?? 50; // Default reasonable limit
-    const offset = args.offset ?? 0;
-    
-    const agents = await ctx.db
+    const limit = args.limit ?? 50;
+
+    return await ctx.db
       .query("agents")
       .order("desc")
-      .skip(offset)
       .take(limit);
-      
-    return agents;
   },
 });
 

@@ -48,7 +48,7 @@ let lastHistoricalScan = Date.now() - 86400000 * 3; // Start from 3 days ago
 
 // Connection state
 let ws: WebSocket | null = null;
-let isConnected = false;
+let _isConnected = false;
 let sessionPollTimer: Timer | null = null;
 
 interface GatewayEvent {
@@ -458,7 +458,7 @@ async function connect(): Promise<void> {
           // Connection response
           if (frame.ok) {
             console.log("[ws] Authenticated successfully, receiving events...");
-            isConnected = true;
+            _isConnected = true;
             reconnectDelay = INITIAL_RECONNECT_DELAY_MS; // Reset reconnect delay
             
             // Start session polling timer
@@ -483,7 +483,7 @@ async function connect(): Promise<void> {
     
     ws.onclose = (event) => {
       console.log(`[ws] Connection closed (connection ${currentConnectionId}): code=${event.code}, reason=${event.reason}`);
-      isConnected = false;
+      _isConnected = false;
       
       // Stop session polling
       if (sessionPollTimer) {

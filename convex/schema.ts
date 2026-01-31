@@ -140,8 +140,7 @@ export default defineSchema({
     sessionKey: v.optional(v.string()),
     channel: v.optional(v.string()),
   })
-    .index("by_agent", ["agentId"])
-    .index("by_creation_time", ["_creationTime"]),
+    .index("by_agent", ["agentId"]),
 
   // Health checks — periodic status snapshots
   healthChecks: defineTable({

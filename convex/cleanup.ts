@@ -199,7 +199,6 @@ export const retentionStats = mutation({
     const stats: Record<string, { total: number; oldest: number | null }> = {};
 
     for (const table of tables) {
-      const all = await ctx.db.query(table).take(1);
       const oldest = await ctx.db.query(table).order("asc").first();
       const total = (await ctx.db.query(table).collect()).length;
 

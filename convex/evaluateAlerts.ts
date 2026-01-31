@@ -111,7 +111,8 @@ export const evaluate = mutation({
         case "channel_disconnect": {
           // Check if any agent's channel has gone silent
           const agents = await ctx.db.query("agents").collect();
-          const windowMs = (rule.config.windowMinutes ?? 30) * 60000;
+          // windowMs could be used for time-based silence detection in the future
+          const _windowMs = (rule.config.windowMinutes ?? 30) * 60000;
 
           for (const agent of agents) {
             const channelSessions = await ctx.db
