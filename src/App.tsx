@@ -1,11 +1,13 @@
-import { useState } from "react";
-import { Dashboard } from "./pages/Dashboard";
-import { MetricsPage } from "./pages/MetricsPage";
-import { CostExplorer } from "./pages/CostExplorer";
-import { AlertsPage } from "./pages/AlertsPage";
-import { ActivityFeed } from "./pages/ActivityFeed";
-import { Settings } from "./pages/Settings";
+import { useState, lazy, Suspense } from "react";
 import { Sidebar } from "./components/Sidebar";
+
+// Lazy load pages to reduce initial bundle size
+const Dashboard = lazy(() => import("./pages/Dashboard").then(m => ({ default: m.Dashboard })));
+const MetricsPage = lazy(() => import("./pages/MetricsPage").then(m => ({ default: m.MetricsPage })));
+const CostExplorer = lazy(() => import("./pages/CostExplorer").then(m => ({ default: m.CostExplorer })));
+const AlertsPage = lazy(() => import("./pages/AlertsPage").then(m => ({ default: m.AlertsPage })));
+const ActivityFeed = lazy(() => import("./pages/ActivityFeed").then(m => ({ default: m.ActivityFeed })));
+const Settings = lazy(() => import("./pages/Settings").then(m => ({ default: m.Settings })));
 
 type Page =
   | "dashboard"
@@ -22,12 +24,18 @@ export function App() {
     <div className="flex h-screen">
       <Sidebar currentPage={page} onNavigate={setPage} />
       <main className="flex-1 overflow-auto">
-        {page === "dashboard" && <Dashboard />}
-        {page === "metrics" && <MetricsPage />}
-        {page === "costs" && <CostExplorer />}
-        {page === "alerts" && <AlertsPage />}
-        {page === "activity" && <ActivityFeed />}
-        {page === "settings" && <Settings />}
+        <Suspense fallback={
+          <div className="flex items-center justify-center h-full">
+            <div className="text-zinc-400">Loading...</div>
+          </div>
+        }>
+          {page === "dashboard" && <Dashboard />}
+          {page === "metrics" && <MetricsPage />}
+          {page === "costs" && <CostExplorer />}
+          {page === "alerts" && <AlertsPage />}
+          {page === "activity" && <ActivityFeed />}
+          {page === "settings" && <Settings />}
+        </Suspense>
       </main>
     </div>
   );
