@@ -15,8 +15,6 @@ import { ConvexHttpClient } from "convex/browser";
 import { api } from "./convex/_generated/api.js";
 import { Glob } from "bun";
 import { join, resolve } from "path";
-import { stat, open } from "fs/promises";
-import { existsSync } from "fs";
 
 // ── Config ───────────────────────────────────────────────────────────────────
 
@@ -45,7 +43,7 @@ const convex = new ConvexHttpClient(CONVEX_URL);
 // ── Frontend Detection ───────────────────────────────────────────────────────
 
 const distDir = resolve(import.meta.dirname, "dist");
-const hasDistBuild = existsSync(distDir);
+const hasDistBuild = await Bun.file(join(distDir, "index.html")).exists();
 
 // In dev mode, use Bun's HTML import for automatic bundling
 // In production, serve from dist/
@@ -163,50 +161,41 @@ async function pollSessions(): Promise<void> {
 // ── Transcript Scanning ─────────────────────────────────────────────────────
 
 async function readNewLines(filePath: string): Promise<string[] | null> {
-  let info;
-  try {
-    info = await stat(filePath);
-  } catch {
-    return null;
-  }
+  const file = Bun.file(filePath);
+
+  if (!(await file.exists())) return null;
+
+  const size = file.size;
+  const mtimeMs = file.lastModified;
 
   const prev = fileStates.get(filePath);
 
-  if (prev && info.size === prev.size && info.mtimeMs === prev.mtimeMs) {
+  if (prev && size === prev.size && mtimeMs === prev.mtimeMs) {
     return null;
   }
 
   const startPos =
-    prev && info.size >= prev.lastPosition ? prev.lastPosition : 0;
+    prev && size >= prev.lastPosition ? prev.lastPosition : 0;
   const prevPartial = startPos === 0 ? "" : (prev?.partial ?? "");
 
-  if (startPos >= info.size) {
+  if (startPos >= size) {
     fileStates.set(filePath, {
-      size: info.size,
-      mtimeMs: info.mtimeMs,
+      size,
+      mtimeMs,
       lastPosition: startPos,
       partial: prevPartial,
     });
     return null;
   }
 
-  const bytesToRead = info.size - startPos;
-  const buf = Buffer.alloc(bytesToRead);
-  const fh = await open(filePath, "r");
-  try {
-    await fh.read(buf, 0, bytesToRead, startPos);
-  } finally {
-    await fh.close();
-  }
-
-  const chunk = prevPartial + buf.toString("utf-8");
+  const chunk = prevPartial + await file.slice(startPos, size).text();
   const parts = chunk.split("\n");
   const trailing = parts.pop() ?? "";
 
   fileStates.set(filePath, {
-    size: info.size,
-    mtimeMs: info.mtimeMs,
-    lastPosition: info.size,
+    size,
+    mtimeMs,
+    lastPosition: size,
     partial: trailing,
   });
 
