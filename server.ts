@@ -77,7 +77,7 @@ let isConnected = false;
 let sessionPollTimer: Timer | null = null;
 const startedAt = Date.now();
 
-// Incremental file state tracking for poll-legacy transcript scanning
+// Incremental file state tracking for transcript scanning
 interface FileState {
   size: number;
   mtimeMs: number;
