@@ -1,3 +1,4 @@
+import { memo, useMemo } from "react";
 import {
   AreaChart,
   Area,
@@ -20,14 +21,36 @@ interface Props {
   data: DataPoint[];
 }
 
-export default function CostChartInternal({ data }: Props) {
-  const formatted = data.map((d) => ({
-    ...d,
-    time: new Date(d.timestamp).toLocaleTimeString([], {
-      hour: "2-digit",
-      minute: "2-digit",
-    }),
-  }));
+const tooltipStyle = {
+  backgroundColor: "#18181b",
+  border: "1px solid #27272a",
+  borderRadius: "8px",
+  fontSize: "12px",
+} as const;
+
+const tooltipLabelStyle = { color: "#a1a1aa" } as const;
+
+function tooltipFormatter(value: number | undefined, name: string) {
+  if (name === "cost" && value !== undefined) return [formatCost(value), "Cost"];
+  return [value ?? 0, name];
+}
+
+function yAxisFormatter(v: number) {
+  return formatCost(v);
+}
+
+export default memo(function CostChartInternal({ data }: Props) {
+  const formatted = useMemo(
+    () =>
+      data.map((d) => ({
+        ...d,
+        time: new Date(d.timestamp).toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+      })),
+    [data],
+  );
 
   return (
     <div className="h-64">
@@ -55,20 +78,12 @@ export default function CostChartInternal({ data }: Props) {
             tick={{ fill: "#71717a", fontSize: 11 }}
             tickLine={false}
             axisLine={false}
-            tickFormatter={(v: number) => formatCost(v)}
+            tickFormatter={yAxisFormatter}
           />
           <Tooltip
-            contentStyle={{
-              backgroundColor: "#18181b",
-              border: "1px solid #27272a",
-              borderRadius: "8px",
-              fontSize: "12px",
-            }}
-            labelStyle={{ color: "#a1a1aa" }}
-            formatter={(value: number | undefined, name: string) => {
-              if (name === "cost" && value !== undefined) return [formatCost(value), "Cost"];
-              return [value ?? 0, name];
-            }}
+            contentStyle={tooltipStyle}
+            labelStyle={tooltipLabelStyle}
+            formatter={tooltipFormatter}
           />
           <Area
             type="monotone"
@@ -81,4 +96,4 @@ export default function CostChartInternal({ data }: Props) {
       </ResponsiveContainer>
     </div>
   );
-}
+});

@@ -1,3 +1,4 @@
+import { memo, useMemo } from "react";
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
@@ -40,8 +41,30 @@ interface Props {
   agentId: Id<"agents">;
 }
 
-export function SnitchScore({ agentId }: Props) {
+function scoreStyles(score: number) {
+  if (score < 25) return { color: "text-emerald-400", bar: "bg-emerald-500" };
+  if (score < 50) return { color: "text-blue-400", bar: "bg-blue-500" };
+  if (score < 75) return { color: "text-amber-400", bar: "bg-amber-500" };
+  return { color: "text-red-400", bar: "bg-red-500" };
+}
+
+export const SnitchScore = memo(function SnitchScore({ agentId }: Props) {
   const score = useQuery(api.snitchScore.getScore, { agentId });
+
+  const styles = useMemo(
+    () => (score ? scoreStyles(score.score) : { color: "", bar: "" }),
+    [score?.score],
+  );
+
+  const sortedBreakdown = useMemo(
+    () =>
+      score
+        ? Object.entries(score.breakdown).sort(
+            ([, a], [, b]) => (b as number) - (a as number),
+          )
+        : [],
+    [score?.breakdown],
+  );
 
   if (!score) {
     return (
@@ -50,24 +73,6 @@ export function SnitchScore({ agentId }: Props) {
       </Card>
     );
   }
-
-  const scoreColor =
-    score.score < 25
-      ? "text-emerald-400"
-      : score.score < 50
-        ? "text-blue-400"
-        : score.score < 75
-          ? "text-amber-400"
-          : "text-red-400";
-
-  const barColor =
-    score.score < 25
-      ? "bg-emerald-500"
-      : score.score < 50
-        ? "bg-blue-500"
-        : score.score < 75
-          ? "bg-amber-500"
-          : "bg-red-500";
 
   return (
     <Card title="Snitch Score™" subtitle="How often does your agent tattle?">
@@ -80,13 +85,16 @@ export function SnitchScore({ agentId }: Props) {
           <div>
             <div className="flex items-baseline gap-2">
               <span
-                className={cn("text-3xl font-bold tabular-nums", scoreColor)}
+                className={cn(
+                  "text-3xl font-bold tabular-nums",
+                  styles.color,
+                )}
               >
                 {score.score}
               </span>
               <span className="text-sm text-zinc-500">/ 100</span>
             </div>
-            <p className={cn("text-sm font-medium", scoreColor)}>
+            <p className={cn("text-sm font-medium", styles.color)}>
               {score.label}
             </p>
           </div>
@@ -95,38 +103,36 @@ export function SnitchScore({ agentId }: Props) {
         {/* Score bar */}
         <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
           <div
-            className={cn("h-full rounded-full transition-all", barColor)}
+            className={cn("h-full rounded-full transition-all", styles.bar)}
             style={{ width: `${score.score}%` }}
           />
         </div>
 
         {/* Breakdown */}
-        {Object.keys(score.breakdown).length > 0 && (
+        {sortedBreakdown.length > 0 && (
           <div className="space-y-1.5">
             <p className="text-xs text-zinc-500 font-medium uppercase tracking-wider">
               Breakdown
             </p>
-            {Object.entries(score.breakdown)
-              .sort(([, a], [, b]) => (b as number) - (a as number))
-              .map(([type, count]) => {
-                const Icon = TYPE_ICONS[type] ?? Eye;
-                return (
-                  <div
-                    key={type}
-                    className="flex items-center justify-between text-sm"
-                  >
-                    <div className="flex items-center gap-2">
-                      <Icon className="w-3.5 h-3.5 text-zinc-500" />
-                      <span className="text-zinc-400">
-                        {TYPE_LABELS[type] ?? type}
-                      </span>
-                    </div>
-                    <span className="text-zinc-300 font-mono text-xs">
-                      {count as number}
+            {sortedBreakdown.map(([type, count]) => {
+              const Icon = TYPE_ICONS[type] ?? Eye;
+              return (
+                <div
+                  key={type}
+                  className="flex items-center justify-between text-sm"
+                >
+                  <div className="flex items-center gap-2">
+                    <Icon className="w-3.5 h-3.5 text-zinc-500" />
+                    <span className="text-zinc-400">
+                      {TYPE_LABELS[type] ?? type}
                     </span>
                   </div>
-                );
-              })}
+                  <span className="text-zinc-300 font-mono text-xs">
+                    {count as number}
+                  </span>
+                </div>
+              );
+            })}
           </div>
         )}
 
@@ -173,15 +179,15 @@ export function SnitchScore({ agentId }: Props) {
       </div>
     </Card>
   );
-}
+});
 
 // Leaderboard component for multi-agent setups
-export function SnitchLeaderboard() {
+export const SnitchLeaderboard = memo(function SnitchLeaderboard() {
   const leaderboard = useQuery(api.snitchScore.leaderboard);
 
-  if (!leaderboard || leaderboard.length === 0) return null;
+  const medals = useMemo(() => ["🥇", "🥈", "🥉"], []);
 
-  const medals = ["🥇", "🥈", "🥉"];
+  if (!leaderboard || leaderboard.length === 0) return null;
 
   return (
     <Card title="Snitch Leaderboard" subtitle="Who's the biggest tattletale?">
@@ -206,13 +212,7 @@ export function SnitchLeaderboard() {
               <span
                 className={cn(
                   "text-sm font-bold tabular-nums",
-                  entry.score < 25
-                    ? "text-emerald-400"
-                    : entry.score < 50
-                      ? "text-blue-400"
-                      : entry.score < 75
-                        ? "text-amber-400"
-                        : "text-red-400",
+                  scoreStyles(entry.score).color,
                 )}
               >
                 {entry.score}
@@ -223,4 +223,4 @@ export function SnitchLeaderboard() {
       </div>
     </Card>
   );
-}
+});
