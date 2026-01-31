@@ -57,7 +57,9 @@ export default defineSchema({
     period: v.string(), // "hourly" | "daily"
   })
     .index("by_agent_time", ["agentId", "timestamp"])
-    .index("by_period", ["period", "timestamp"]),
+    .index("by_period", ["period", "timestamp"])
+    .index("by_provider_time", ["provider", "timestamp"])
+    .index("by_model", ["model", "timestamp"]),
 
   // Budgets — spending limits
   budgets: defineTable({
@@ -140,8 +142,7 @@ export default defineSchema({
     sessionKey: v.optional(v.string()),
     channel: v.optional(v.string()),
   })
-    .index("by_agent", ["agentId"])
-    .index("by_creation_time", ["_creationTime"]),
+    .index("by_agent", ["agentId"]),
 
   // Health checks — periodic status snapshots
   healthChecks: defineTable({
