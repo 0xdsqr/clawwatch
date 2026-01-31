@@ -1,4 +1,4 @@
-import { lazy, Suspense } from "react";
+import { lazy, memo, Suspense } from "react";
 
 // Lazy load the actual chart component to reduce bundle size
 const CostChartInternal = lazy(() => import("./CostChartInternal"));
@@ -14,7 +14,7 @@ interface Props {
   data: DataPoint[];
 }
 
-export function CostChart({ data }: Props) {
+export const CostChart = memo(function CostChart({ data }: Props) {
   if (data.length === 0) {
     return (
       <div className="h-64 flex items-center justify-center text-zinc-600">
@@ -32,4 +32,4 @@ export function CostChart({ data }: Props) {
       <CostChartInternal data={data} />
     </Suspense>
   );
-}
+});

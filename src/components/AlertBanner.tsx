@@ -1,3 +1,4 @@
+import { memo, useMemo, useCallback } from "react";
 import { useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { cn, severityColor, timeAgo } from "@/lib/utils";
@@ -16,14 +17,73 @@ interface Props {
   alerts: Alert[];
 }
 
-export function AlertBanner({ alerts }: Props) {
+const AlertRow = memo(function AlertRow({
+  alert,
+  onAcknowledge,
+  onResolve,
+}: {
+  alert: Alert;
+  onAcknowledge: (id: string) => void;
+  onResolve: (id: string) => void;
+}) {
+  return (
+    <div className="flex items-center justify-between text-sm">
+      <div className="flex items-center gap-2 min-w-0">
+        <span
+          className={cn(
+            "shrink-0 px-1.5 py-0.5 rounded text-xs font-medium",
+            severityColor(alert.severity),
+          )}
+        >
+          {alert.severity}
+        </span>
+        <span className="text-zinc-300 truncate">{alert.title}</span>
+        <span className="text-zinc-600 text-xs shrink-0">
+          {timeAgo(alert._creationTime)}
+        </span>
+      </div>
+      <div className="flex items-center gap-1 shrink-0 ml-2">
+        {!alert.acknowledgedAt && (
+          <button
+            onClick={() => onAcknowledge(alert._id)}
+            className="p-1 rounded hover:bg-zinc-700/50 text-zinc-500 hover:text-zinc-300"
+            title="Acknowledge"
+          >
+            <CheckCircle className="w-3.5 h-3.5" />
+          </button>
+        )}
+        <button
+          onClick={() => onResolve(alert._id)}
+          className="p-1 rounded hover:bg-zinc-700/50 text-zinc-500 hover:text-zinc-300"
+          title="Resolve"
+        >
+          <X className="w-3.5 h-3.5" />
+        </button>
+      </div>
+    </div>
+  );
+});
+
+export const AlertBanner = memo(function AlertBanner({ alerts }: Props) {
   const acknowledge = useMutation(api.alerting.acknowledge);
   const resolve = useMutation(api.alerting.resolve);
 
-  if (alerts.length === 0) return null;
+  const handleAcknowledge = useCallback(
+    (id: string) => acknowledge({ id: id as any }),
+    [acknowledge],
+  );
 
-  const criticalCount = alerts.filter((a) => a.severity === "critical").length;
-  const warningCount = alerts.filter((a) => a.severity === "warning").length;
+  const handleResolve = useCallback(
+    (id: string) => resolve({ id: id as any }),
+    [resolve],
+  );
+
+  const criticalCount = useMemo(
+    () => alerts.filter((a) => a.severity === "critical").length,
+    [alerts],
+  );
+
+  if (alerts.length === 0) return null;
 
   return (
     <div
@@ -52,47 +112,16 @@ export function AlertBanner({ alerts }: Props) {
           </p>
           <div className="mt-2 space-y-1.5">
             {alerts.slice(0, 3).map((alert) => (
-              <div
+              <AlertRow
                 key={alert._id}
-                className="flex items-center justify-between text-sm"
-              >
-                <div className="flex items-center gap-2 min-w-0">
-                  <span
-                    className={cn(
-                      "shrink-0 px-1.5 py-0.5 rounded text-xs font-medium",
-                      severityColor(alert.severity),
-                    )}
-                  >
-                    {alert.severity}
-                  </span>
-                  <span className="text-zinc-300 truncate">{alert.title}</span>
-                  <span className="text-zinc-600 text-xs shrink-0">
-                    {timeAgo(alert._creationTime)}
-                  </span>
-                </div>
-                <div className="flex items-center gap-1 shrink-0 ml-2">
-                  {!alert.acknowledgedAt && (
-                    <button
-                      onClick={() => acknowledge({ id: alert._id as any })}
-                      className="p-1 rounded hover:bg-zinc-700/50 text-zinc-500 hover:text-zinc-300"
-                      title="Acknowledge"
-                    >
-                      <CheckCircle className="w-3.5 h-3.5" />
-                    </button>
-                  )}
-                  <button
-                    onClick={() => resolve({ id: alert._id as any })}
-                    className="p-1 rounded hover:bg-zinc-700/50 text-zinc-500 hover:text-zinc-300"
-                    title="Resolve"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
+                alert={alert}
+                onAcknowledge={handleAcknowledge}
+                onResolve={handleResolve}
+              />
             ))}
           </div>
         </div>
       </div>
     </div>
   );
-}
+});

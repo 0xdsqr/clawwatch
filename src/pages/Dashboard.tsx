@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { Card, StatCard } from "@/components/Card";
@@ -16,7 +17,72 @@ export function Dashboard() {
   const recentActivities = useQuery(api.activities.recent, { limit: 10 });
   const costTimeSeries = useQuery(api.costs.timeSeries, { hours: 24 });
 
-  const unresolvedAlerts = recentAlerts?.filter((a) => !a.resolvedAt) ?? [];
+  const unresolvedAlerts = useMemo(
+    () => recentAlerts?.filter((a) => !a.resolvedAt) ?? [],
+    [recentAlerts],
+  );
+
+  // Memoize expensive formatting calculations
+  const costTodayFormatted = useMemo(
+    () => formatCost(costSummary?.today.cost ?? 0),
+    [costSummary?.today.cost],
+  );
+
+  const todayRequests = useMemo(
+    () =>
+      costSummary
+        ? `${costSummary.today.requests} requests`
+        : "Loading...",
+    [costSummary?.today.requests],
+  );
+
+  const totalTokens = useMemo(
+    () =>
+      formatTokens(
+        (costSummary?.today.inputTokens ?? 0) +
+          (costSummary?.today.outputTokens ?? 0),
+      ),
+    [costSummary?.today.inputTokens, costSummary?.today.outputTokens],
+  );
+
+  const tokenBreakdown = useMemo(
+    () =>
+      `In: ${formatTokens(costSummary?.today.inputTokens ?? 0)} / Out: ${formatTokens(costSummary?.today.outputTokens ?? 0)}`,
+    [costSummary?.today.inputTokens, costSummary?.today.outputTokens],
+  );
+
+  const activeAgentCount = useMemo(
+    () =>
+      `${agents?.filter((a) => a.status === "online").length ?? 0} / ${agents?.length ?? 0}`,
+    [agents],
+  );
+
+  const offlineAgentInfo = useMemo(() => {
+    if (!agents) return { text: "Loading...", type: "neutral" as const };
+    const offlineCount = agents.filter((a) => a.status === "offline").length;
+    return {
+      text: `${offlineCount} offline`,
+      type: offlineCount > 0 ? ("negative" as const) : ("positive" as const),
+    };
+  }, [agents]);
+
+  const alertInfo = useMemo(() => {
+    const criticalCount = unresolvedAlerts.filter(
+      (a) => a.severity === "critical",
+    ).length;
+    return {
+      text:
+        criticalCount > 0
+          ? `${criticalCount} critical`
+          : "All clear",
+      type:
+        unresolvedAlerts.length > 0
+          ? ("negative" as const)
+          : ("positive" as const),
+    };
+  }, [unresolvedAlerts]);
+
+  const firstAgentId = agents?.[0]?._id;
 
   return (
     <div className="p-8 max-w-7xl mx-auto space-y-8">
@@ -35,47 +101,28 @@ export function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           label="Cost Today"
-          value={formatCost(costSummary?.today.cost ?? 0)}
-          change={
-            costSummary
-              ? `${costSummary.today.requests} requests`
-              : "Loading..."
-          }
+          value={costTodayFormatted}
+          change={todayRequests}
           icon={<DollarSign className="w-5 h-5 text-keel-400" />}
         />
         <StatCard
           label="Tokens (24h)"
-          value={formatTokens(
-            (costSummary?.today.inputTokens ?? 0) +
-              (costSummary?.today.outputTokens ?? 0),
-          )}
-          change={`In: ${formatTokens(costSummary?.today.inputTokens ?? 0)} / Out: ${formatTokens(costSummary?.today.outputTokens ?? 0)}`}
+          value={totalTokens}
+          change={tokenBreakdown}
           icon={<Zap className="w-5 h-5 text-amber-400" />}
         />
         <StatCard
           label="Active Agents"
-          value={`${agents?.filter((a) => a.status === "online").length ?? 0} / ${agents?.length ?? 0}`}
-          change={
-            agents
-              ? `${agents.filter((a) => a.status === "offline").length} offline`
-              : "Loading..."
-          }
-          changeType={
-            agents?.some((a) => a.status === "offline")
-              ? "negative"
-              : "positive"
-          }
+          value={activeAgentCount}
+          change={offlineAgentInfo.text}
+          changeType={offlineAgentInfo.type}
           icon={<Activity className="w-5 h-5 text-emerald-400" />}
         />
         <StatCard
           label="Active Alerts"
           value={unresolvedAlerts.length.toString()}
-          change={
-            unresolvedAlerts.filter((a) => a.severity === "critical").length > 0
-              ? `${unresolvedAlerts.filter((a) => a.severity === "critical").length} critical`
-              : "All clear"
-          }
-          changeType={unresolvedAlerts.length > 0 ? "negative" : "positive"}
+          change={alertInfo.text}
+          changeType={alertInfo.type}
           icon={<AlertTriangle className="w-5 h-5 text-red-400" />}
         />
       </div>
@@ -101,7 +148,7 @@ export function Dashboard() {
       {agents && agents.length > 0 && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <SnitchLeaderboard />
-          {agents[0] && <SnitchScore agentId={agents[0]._id} />}
+          {firstAgentId && <SnitchScore agentId={firstAgentId} />}
         </div>
       )}
 

@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { cn } from "@/lib/utils";
 import type { ReactNode } from "react";
 
@@ -9,7 +10,7 @@ interface CardProps {
   action?: ReactNode;
 }
 
-export function Card({
+export const Card = memo(function Card({
   title,
   subtitle,
   children,
@@ -39,7 +40,7 @@ export function Card({
       {children}
     </div>
   );
-}
+});
 
 interface StatCardProps {
   label: string;
@@ -49,7 +50,7 @@ interface StatCardProps {
   icon?: ReactNode;
 }
 
-export function StatCard({
+export const StatCard = memo(function StatCard({
   label,
   value,
   change,
@@ -85,4 +86,4 @@ export function StatCard({
       </div>
     </Card>
   );
-}
+});

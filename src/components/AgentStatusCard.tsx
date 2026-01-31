@@ -1,3 +1,4 @@
+import { memo, useMemo } from "react";
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
@@ -15,8 +16,25 @@ interface Props {
   agentId: Id<"agents">;
 }
 
-export function AgentStatusCard({ agentId }: Props) {
+export const AgentStatusCard = memo(function AgentStatusCard({
+  agentId,
+}: Props) {
   const health = useQuery(api.agents.healthSummary, { agentId });
+
+  const formattedCost = useMemo(
+    () => formatCost(health?.costLastHour ?? 0),
+    [health?.costLastHour],
+  );
+
+  const formattedTokens = useMemo(
+    () => formatTokens(health?.tokensLastHour ?? 0),
+    [health?.tokensLastHour],
+  );
+
+  const formattedHeartbeat = useMemo(
+    () => (health ? timeAgo(health.agent.lastHeartbeat) : ""),
+    [health?.agent.lastHeartbeat],
+  );
 
   if (!health) {
     return (
@@ -29,8 +47,6 @@ export function AgentStatusCard({ agentId }: Props) {
   const {
     agent,
     activeSessions,
-    costLastHour,
-    tokensLastHour,
     errorCount,
     isHealthy,
   } = health;
@@ -49,9 +65,7 @@ export function AgentStatusCard({ agentId }: Props) {
             />
             <span className="font-semibold text-zinc-200">{agent.name}</span>
           </div>
-          <span className="text-xs text-zinc-500">
-            {timeAgo(agent.lastHeartbeat)}
-          </span>
+          <span className="text-xs text-zinc-500">{formattedHeartbeat}</span>
         </div>
 
         {/* Model / Channel */}
@@ -86,7 +100,7 @@ export function AgentStatusCard({ agentId }: Props) {
             <div>
               <p className="text-xs text-zinc-500">Cost/hr</p>
               <p className="text-sm font-medium text-zinc-300">
-                {formatCost(costLastHour)}
+                {formattedCost}
               </p>
             </div>
           </div>
@@ -97,7 +111,7 @@ export function AgentStatusCard({ agentId }: Props) {
             <div>
               <p className="text-xs text-zinc-500">Tokens/hr</p>
               <p className="text-sm font-medium text-zinc-300">
-                {formatTokens(tokensLastHour)}
+                {formattedTokens}
               </p>
             </div>
           </div>
@@ -144,4 +158,4 @@ export function AgentStatusCard({ agentId }: Props) {
       </div>
     </Card>
   );
-}
+});
