@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+
+# Build
+dist/
+
+# Environment files (keep .env.example tracked)
+.env.local
+.env*.local
+.env
+!.env.example
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+
+# Convex
+.convex/
+convex/_generated/
+
+# Docker volumes
+infra/data/

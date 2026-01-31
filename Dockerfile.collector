@@ -1,0 +1,27 @@
+# ClawWatch Collector - Docker image
+FROM oven/bun:1
+
+WORKDIR /app
+
+# Copy package files for dependencies
+COPY package.json bun.lockb* ./
+
+# Install dependencies
+RUN bun install --frozen-lockfile --production
+
+# Copy collector and convex directories
+COPY collector/ ./collector/
+COPY convex/ ./convex/
+
+# Set environment variables (will be overridden by docker-compose)
+ENV GATEWAY_URL=""
+ENV GATEWAY_TOKEN=""
+ENV CONVEX_URL="http://127.0.0.1:3210"
+ENV SESSIONS_DIR="/data/sessions"
+ENV POLL_INTERVAL="30000"
+
+# Create sessions directory
+RUN mkdir -p /data/sessions
+
+# Run the collector
+CMD ["bun", "run", "collector/poll.ts"]
