@@ -1,162 +1,55 @@
 # 🔍 ClawWatch
 
+<div align="center">
+
 **PagerDuty for your AI agents**
 
-ClawWatch is the operational backbone for your AI agents — monitor performance, track costs, set budgets, configure alerts, and see what your agents are doing in real-time.
+[![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Docker](https://img.shields.io/badge/Docker-2CA5E0?logo=docker&logoColor=white)](https://www.docker.com/)
+[![Convex](https://img.shields.io/badge/Convex-FF6B4D?logo=data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJMMjIgOEwxMiAxNEwyIDhMMTIgMloiIGZpbGw9IndoaXRlIi8+Cjwvc3ZnPgo=)](https://convex.dev/)
 
-Built for the [Clawdbot](https://github.com/clawdbot/clawdbot) and OpenClaw ecosystem but designed to work with any AI agent platform.
+[Getting Started](#quick-start) · [Features](#features) · [Architecture](#architecture) · [Development](#development) · [Discord](https://discord.gg/clawd)
 
-![ClawWatch Dashboard](./screenshot.png)
-_Screenshot placeholder - ClawWatch monitoring dashboard_
+Monitor your AI agents' spending, performance, and behavior. Self-hosted. Real-time. Open source.
+
+</div>
 
 ---
 
-## Getting Started
+## Screenshots
 
-Get ClawWatch monitoring your AI agents in 5 simple steps:
+<div align="center">
 
-### 1. Clone and Configure
+| Dashboard | Cost Explorer |
+|-----------|---------------|
+| ![ClawWatch Dashboard](docs/screenshots/dashboard.jpg) | ![Cost Explorer](docs/screenshots/cost-explorer.jpg) |
 
-```bash
-# Clone the repository
-git clone https://github.com/0xdsqr/clawwatch.git
-cd clawwatch
+*Track agent status, costs, and activity at a glance*
 
-# Copy the configuration template
-cp .env.example .env
-```
+</div>
 
-### 2. Edit Configuration
+---
 
-Open `.env` in your editor and set these **required** values:
+## Quick Start
 
 ```bash
-# Your Clawdbot gateway URL and token
-GATEWAY_URL=http://127.0.0.1:18789
-GATEWAY_TOKEN=your_gateway_token_here
-```
-
-> 💡 **Where to find these**: Check your Clawdbot gateway config or startup logs
-
-### 3. Start ClawWatch
-
-```bash
-# Start all services with Docker
+git clone https://github.com/0xdsqr/clawwatch.git && cd clawwatch
+cp .env.example .env  # configure GATEWAY_URL + GATEWAY_TOKEN
 docker compose up -d
+# Open http://localhost:5173
 ```
-
-Wait ~30 seconds for services to start, then:
-
-### 4. Set Up Database
-
-```bash
-# Generate admin key
-docker compose exec convex-backend ./generate_admin_key.sh
-
-# Deploy the schema (use the key from above)
-npx convex dev --once --url http://127.0.0.1:3210 --admin-key <your-admin-key>
-```
-
-### 5. Open Dashboard
-
-Visit in your browser:
-
-- **🔍 ClawWatch Dashboard**: http://localhost:5173
-- **⚙️ Convex Admin** (optional): http://localhost:6791
-
-**That's it!** ClawWatch will start collecting data from your gateway automatically.
-
----
-
-## Configuration
-
-### Environment Variables
-
-ClawWatch requires connection to your Clawdbot gateway. Configure these in `.env`:
-
-```bash
-# Required: Gateway connection
-GATEWAY_URL=http://127.0.0.1:18789
-GATEWAY_TOKEN=your_gateway_token_here
-
-# Optional: Session transcript location
-SESSIONS_DIR=/home/moltbot/.clawdbot/agents
-
-# Optional: Collector polling frequency
-POLL_INTERVAL=30000
-```
-
-See `.env.example` for all available options.
-
-### Gateway Connection
-
-ClawWatch connects to your Clawdbot gateway to:
-
-- Monitor agent status and health
-- Track real-time cost and token usage
-- Collect activity logs and session transcripts
-- Receive heartbeat and status updates
-
-Ensure your gateway is running and accessible at the configured URL.
 
 ---
 
 ## Features
 
-### 📊 Dashboard
-
-Get an overview of all your agents at a glance:
-
-- **Agent Status**: Online/offline, active sessions, health metrics
-- **Cost Summary**: Today's spend, token usage, request counts
-- **Active Alerts**: Critical issues requiring attention
-- **Recent Activity**: What your agents have been doing
-
-### 💰 Cost Explorer
-
-Track spending across all your agents:
-
-- **Real-time Tracking**: Token and dollar costs per agent, session, and time period
-- **Historical Data**: Hourly, daily, weekly, and monthly breakdowns
-- **Budget Management**: Set spending limits with hard stops or alerts
-- **Provider Breakdown**: Costs by AI provider (OpenAI, Anthropic, etc.)
-
-### 📈 Metrics
-
-CloudWatch-style monitoring for your agents:
-
-- **Response Latency**: P50, P95, P99 percentiles with configurable alarms
-- **Request Rate**: Invocations per time window
-- **Error Rate**: Failed requests and exceptions
-- **Token Throughput**: Tokens processed per time period
-- **Active Sessions**: Concurrent agent sessions
-- **Heartbeat Monitoring**: Agent connectivity and health
-
-### 🚨 Alerts
-
-Configurable monitoring and alerting:
-
-- **Cost Thresholds**: Alert when agents exceed spending limits
-- **Performance Issues**: High latency, error spikes, session loops
-- **Agent Health**: Offline detection, heartbeat failures
-- **Custom Metrics**: Define your own monitoring rules
-
-### 📜 Activity Feed
-
-"What did my agent do?" timeline:
-
-- **Action History**: Tool calls, messages, decisions
-- **Session Tracking**: Follow agent conversations and workflows
-- **Error Logging**: Exceptions and failure details
-- **Performance Insights**: Response times and resource usage
-
-### 🎯 Snitch Score™
-
-A fun metric tracking how often your agents "tattle" or report issues:
-
-- **Behavioral Tracking**: Safety refusals, permission requests, compliance reports
-- **Leaderboards**: Which agent is the biggest tattletale?
-- **Trend Analysis**: Changes in agent behavior over time
+- 📊 **Dashboard** — agent status, costs, alerts at a glance
+- 💰 **Cost Explorer** — track every token and dollar
+- 📈 **Metrics** — CloudWatch-style P50/P95/P99 latency, request rate, errors
+- 🚨 **Alerts** — budget exceeded, agent offline, error spikes
+- 📜 **Activity Feed** — what your agent actually did
+- 🎯 **Snitch Score™** — how often does your agent tattle on you?
 
 ---
 
@@ -164,9 +57,9 @@ A fun metric tracking how often your agents "tattle" or report issues:
 
 ```
 ┌──────────────┐     HTTP API       ┌──────────────────┐
-│  Clawdbot    │ ─────────────────▸ │ ClawWatch        │
+│  Clawdbot    │ ─────────────────▶ │ ClawWatch        │
 │  Gateway     │   File System      │ Collector        │
-└──────────────┘ ─────────────────▸ └────────┬─────────┘
+└──────────────┘ ─────────────────▶ └────────┬─────────┘
                                              │
                                     Convex Mutations
                                              │
@@ -184,24 +77,18 @@ A fun metric tracking how often your agents "tattle" or report issues:
                                     └───────────────────┘
 ```
 
-**Components:**
-
-- **ClawWatch Collector**: Polls the Clawdbot gateway and session transcripts, feeds data into Convex
-- **Convex Backend**: Self-hosted reactive database with real-time subscriptions
-- **ClawWatch Dashboard**: React frontend with live updates and interactive charts
-
-**Technology Stack:**
-
-- **Frontend**: React + Vite + Tailwind CSS + Recharts
-- **Backend**: [Convex](https://convex.dev) (self-hosted) — reactive database
-- **Runtime**: Bun for performance, Node.js compatible
-- **Deployment**: Docker Compose for easy orchestration
+**Tech Stack:** React + Vite + Tailwind + Convex + Recharts + Bun
 
 ---
 
 ## Development
 
-### Running Locally (without Docker)
+### Prerequisites
+
+- Node.js 18+ or Bun
+- Docker & Docker Compose
+
+### Local Setup
 
 ```bash
 # Install dependencies
@@ -210,12 +97,9 @@ bun install
 # Start Convex backend
 cd infra && docker compose up -d
 
-# Generate admin key
-docker compose exec backend ./generate_admin_key.sh
-
 # Configure environment
 cp .env.example .env.local
-# Edit .env.local with your settings
+# Edit .env.local with your GATEWAY_URL and GATEWAY_TOKEN
 
 # Deploy schema
 npx convex dev --once
@@ -223,7 +107,7 @@ npx convex dev --once
 # Start frontend
 bun run dev
 
-# Start collector (in another terminal)
+# Start collector (new terminal)
 bun run collector/poll.ts
 ```
 
@@ -231,59 +115,29 @@ bun run collector/poll.ts
 
 ```
 clawwatch/
-├── src/                  # React frontend source
-├── convex/              # Database schema and functions
-├── collector/           # Data collection service
-├── public/              # Static assets
-├── docker-compose.yml   # Production deployment
-├── Dockerfile           # Webapp container
-├── Dockerfile.collector # Collector container
-└── .env.example        # Configuration template
-```
-
-### Building
-
-```bash
-# Build frontend
-bun run build
-
-# Build Docker images
-docker build -t clawwatch-webapp .
-docker build -f Dockerfile.collector -t clawwatch-collector .
+├── src/                 # React frontend
+├── convex/             # Database schema & functions
+├── collector/          # Data collection service
+├── docs/screenshots/   # UI screenshots
+└── docker-compose.yml  # Production deployment
 ```
 
 ---
 
-## Contributing
+## Built for the Claw Ecosystem
 
-We welcome contributions! Please:
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
-
-See [CONTRIBUTING.md](./CONTRIBUTING.md) for detailed guidelines.
+ClawWatch seamlessly integrates with [OpenClaw](https://github.com/openclaw/openclaw) and [Clawdbot](https://github.com/clawdbot/clawdbot), providing comprehensive monitoring for your AI agent infrastructure. Works with any agent platform that exposes compatible APIs.
 
 ---
 
 ## License
 
-MIT License - see [LICENSE](./LICENSE) for details.
+MIT License - see [LICENSE](LICENSE) for details.
 
 ---
 
-## Built With
+<div align="center">
 
-- [React](https://react.dev) - Frontend framework
-- [Vite](https://vitejs.dev) - Build tool and dev server
-- [Tailwind CSS](https://tailwindcss.com) - Styling
-- [Convex](https://convex.dev) - Reactive backend database
-- [Recharts](https://recharts.org) - Chart library
-- [Bun](https://bun.sh) - Fast JavaScript runtime
-- [Docker](https://docker.com) - Containerization
+*Built with ❤️ for the AI agent community*
 
----
-
-_Built with ❤️ for the AI agent community_
+</div>
