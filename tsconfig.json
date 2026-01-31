@@ -16,10 +16,11 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true,
+    "types": ["@types/bun"],
     "paths": {
       "@/*": ["./src/*"]
     },
     "baseUrl": "."
   },
-  "include": ["src", "convex"]
+  "include": ["src", "convex", "server.ts", "collector"]
 }
