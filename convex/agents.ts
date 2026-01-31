@@ -5,16 +5,13 @@ import { v } from "convex/values";
 export const list = query({
   args: { 
     limit: v.optional(v.number()),
-    offset: v.optional(v.number()) 
   },
   handler: async (ctx, args) => {
-    const limit = args.limit ?? 50; // Default reasonable limit
-    const offset = args.offset ?? 0;
+    const limit = args.limit ?? 50;
     
     const agents = await ctx.db
       .query("agents")
       .order("desc")
-      .skip(offset)
       .take(limit);
       
     return agents;
