@@ -1,0 +1,23 @@
+{
+  "name": "@clawwatch/core",
+  "version": "0.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "codegen": "npx convex dev --once --typecheck=disable --until-success",
+    "dev": "npx convex dev",
+    "push": "npx convex push --typecheck disable",
+    "deploy": "npx convex deploy --typecheck disable",
+    "serve": "bun run server.ts",
+    "collector": "bun run collector/ws.ts",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.server.json"
+  },
+  "dependencies": {
+    "convex": "^1.31.7"
+  },
+  "devDependencies": {
+    "@clawwatch/tsconfig": "workspace:*",
+    "bun-types": "^1.2.20",
+    "typescript": "^5.9.3"
+  }
+}

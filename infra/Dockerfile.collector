@@ -1,0 +1,27 @@
+# ClawWatch Collector
+FROM oven/bun:1-slim
+
+WORKDIR /app
+
+COPY package.json bun.lock* ./
+COPY packages/core/package.json packages/core/
+RUN bun install --frozen-lockfile --production
+
+COPY packages/core/collector/ ./collector/
+COPY packages/core/convex/ ./convex/
+
+# Create sessions directory and non-root user
+RUN mkdir -p /data/sessions && \
+    addgroup --system --gid 1001 clawwatch && \
+    adduser --system --uid 1001 --ingroup clawwatch clawwatch && \
+    chown -R clawwatch:clawwatch /data/sessions
+
+USER clawwatch
+
+ENV GATEWAY_URL=""
+ENV GATEWAY_TOKEN=""
+ENV CONVEX_URL="http://127.0.0.1:3210"
+ENV SESSIONS_DIR="/data/sessions"
+ENV SESSION_POLL_INTERVAL="60000"
+
+CMD ["bun", "run", "collector/ws.ts"]

@@ -1,36 +1,26 @@
 {
   "name": "clawwatch",
-  "version": "0.1.0",
   "description": "Agent monitoring, cost control, and alerting for Clawdbot and OpenClaw agents",
-  "private": true,
   "type": "module",
+  "private": true,
+  "workspaces": [
+    "apps/clawwatch",
+    "packages/core",
+    "packages/ui",
+    "tooling/typescript"
+  ],
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
-    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.server.json",
-    "preview": "vite preview",
-    "serve": "bun run server.ts",
-    "convex:dev": "convex dev",
-    "convex:deploy": "convex deploy"
-  },
-  "dependencies": {
-    "clsx": "^2.1.1",
-    "convex": "^1.31.7",
-    "lucide-react": "^0.563.0",
-    "react": "^19.2.4",
-    "react-dom": "^19.2.4",
-    "recharts": "^3.7.0",
-    "tailwind-merge": "^3.4.0"
+    "codegen": "bun run --filter='@clawwatch/core' codegen",
+    "dev": "bun run codegen && bun run --filter='clawwatch-app' dev",
+    "build": "bun run codegen && bun run --filter='clawwatch-app' build",
+    "serve": "bun run --filter='@clawwatch/core' serve",
+    "collector": "bun run --filter='@clawwatch/core' collector",
+    "clean": "rm -rf packages/*/dist apps/*/dist apps/*/.output node_modules",
+    "typecheck": "bun run --filter '*' typecheck",
+    "style:fix": "nix fmt ."
   },
   "devDependencies": {
-    "@tailwindcss/vite": "^4.1.18",
-    "@types/bun": "^1.3.8",
-    "@types/react": "^19.2.10",
-    "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^5.1.2",
-    "bun-types": "^1.2.20",
-    "tailwindcss": "^4.1.18",
-    "typescript": "^5.9.3",
-    "vite": "^7.3.1"
+    "@types/bun": "latest",
+    "typescript": "^5.9.3"
   }
 }

@@ -1,143 +1,52 @@
-# 🔍 ClawWatch
-
 <div align="center">
+<img src=".github/assets/clawwatch-wordmark.svg" alt="ClawWatch" width="200" />
 
-**PagerDuty for your AI agents**
+<p>
+  <a href="https://github.com/0xdsqr/clawwatch"><img src="https://img.shields.io/badge/github-clawwatch-blue?style=for-the-badge&logo=github" alt="GitHub" /></a>
+  <a href="#"><img src="https://img.shields.io/badge/typescript-%23007ACC.svg?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript" /></a>
+  <a href="#"><img src="https://img.shields.io/badge/convex-ff6f61?style=for-the-badge&logo=convex&logoColor=white" alt="Convex" /></a>
+  <a href="#"><img src="https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white" alt="Docker" /></a>
+  <a href="#"><img src="https://img.shields.io/badge/nix-%235277C3.svg?style=for-the-badge&logo=nixos&logoColor=white" alt="Nix" /></a>
+</p>
 
-[![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
-[![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Docker](https://img.shields.io/badge/Docker-2CA5E0?logo=docker&logoColor=white)](https://www.docker.com/)
-[![Convex](https://img.shields.io/badge/Convex-FF6B4D?logo=data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJMMjIgOEwxMiAxNEwyIDhMMTIgMloiIGZpbGw9IndoaXRlIi8+Cjwvc3ZnPgo=)](https://convex.dev/)
+**Self-hosted monitoring and cost management for AI agents.**
 
-[Getting Started](#quick-start) · [Features](#features) · [Architecture](#architecture) · [Development](#development) · [Discord](https://discord.gg/clawd)
-
-Monitor your AI agents' spending, performance, and behavior. Self-hosted. Real-time. Open source.
-
+*Real-time visibility into costs, tokens, sessions, and system health from a single dashboard.*
 </div>
 
----
-
-## Screenshots
-
-<div align="center">
-
-| Dashboard | Cost Explorer |
-|-----------|---------------|
-| ![ClawWatch Dashboard](.github/assets/dashboard.jpg) | ![Cost Explorer](.github/assets/cost-explorer.jpg) |
-
-*Track agent status, costs, and activity at a glance*
-
-</div>
+<p align="center">
+  <img src=".github/assets/dashboard.png" alt="ClawWatch Dashboard" width="680" />
+</p>
 
 ---
 
-## Quick Start
+ClawWatch is a local-first monitoring system for agentic AI agents. Connect your agents through a WebSocket gateway and track everything from a single pane of glass:
+
+- 💸 **Real-time cost tracking** - Monitor spend across providers and models as it happens, with projected burn rates and budget controls
+- 🤖 **Multi-agent dashboard** - Unified view of all connected agents with live status, session counts, and per-agent cost breakdowns
+- 🔔 **Smart alerting** - Configurable rules for budget thresholds, offline detection, error spikes, and cost anomalies with Discord, email, and webhook notifications
+- 📡 **Live event stream** - Filterable, sortable log of all agent activity with level-based coloring, search, and real-time streaming
+- 📊 **Token analytics** - Input/output/cache token breakdowns with model comparison tables and usage distribution charts
+- 🏠 **Fully self-hosted** - Runs on your machine, data stays local, no external dependencies beyond a Convex backend
+
+### Quick Start
 
 ```bash
-git clone https://github.com/0xdsqr/clawwatch.git && cd clawwatch
-cp .env.example .env  # configure GATEWAY_URL + GATEWAY_TOKEN
-docker compose up -d
-# Open http://localhost:5173
-```
-
----
-
-## Features
-
-- 📊 **Dashboard** — agent status, costs, alerts at a glance
-- 💰 **Cost Explorer** — track every token and dollar
-- 📈 **Metrics** — CloudWatch-style P50/P95/P99 latency, request rate, errors
-- 🚨 **Alerts** — budget exceeded, agent offline, error spikes
-- 📜 **Activity Feed** — what your agent actually did
-- 🎯 **Snitch Score™** — how often does your agent tattle on you?
-
----
-
-## Architecture
-
-```
-┌──────────────┐     HTTP API       ┌──────────────────┐
-│  Clawdbot    │ ─────────────────▶ │ ClawWatch        │
-│  Gateway     │   File System      │ Collector        │
-└──────────────┘ ─────────────────▶ └────────┬─────────┘
-                                             │
-                                    Convex Mutations
-                                             │
-                                    ┌────────▼──────────┐
-                                    │  Convex Backend   │
-                                    │  (self-hosted)    │
-                                    └────────┬──────────┘
-                                             │
-                                    Real-time Queries
-                                             │
-                                    ┌────────▼──────────┐
-                                    │ ClawWatch         │
-                                    │ Dashboard         │
-                                    │ (React + Vite)    │
-                                    └───────────────────┘
-```
-
-**Tech Stack:** React + Vite + Tailwind + Convex + Recharts + Bun
-
----
-
-## Development
-
-### Prerequisites
-
-- Node.js 18+ or Bun
-- Docker & Docker Compose
-
-### Local Setup
-
-```bash
-# Install dependencies
+# install dependencies
 bun install
 
-# Start Convex backend
-cd infra && docker compose up -d
+# start convex backend
+cd packages/core && npx convex dev
 
-# Configure environment
-cp .env.example .env.local
-# Edit .env.local with your GATEWAY_URL and GATEWAY_TOKEN
-
-# Deploy schema
-npx convex dev --once
-
-# Start frontend
-bun run dev
-
-# Start collector (new terminal)
-bun run collector/ws.ts
+# start the dashboard
+cd apps/clawwatch && bun run dev
 ```
 
-### Project Structure
+Set `GATEWAY_URL` and `GATEWAY_TOKEN` to connect the WebSocket collector to your agent gateway.
 
-```
-clawwatch/
-├── src/                 # React frontend
-├── convex/             # Database schema & functions
-├── collector/          # Data collection service
-├── .github/assets/     # UI screenshots
-└── docker-compose.yml  # Production deployment
-```
+### Stack
 
----
-
-## Built for the Claw Ecosystem
-
-ClawWatch seamlessly integrates with [OpenClaw](https://github.com/openclaw/openclaw) and [Clawdbot](https://github.com/clawdbot/clawdbot), providing comprehensive monitoring for your AI agent infrastructure. Works with any agent platform that exposes compatible APIs.
-
----
-
-## License
-
-MIT License - see [LICENSE](LICENSE) for details.
-
----
-
-<div align="center">
-
-*Built with ❤️ for the AI agent community*
-
-</div>
+- **Frontend**: React 19, TanStack Router, Tailwind CSS 4, Recharts
+- **Backend**: Convex (real-time database + API)
+- **Runtime**: Bun
+- **Collector**: WebSocket + polling for live data ingestion

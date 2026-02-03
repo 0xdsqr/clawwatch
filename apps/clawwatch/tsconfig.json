@@ -1,0 +1,11 @@
+{
+  "extends": "@clawwatch/tsconfig/tanstack-app.json",
+  "include": ["**/*.ts", "**/*.tsx"],
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@convex/*": ["../../packages/core/convex/_generated/*"]
+    }
+  }
+}
