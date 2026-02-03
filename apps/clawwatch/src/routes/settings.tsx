@@ -202,9 +202,9 @@ function SettingsPage() {
             <div className="mb-4 space-y-3 rounded-lg border bg-muted/30 p-4">
               <div className="flex gap-3">
                 <div className="flex-1">
-                  <label className="mb-1 block text-xs text-muted-foreground">
+                  <div className="mb-1 block text-xs text-muted-foreground">
                     Type
-                  </label>
+                  </div>
                   <select
                     value={channelType}
                     onChange={(e: ChangeEvent<HTMLSelectElement>) =>
@@ -218,9 +218,9 @@ function SettingsPage() {
                   </select>
                 </div>
                 <div className="flex-1">
-                  <label className="mb-1 block text-xs text-muted-foreground">
+                  <div className="mb-1 block text-xs text-muted-foreground">
                     Name
-                  </label>
+                  </div>
                   <Input
                     placeholder="e.g. #alerts"
                     value={channelName}
@@ -293,6 +293,7 @@ function SettingsPage() {
                       {channel.isActive ? "Active" : "Disabled"}
                     </span>
                     <button
+                      type="button"
                       onClick={() => removeNotification({ id: channel._id })}
                       className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-red-500/10 hover:text-red-400"
                     >

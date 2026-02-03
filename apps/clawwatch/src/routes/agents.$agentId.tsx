@@ -127,6 +127,7 @@ function FileTreeItem({
   return (
     <>
       <button
+        type="button"
         onClick={() => {
           if (node.isDirectory) {
             onToggle(node.path);
@@ -154,20 +155,19 @@ function FileTreeItem({
         {fileIcon(node.name, node.isDirectory)}
         <span className="truncate">{node.name}</span>
       </button>
-      {node.isDirectory && node.expanded && node.children && (
-        <>
-          {node.children.map((child) => (
-            <FileTreeItem
-              key={child.path}
-              node={child}
-              depth={depth + 1}
-              selectedPath={selectedPath}
-              onSelect={onSelect}
-              onToggle={onToggle}
-            />
-          ))}
-        </>
-      )}
+      {node.isDirectory &&
+        node.expanded &&
+        node.children &&
+        node.children.map((child) => (
+          <FileTreeItem
+            key={child.path}
+            node={child}
+            depth={depth + 1}
+            selectedPath={selectedPath}
+            onSelect={onSelect}
+            onToggle={onToggle}
+          />
+        ))}
     </>
   );
 }
@@ -278,7 +278,7 @@ function FilesTab({
           })),
         };
       }
-      if (node.children && targetPath.startsWith(node.path + "/")) {
+      if (node.children && targetPath.startsWith(`${node.path}/`)) {
         return {
           ...node,
           children: updateTreeNode(node.children, targetPath, children),
@@ -760,6 +760,7 @@ function ConfigurationCard({
                   {agent.workspacePath || "Not set"}
                 </p>
                 <button
+                  type="button"
                   onClick={() => {
                     setPathValue(agent.workspacePath ?? "");
                     setEditingPath(true);
@@ -1119,6 +1120,7 @@ function AgentDetailPage() {
             <div className="flex items-center gap-1 rounded-lg border bg-muted/30 p-0.5">
               {(["all", "active", "completed"] as const).map((s) => (
                 <button
+                  type="button"
                   key={s}
                   onClick={() => setStatusFilter(s)}
                   className={cn(
@@ -1164,6 +1166,7 @@ function AgentDetailPage() {
                     <TableHead>Started</TableHead>
                     <TableHead>
                       <button
+                        type="button"
                         onClick={() => toggleSort("lastActivity")}
                         className="flex items-center gap-1 hover:text-foreground transition-colors"
                       >
@@ -1173,6 +1176,7 @@ function AgentDetailPage() {
                     </TableHead>
                     <TableHead>
                       <button
+                        type="button"
                         onClick={() => toggleSort("totalTokens")}
                         className="flex items-center gap-1 hover:text-foreground transition-colors"
                       >
@@ -1182,6 +1186,7 @@ function AgentDetailPage() {
                     </TableHead>
                     <TableHead>
                       <button
+                        type="button"
                         onClick={() => toggleSort("estimatedCost")}
                         className="flex items-center gap-1 hover:text-foreground transition-colors"
                       >

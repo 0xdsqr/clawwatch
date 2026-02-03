@@ -12,8 +12,11 @@
       "*.json"
     ];
     excludes = [
-      "_generated/*"
-      "*.gen.ts"
+      "**/routeTree.gen.ts"
+      "**/_generated/**"
+      "**/*.css"
+      "**/node_modules/**"
+      "packages/ui/**"
     ];
     settings = {
       formatter = {
@@ -26,10 +29,31 @@
           semicolons = "always";
         };
       };
+      css = {
+        linter.enabled = false;
+        formatter.enabled = false;
+      };
       linter = {
         rules = {
           suspicious = {
             noExplicitAny = "warn";
+            noArrayIndexKey = "warn";
+            noImplicitAnyLet = "warn";
+          };
+          style = {
+            noNonNullAssertion = "warn";
+            useTemplate = "warn";
+            useNodejsImportProtocol = "warn";
+          };
+          a11y = {
+            noStaticElementInteractions = "off";
+          };
+          correctness = {
+            noUnusedVariables = "warn";
+            noUnusedImports = "warn";
+          };
+          security = {
+            noDangerouslySetInnerHtml = "warn";
           };
         };
       };

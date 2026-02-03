@@ -22,6 +22,7 @@ export const TimeRangeSelector = memo(function TimeRangeSelector({
     <div className="flex items-center gap-0.5 rounded-md border border-border/50 bg-muted/40 p-0.5">
       {TIME_RANGE_OPTIONS.map((option) => (
         <button
+          type="button"
           key={option.value}
           onClick={() => onChange(option.value)}
           className={cn(

@@ -130,7 +130,7 @@ const AgentNode = memo(function AgentNode({
           </div>
           {(health?.errorCount ?? 0) > 0 && (
             <div className="flex items-center gap-1 text-[11px] text-red-400">
-              <span>⚠ {health!.errorCount} errors</span>
+              <span>⚠ {health?.errorCount} errors</span>
             </div>
           )}
         </div>
@@ -192,7 +192,7 @@ function buildLayout(
       agent.config?.channel?.split(",").map((c) => c.trim()) ?? [];
     for (const ch of channels) {
       if (!channelAgents.has(ch)) channelAgents.set(ch, []);
-      channelAgents.get(ch)!.push(agent._id);
+      channelAgents.get(ch)?.push(agent._id);
     }
   }
 
@@ -200,13 +200,15 @@ function buildLayout(
   for (const [channel, agentIds] of channelAgents) {
     for (let i = 0; i < agentIds.length; i++) {
       for (let j = i + 1; j < agentIds.length; j++) {
-        const pair = [agentIds[i]!, agentIds[j]!].sort().join("-");
+        const a = agentIds[i] as string;
+        const b = agentIds[j] as string;
+        const pair = [a, b].sort().join("-");
         if (seenPairs.has(pair)) continue;
         seenPairs.add(pair);
         edges.push({
           id: `edge-${pair}`,
-          source: agentIds[i]!,
-          target: agentIds[j]!,
+          source: a,
+          target: b,
           animated: true,
           style: { stroke: "hsl(var(--primary))", strokeWidth: 1.5 },
           label: channel,

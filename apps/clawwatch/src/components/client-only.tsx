@@ -13,5 +13,5 @@ export function ClientOnly({
 }) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
-  return mounted ? <>{children}</> : <>{fallback}</>;
+  return mounted ? children : fallback;
 }

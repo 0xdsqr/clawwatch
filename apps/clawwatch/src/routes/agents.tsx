@@ -201,6 +201,7 @@ function AgentsPage() {
         <div className="flex items-center gap-0.5 rounded-md border border-border/50 bg-muted/40 p-0.5">
           {(["all", "online", "offline", "degraded"] as const).map((status) => (
             <button
+              type="button"
               key={status}
               onClick={() => setStatusFilter(status)}
               className={cn(
@@ -222,6 +223,7 @@ function AgentsPage() {
 
         <div className="flex items-center gap-0.5 rounded-md border border-border/50 bg-muted/40 p-0.5 ml-auto">
           <button
+            type="button"
             onClick={() => setViewMode("grid")}
             className={cn(
               "rounded-sm p-1.5 transition-all",
@@ -234,6 +236,7 @@ function AgentsPage() {
             <LayoutGrid className="h-3.5 w-3.5" />
           </button>
           <button
+            type="button"
             onClick={() => setViewMode("graph")}
             className={cn(
               "rounded-sm p-1.5 transition-all",

@@ -77,15 +77,15 @@ function bucketPercentiles(
   return {
     p50: keys.map((k) => ({
       timestamp: k,
-      value: Math.round(percentile(buckets.get(k)!, 50)),
+      value: Math.round(percentile(buckets.get(k) ?? [], 50)),
     })),
     p95: keys.map((k) => ({
       timestamp: k,
-      value: Math.round(percentile(buckets.get(k)!, 95)),
+      value: Math.round(percentile(buckets.get(k) ?? [], 95)),
     })),
     p99: keys.map((k) => ({
       timestamp: k,
-      value: Math.round(percentile(buckets.get(k)!, 99)),
+      value: Math.round(percentile(buckets.get(k) ?? [], 99)),
     })),
   };
 }
@@ -178,6 +178,7 @@ function MetricsPage() {
         <div className="flex items-center gap-1 rounded-lg border bg-card p-1">
           {TIME_RANGES.map((r) => (
             <button
+              type="button"
               key={r.value}
               onClick={() => setRange(r.value)}
               className={cn(

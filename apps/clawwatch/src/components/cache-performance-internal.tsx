@@ -27,7 +27,12 @@ export const CachePerformanceInternal = memo(function CachePerformanceInternal({
       {/* Cache Hit Rate Ring */}
       <div className="flex items-center gap-6">
         <div className="relative h-24 w-24 shrink-0">
-          <svg className="h-24 w-24 -rotate-90" viewBox="0 0 36 36">
+          <svg
+            className="h-24 w-24 -rotate-90"
+            viewBox="0 0 36 36"
+            role="img"
+            aria-label="Cache hit rate chart"
+          >
             <path
               d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
               fill="none"

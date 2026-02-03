@@ -47,6 +47,7 @@ const AlertRow = memo(function AlertRow({
       <div className="ml-2 flex shrink-0 items-center gap-0.5">
         {!alert.acknowledgedAt && (
           <button
+            type="button"
             onClick={() => onAcknowledge(alert._id)}
             className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             title="Acknowledge"
@@ -55,6 +56,7 @@ const AlertRow = memo(function AlertRow({
           </button>
         )}
         <button
+          type="button"
           onClick={() => onResolve(alert._id)}
           className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           title="Resolve"

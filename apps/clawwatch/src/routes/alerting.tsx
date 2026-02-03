@@ -190,7 +190,7 @@ function AlertingPage() {
         day: "numeric",
       });
       if (!groups.has(date)) groups.set(date, []);
-      groups.get(date)!.push(alert);
+      groups.get(date)?.push(alert);
     }
     return groups;
   }, [filteredAlerts]);
@@ -314,6 +314,7 @@ function AlertingPage() {
                         size="sm"
                       />
                       <button
+                        type="button"
                         onClick={() => deleteRule({ id: rule._id })}
                         className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-red-500/10 hover:text-red-400"
                         title="Delete rule"
@@ -425,6 +426,7 @@ function AlertingPage() {
                           <div className="flex shrink-0 items-center gap-1">
                             {!alert.acknowledgedAt && (
                               <button
+                                type="button"
                                 onClick={() => acknowledge({ id: alert._id })}
                                 className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                                 title="Acknowledge"
@@ -433,6 +435,7 @@ function AlertingPage() {
                               </button>
                             )}
                             <button
+                              type="button"
                               onClick={() => resolve({ id: alert._id })}
                               className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                               title="Resolve"
@@ -511,13 +514,13 @@ function CreateAlertRuleDialog({
       config.metric = "daily_cost";
       if (hardStop) config.hardStop = true;
     } else if (type === "agent_offline") {
-      config.windowMinutes = parseInt(windowMinutes);
+      config.windowMinutes = parseInt(windowMinutes, 10);
     } else if (type === "error_spike") {
       config.threshold = parseFloat(threshold);
-      config.windowMinutes = parseInt(windowMinutes);
+      config.windowMinutes = parseInt(windowMinutes, 10);
     } else if (type === "cost_spike") {
-      config.percentageThreshold = parseInt(percentageThreshold);
-      config.windowMinutes = parseInt(windowMinutes);
+      config.percentageThreshold = parseInt(percentageThreshold, 10);
+      config.windowMinutes = parseInt(windowMinutes, 10);
     } else if (type === "high_token_usage") {
       config.threshold = parseFloat(threshold);
     }
@@ -529,7 +532,7 @@ function CreateAlertRuleDialog({
       config: config as any,
       severity,
       channels: selectedChannels as any,
-      cooldownMinutes: parseInt(cooldownMinutes),
+      cooldownMinutes: parseInt(cooldownMinutes, 10),
     });
 
     onClose();
@@ -566,6 +569,7 @@ function CreateAlertRuleDialog({
               const Icon = t.icon;
               return (
                 <button
+                  type="button"
                   key={t.value}
                   onClick={() => setType(t.value)}
                   className={cn(
@@ -659,7 +663,7 @@ function CreateAlertRuleDialog({
         )}
 
         {type === "budget_exceeded" && (
-          <label className="flex items-center gap-3 rounded-lg border p-3">
+          <div className="flex items-center gap-3 rounded-lg border p-3">
             <Switch
               checked={hardStop}
               onCheckedChange={(checked: boolean) => setHardStop(checked)}
@@ -671,7 +675,7 @@ function CreateAlertRuleDialog({
                 Pause the agent when budget is exceeded
               </p>
             </div>
-          </label>
+          </div>
         )}
 
         {/* Severity */}
@@ -680,6 +684,7 @@ function CreateAlertRuleDialog({
           <div className="flex gap-2">
             {(["info", "warning", "critical"] as const).map((s) => (
               <button
+                type="button"
                 key={s}
                 onClick={() => setSeverity(s)}
                 className={cn(
@@ -701,6 +706,7 @@ function CreateAlertRuleDialog({
           <div className="flex flex-wrap gap-2">
             {(["discord", "email", "webhook"] as const).map((ch) => (
               <button
+                type="button"
                 key={ch}
                 onClick={() => toggleChannel(ch)}
                 className={cn(

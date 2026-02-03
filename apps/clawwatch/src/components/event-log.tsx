@@ -136,7 +136,7 @@ export const EventLog = memo(function EventLog({
   const [levelFilter, setLevelFilter] = useState<LogLevel | "all">("all");
   const [agentFilter, setAgentFilter] = useState<string>("all");
   const [typeFilter, setTypeFilter] = useState<string>("all");
-  const [timeRange, setTimeRange] = useState(TIME_RANGES[0]!.value);
+  const [timeRange, setTimeRange] = useState(TIME_RANGES[0]?.value);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
@@ -352,6 +352,7 @@ export const EventLog = memo(function EventLog({
         <div className="flex items-center gap-1 rounded-lg border bg-muted/30 p-0.5">
           {TIME_RANGES.map((tr) => (
             <button
+              type="button"
               key={tr.value}
               onClick={() => setTimeRange(tr.value)}
               className={cn(
@@ -368,6 +369,7 @@ export const EventLog = memo(function EventLog({
 
         {/* Live toggle */}
         <button
+          type="button"
           onClick={() => setIsLive((v) => !v)}
           className={cn(
             "flex items-center gap-2 rounded-lg border px-3 py-1.5 text-xs font-medium transition-all",
@@ -444,14 +446,14 @@ export const EventLog = memo(function EventLog({
         </select>
 
         {/* Single line toggle */}
-        <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer select-none">
+        <span className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer select-none">
           <Switch
             checked={singleLine}
             onCheckedChange={setSingleLine}
             size="sm"
           />
           Single line
-        </label>
+        </span>
 
         {/* Clear filters button */}
         {hasActiveFilters && (
