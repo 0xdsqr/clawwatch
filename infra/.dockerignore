@@ -11,7 +11,10 @@ dist
 .idea
 .DS_Store
 .convex
-convex/_generated
-convex/tsconfig.tsbuildinfo
-tsconfig.tsbuildinfo
+**/convex/_generated
+**/*.tsbuildinfo
+.output
+.direnv
+result
+result-*
 bun.lock

@@ -1,0 +1,84 @@
+@import "tailwindcss";
+@source "../../../packages/ui/src";
+
+@import "tw-animate-css";
+
+@import "@fontsource/geist-sans";
+@import "@fontsource/geist-mono";
+
+@import "@clawwatch/ui/globals.css";
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --font-sans: "Geist", "Geist Fallback", sans-serif;
+  --font-serif: "Geist Mono", "Geist Mono Fallback", ui-monospace, monospace;
+  --font-mono: "Geist Mono", "Geist Mono Fallback", monospace;
+
+  /* clawwatch brand overrides — keel purple */
+  --primary: oklch(0.5393 0.2713 286.7462);
+  --primary-foreground: oklch(1 0 0);
+  --ring: oklch(0.5393 0.2713 286.7462);
+
+  --shadow-2xs: 0px 2px 3px 0px hsl(0 0% 0% / 0.08);
+  --shadow-xs: 0px 2px 3px 0px hsl(0 0% 0% / 0.08);
+  --shadow-sm: 0px 2px 3px 0px hsl(0 0% 0% / 0.16), 0px 1px 2px -1px hsl(0 0% 0% / 0.16);
+  --shadow: 0px 2px 3px 0px hsl(0 0% 0% / 0.16), 0px 1px 2px -1px hsl(0 0% 0% / 0.16);
+  --shadow-md: 0px 2px 3px 0px hsl(0 0% 0% / 0.16), 0px 2px 4px -1px hsl(0 0% 0% / 0.16);
+  --shadow-lg: 0px 2px 3px 0px hsl(0 0% 0% / 0.16), 0px 4px 6px -1px hsl(0 0% 0% / 0.16);
+  --shadow-xl: 0px 2px 3px 0px hsl(0 0% 0% / 0.16), 0px 8px 10px -1px hsl(0 0% 0% / 0.16);
+  --shadow-2xl: 0px 2px 3px 0px hsl(0 0% 0% / 0.4);
+  --tracking-normal: -0.025em;
+  --spacing: 0.27rem;
+}
+
+.dark {
+  --primary: oklch(0.6132 0.2294 291.7437);
+  --primary-foreground: oklch(1 0 0);
+  --ring: oklch(0.6132 0.2294 291.7437);
+  --sidebar-primary: oklch(0.6132 0.2294 291.7437);
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent-foreground: oklch(0.6132 0.2294 291.7437);
+}
+
+@theme inline {
+  --font-family-sans: var(--font-sans);
+  --font-family-mono: var(--font-mono);
+  --font-family-serif: var(--font-serif);
+
+  --shadow-2xs: var(--shadow-2xs);
+  --shadow-xs: var(--shadow-xs);
+  --shadow-sm: var(--shadow-sm);
+  --shadow: var(--shadow);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+  --shadow-xl: var(--shadow-xl);
+  --shadow-2xl: var(--shadow-2xl);
+
+  --tracking-tighter: calc(var(--tracking-normal) - 0.05em);
+  --tracking-tight: calc(var(--tracking-normal) - 0.025em);
+  --tracking-normal: var(--tracking-normal);
+  --tracking-wide: calc(var(--tracking-normal) + 0.025em);
+  --tracking-wider: calc(var(--tracking-normal) + 0.05em);
+  --tracking-widest: calc(var(--tracking-normal) + 0.1em);
+
+  --color-keel-50: #faf5ff;
+  --color-keel-100: #f3e8ff;
+  --color-keel-200: #e9d5ff;
+  --color-keel-300: #d8b4fe;
+  --color-keel-400: #c084fc;
+  --color-keel-500: #a855f7;
+  --color-keel-600: #9333ea;
+  --color-keel-700: #7e22ce;
+  --color-keel-800: #6b21a8;
+  --color-keel-900: #581c87;
+  --color-keel-950: #3b0764;
+}
+
+body {
+  @apply m-0 bg-background text-foreground;
+  font-family: var(--font-sans);
+  letter-spacing: var(--tracking-normal);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}

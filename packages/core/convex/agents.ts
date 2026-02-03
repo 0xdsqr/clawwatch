@@ -1,22 +1,22 @@
-import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
+import { mutation, query } from "./_generated/server";
 
 // List all agents with their current status
 export const list = query({
-  args: { 
+  args: {
     limit: v.optional(v.number()),
-    offset: v.optional(v.number()) 
+    offset: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     const limit = args.limit ?? 50; // Default reasonable limit
     const offset = args.offset ?? 0;
-    
+
     const all = await ctx.db
       .query("agents")
       .order("desc")
       .take(offset + limit);
     const agents = all.slice(offset);
-      
+
     return agents;
   },
 });

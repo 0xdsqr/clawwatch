@@ -29,7 +29,10 @@ export async function writeJSON(
  * @example
  * await writeText("output.log", "Hello, world!\n");
  */
-export async function writeText(path: string, content: string): Promise<number> {
+export async function writeText(
+  path: string,
+  content: string,
+): Promise<number> {
   return Bun.write(path, content);
 }
 
@@ -41,10 +44,7 @@ export async function writeText(path: string, content: string): Promise<number> 
  * @example
  * await appendLine("events.jsonl", JSON.stringify(event));
  */
-export async function appendLine(
-  path: string,
-  line: string,
-): Promise<number> {
+export async function appendLine(path: string, line: string): Promise<number> {
   const file = Bun.file(path);
   const existing = (await file.exists()) ? await file.text() : "";
   const content = existing + line + "\n";

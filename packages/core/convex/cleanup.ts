@@ -1,5 +1,5 @@
-import { internalMutation, mutation } from "./_generated/server";
 import { v } from "convex/values";
+import { internalMutation, mutation } from "./_generated/server";
 
 /**
  * Data retention cleanup — prevents database bloat by removing old records.

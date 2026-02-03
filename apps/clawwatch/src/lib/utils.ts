@@ -1,13 +1,6 @@
-import { clsx, type ClassValue } from "clsx";
-import { twMerge } from "tailwind-merge";
-
 export interface MetricPoint {
   timestamp: number;
   value: number;
-}
-
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
 }
 
 export function formatCost(dollars: number): string {

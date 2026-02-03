@@ -1,5 +1,5 @@
-import { query } from "./_generated/server";
 import { v } from "convex/values";
+import { query } from "./_generated/server";
 
 // Get health check time series for metrics charts
 export const healthTimeSeries = query({

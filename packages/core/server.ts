@@ -1,4 +1,5 @@
 #!/usr/bin/env bun
+
 /**
  * ClawWatch Unified Server
  *
@@ -11,11 +12,11 @@
  * Run: bun run server.ts
  */
 
-import { ConvexHttpClient } from "convex/browser";
-import { api } from "./convex/_generated/api.js";
 import { Glob } from "bun";
-import { join, resolve } from "path";
+import { ConvexHttpClient } from "convex/browser";
 import { existsSync } from "fs";
+import { join, resolve } from "path";
+import { api } from "./convex/_generated/api.js";
 
 // ── Config ───────────────────────────────────────────────────────────────────
 
@@ -26,8 +27,7 @@ const CONVEX_URL = Bun.env.CONVEX_URL ?? "http://127.0.0.1:3210";
 const SESSION_POLL_INTERVAL_MS = parseInt(
   Bun.env.SESSION_POLL_INTERVAL ?? "60000",
 );
-const SESSIONS_DIR =
-  Bun.env.SESSIONS_DIR ?? "/home/moltbot/.clawdbot/agents";
+const SESSIONS_DIR = Bun.env.SESSIONS_DIR ?? "/home/moltbot/.clawdbot/agents";
 
 if (!GATEWAY_URL) {
   console.error("❌ GATEWAY_URL environment variable is required");
@@ -177,8 +177,7 @@ async function readNewLines(filePath: string): Promise<string[] | null> {
     return null;
   }
 
-  const startPos =
-    prev && size >= prev.lastPosition ? prev.lastPosition : 0;
+  const startPos = prev && size >= prev.lastPosition ? prev.lastPosition : 0;
   const prevPartial = startPos === 0 ? "" : (prev?.partial ?? "");
 
   if (startPos >= size) {
@@ -250,8 +249,7 @@ async function scanTranscripts(): Promise<void> {
       for (const line of newLines) {
         try {
           const entry = JSON.parse(line);
-          if (entry.type !== "message" || !entry.message?.usage?.cost)
-            continue;
+          if (entry.type !== "message" || !entry.message?.usage?.cost) continue;
 
           const msg = entry.message;
           const ts = msg.timestamp ?? new Date(entry.timestamp).getTime();
@@ -276,9 +274,7 @@ async function scanTranscripts(): Promise<void> {
           ingestedCosts.add(costKey);
 
           if (msg.role === "assistant" && msg.content) {
-            for (const block of Array.isArray(msg.content)
-              ? msg.content
-              : []) {
+            for (const block of Array.isArray(msg.content) ? msg.content : []) {
               if (block.type === "toolCall") {
                 activities.push({
                   agentName: agentDir,
@@ -373,10 +369,7 @@ async function handleEvent(event: GatewayEvent): Promise<void> {
         await handleChatEvent(event.payload);
         break;
       default:
-        console.log(
-          `[ws] Unhandled event type: ${event.event}`,
-          event.payload,
-        );
+        console.log(`[ws] Unhandled event type: ${event.event}`, event.payload);
     }
   } catch (err) {
     console.error(`[ws] Error handling ${event.event} event:`, err);
@@ -664,7 +657,10 @@ const server = Bun.serve({
     // Serve frontend
     if (hasDistBuild) {
       // Production: serve from dist/
-      const filePath = join(distDir, url.pathname === "/" ? "index.html" : url.pathname);
+      const filePath = join(
+        distDir,
+        url.pathname === "/" ? "index.html" : url.pathname,
+      );
       const file = Bun.file(filePath);
 
       if (await file.exists()) {
@@ -693,7 +689,9 @@ console.log("🔱 ClawWatch Server starting");
 console.log(`  HTTP:    http://localhost:${server.port}`);
 console.log(`  Gateway: ${wsUrl}`);
 console.log(`  Convex:  ${CONVEX_URL}`);
-console.log(`  Frontend: ${hasDistBuild ? "dist/ (production)" : htmlImport ? "HTML import (dev)" : "none"}`);
+console.log(
+  `  Frontend: ${hasDistBuild ? "dist/ (production)" : htmlImport ? "HTML import (dev)" : "none"}`,
+);
 console.log(`  Session poll interval: ${SESSION_POLL_INTERVAL_MS}ms`);
 console.log(`  Sessions dir: ${SESSIONS_DIR}`);
 console.log("");

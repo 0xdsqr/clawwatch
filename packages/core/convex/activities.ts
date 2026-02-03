@@ -1,5 +1,5 @@
-import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
+import { mutation, query } from "./_generated/server";
 
 // Record an activity
 export const record = mutation({
@@ -16,7 +16,12 @@ export const record = mutation({
       v.literal("alert_fired"),
     ),
     summary: v.string(),
-    details: v.optional(v.record(v.string(), v.union(v.string(), v.number(), v.boolean(), v.null()))),
+    details: v.optional(
+      v.record(
+        v.string(),
+        v.union(v.string(), v.number(), v.boolean(), v.null()),
+      ),
+    ),
     sessionKey: v.optional(v.string()),
     channel: v.optional(v.string()),
   },

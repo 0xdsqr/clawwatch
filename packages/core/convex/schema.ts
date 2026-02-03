@@ -116,7 +116,12 @@ export default defineSchema({
     ),
     title: v.string(),
     message: v.string(),
-    data: v.optional(v.record(v.string(), v.union(v.string(), v.number(), v.boolean(), v.null()))),
+    data: v.optional(
+      v.record(
+        v.string(),
+        v.union(v.string(), v.number(), v.boolean(), v.null()),
+      ),
+    ),
     acknowledgedAt: v.optional(v.number()),
     resolvedAt: v.optional(v.number()),
     channels: v.array(v.string()),
@@ -136,11 +141,15 @@ export default defineSchema({
       v.literal("alert_fired"),
     ),
     summary: v.string(),
-    details: v.optional(v.record(v.string(), v.union(v.string(), v.number(), v.boolean(), v.null()))),
+    details: v.optional(
+      v.record(
+        v.string(),
+        v.union(v.string(), v.number(), v.boolean(), v.null()),
+      ),
+    ),
     sessionKey: v.optional(v.string()),
     channel: v.optional(v.string()),
-  })
-    .index("by_agent", ["agentId"]),
+  }).index("by_agent", ["agentId"]),
 
   // Health checks — periodic status snapshots
   healthChecks: defineTable({

@@ -1,4 +1,5 @@
 #!/usr/bin/env bun
+
 /**
  * ClawWatch WebSocket Collector
  *
@@ -9,16 +10,18 @@
  * Run: bun run collector/ws.ts
  */
 
-import { ConvexHttpClient } from "convex/browser";
-import { api } from "../convex/_generated/api.js";
 import { Glob } from "bun";
+import { ConvexHttpClient } from "convex/browser";
 import { join } from "path";
+import { api } from "../convex/_generated/api.js";
 
 // Config - all values must be provided via environment variables
 const GATEWAY_URL = Bun.env.GATEWAY_URL;
 const GATEWAY_TOKEN = Bun.env.GATEWAY_TOKEN;
 const CONVEX_URL = Bun.env.CONVEX_URL ?? "http://127.0.0.1:3210";
-const SESSION_POLL_INTERVAL_MS = parseInt(Bun.env.SESSION_POLL_INTERVAL ?? "60000"); // 60 seconds
+const SESSION_POLL_INTERVAL_MS = parseInt(
+  Bun.env.SESSION_POLL_INTERVAL ?? "60000",
+); // 60 seconds
 const SESSIONS_DIR = Bun.env.SESSIONS_DIR ?? "/home/moltbot/.clawdbot/agents";
 
 // Connection management
@@ -86,7 +89,7 @@ async function invokeGatewayTool(
 
 async function pollSessions(): Promise<void> {
   console.log("[ws] Polling sessions as periodic supplement...");
-  
+
   try {
     const startTime = Date.now();
     const result = await invokeGatewayTool("sessions_list", {
@@ -113,7 +116,9 @@ async function pollSessions(): Promise<void> {
       sessions: mapped,
     });
 
-    console.log(`[ws] Session poll: ingested ${ingested} sessions (${responseTimeMs}ms)`);
+    console.log(
+      `[ws] Session poll: ingested ${ingested} sessions (${responseTimeMs}ms)`,
+    );
   } catch (err) {
     console.error("[ws] Error in session polling:", err);
   }
@@ -288,7 +293,9 @@ async function handleEvent(event: GatewayEvent): Promise<void> {
   }
 }
 
-async function handleAgentEvent(payload: Record<string, unknown>): Promise<void> {
+async function handleAgentEvent(
+  payload: Record<string, unknown>,
+): Promise<void> {
   // Extract agent info from payload and ingest as activity
   const agent = payload.agent as Record<string, unknown> | undefined;
   const agentName = String(agent?.name || payload.agentName || "unknown");
@@ -298,7 +305,9 @@ async function handleAgentEvent(payload: Record<string, unknown>): Promise<void>
 
   const message = payload.message as Record<string, unknown> | undefined;
   if (message?.content) {
-    const contentBlocks = message.content as Array<Record<string, string>> | string;
+    const contentBlocks = message.content as
+      | Array<Record<string, string>>
+      | string;
     const content = Array.isArray(contentBlocks)
       ? contentBlocks.map((c) => c.text || c.type || "").join(" ")
       : String(contentBlocks);
@@ -320,8 +329,10 @@ async function handleAgentEvent(payload: Record<string, unknown>): Promise<void>
       model: String(message?.model || "unknown"),
       inputTokens: Number(usage.input || 0),
       outputTokens: Number(usage.output || 0),
-      cacheReadTokens: usage.cacheRead != null ? Number(usage.cacheRead) : undefined,
-      cacheWriteTokens: usage.cacheWrite != null ? Number(usage.cacheWrite) : undefined,
+      cacheReadTokens:
+        usage.cacheRead != null ? Number(usage.cacheRead) : undefined,
+      cacheWriteTokens:
+        usage.cacheWrite != null ? Number(usage.cacheWrite) : undefined,
       totalCost: Number(usageCost.total || 0),
       timestamp: Number(payload.timestamp || Date.now()),
     };
@@ -333,17 +344,26 @@ async function handleAgentEvent(payload: Record<string, unknown>): Promise<void>
 
   // Ingest activity
   await convex.mutation(api.collector.ingestActivities, {
-    activities: [{
-      agentName,
-      type: activityType as "message_sent" | "message_received" | "tool_call" | "error" | "heartbeat",
-      summary,
-      sessionKey: payload.sessionKey as string | undefined,
-      channel: payload.channel as string | undefined,
-    }],
+    activities: [
+      {
+        agentName,
+        type: activityType as
+          | "message_sent"
+          | "message_received"
+          | "tool_call"
+          | "error"
+          | "heartbeat",
+        summary,
+        sessionKey: payload.sessionKey as string | undefined,
+        channel: payload.channel as string | undefined,
+      },
+    ],
   });
 }
 
-async function handleHealthEvent(payload: Record<string, unknown>): Promise<void> {
+async function handleHealthEvent(
+  payload: Record<string, unknown>,
+): Promise<void> {
   const agent = payload.agent as Record<string, unknown> | undefined;
   const agentName = String(agent?.name || payload.agentName || "unknown");
 
@@ -357,38 +377,51 @@ async function handleHealthEvent(payload: Record<string, unknown>): Promise<void
   });
 }
 
-async function handleHeartbeatEvent(payload: Record<string, unknown>): Promise<void> {
+async function handleHeartbeatEvent(
+  payload: Record<string, unknown>,
+): Promise<void> {
   const agent = payload.agent as Record<string, unknown> | undefined;
   const agentName = String(agent?.name || payload.agentName || "unknown");
 
   await convex.mutation(api.collector.ingestActivities, {
-    activities: [{
-      agentName,
-      type: "heartbeat" as const,
-      summary: "Agent heartbeat",
-      sessionKey: payload.sessionKey as string | undefined,
-      channel: payload.channel as string | undefined,
-    }],
+    activities: [
+      {
+        agentName,
+        type: "heartbeat" as const,
+        summary: "Agent heartbeat",
+        sessionKey: payload.sessionKey as string | undefined,
+        channel: payload.channel as string | undefined,
+      },
+    ],
   });
 }
 
-async function handlePresenceEvent(payload: Record<string, unknown>): Promise<void> {
+async function handlePresenceEvent(
+  payload: Record<string, unknown>,
+): Promise<void> {
   const agent = payload.agent as Record<string, unknown> | undefined;
   const agentName = String(agent?.name || payload.agentName || "unknown");
   const status = String(payload.status || payload.presence || "unknown");
 
   await convex.mutation(api.collector.ingestActivities, {
-    activities: [{
-      agentName,
-      type: status === "online" ? ("session_started" as const) : ("session_ended" as const),
-      summary: `Agent ${status}`,
-      sessionKey: payload.sessionKey as string | undefined,
-      channel: payload.channel as string | undefined,
-    }],
+    activities: [
+      {
+        agentName,
+        type:
+          status === "online"
+            ? ("session_started" as const)
+            : ("session_ended" as const),
+        summary: `Agent ${status}`,
+        sessionKey: payload.sessionKey as string | undefined,
+        channel: payload.channel as string | undefined,
+      },
+    ],
   });
 }
 
-async function handleChatEvent(payload: Record<string, unknown>): Promise<void> {
+async function handleChatEvent(
+  payload: Record<string, unknown>,
+): Promise<void> {
   const agent = payload.agent as Record<string, unknown> | undefined;
   const agentName = String(agent?.name || payload.agentName || "unknown");
 
@@ -400,32 +433,41 @@ async function handleChatEvent(payload: Record<string, unknown>): Promise<void> 
   }
 
   await convex.mutation(api.collector.ingestActivities, {
-    activities: [{
-      agentName,
-      type: payload.direction === "outbound" ? ("message_sent" as const) : ("message_received" as const),
-      summary,
-      sessionKey: payload.sessionKey as string | undefined,
-      channel: payload.channel as string | undefined,
-    }],
+    activities: [
+      {
+        agentName,
+        type:
+          payload.direction === "outbound"
+            ? ("message_sent" as const)
+            : ("message_received" as const),
+        summary,
+        sessionKey: payload.sessionKey as string | undefined,
+        channel: payload.channel as string | undefined,
+      },
+    ],
   });
 }
 
 async function connect(): Promise<void> {
   const currentConnectionId = connectionId++;
-  
-  console.log(`[ws] Connecting to ${wsUrl} (connection ${currentConnectionId})...`);
-  
+
+  console.log(
+    `[ws] Connecting to ${wsUrl} (connection ${currentConnectionId})...`,
+  );
+
   try {
     ws = new WebSocket(wsUrl);
-    
+
     ws.onopen = async () => {
-      console.log(`[ws] Connected to gateway WebSocket (connection ${currentConnectionId})`);
+      console.log(
+        `[ws] Connected to gateway WebSocket (connection ${currentConnectionId})`,
+      );
     };
-    
+
     ws.onmessage = async (event) => {
       try {
         const frame: GatewayEvent = JSON.parse(event.data as string);
-        
+
         if (frame.type === "event" && frame.event === "connect.challenge") {
           // Send connect request in response to challenge
           const connectRequest = {
@@ -440,7 +482,7 @@ async function connect(): Promise<void> {
                 displayName: "ClawWatch Collector",
                 version: "0.1.0",
                 platform: "linux",
-                mode: "backend"
+                mode: "backend",
               },
               role: "operator",
               scopes: ["operator.read"],
@@ -449,10 +491,10 @@ async function connect(): Promise<void> {
               permissions: {},
               auth: { token: GATEWAY_TOKEN },
               locale: "en-US",
-              userAgent: "clawwatch-collector/0.1.0"
-            }
+              userAgent: "clawwatch-collector/0.1.0",
+            },
           };
-          
+
           ws!.send(JSON.stringify(connectRequest));
           console.log("[ws] Sent connect request in response to challenge");
         } else if (frame.type === "res" && frame.id === "clawwatch-1") {
@@ -461,10 +503,13 @@ async function connect(): Promise<void> {
             console.log("[ws] Authenticated successfully, receiving events...");
             isConnected = true;
             reconnectDelay = INITIAL_RECONNECT_DELAY_MS; // Reset reconnect delay
-            
+
             // Start session polling timer
             if (sessionPollTimer) clearInterval(sessionPollTimer);
-            sessionPollTimer = setInterval(pollSessions, SESSION_POLL_INTERVAL_MS);
+            sessionPollTimer = setInterval(
+              pollSessions,
+              SESSION_POLL_INTERVAL_MS,
+            );
           } else {
             console.error("[ws] Authentication failed:", frame.error);
             ws!.close();
@@ -477,36 +522,43 @@ async function connect(): Promise<void> {
         console.error("[ws] Error processing message:", err);
       }
     };
-    
+
     ws.onerror = (error) => {
-      console.error(`[ws] WebSocket error (connection ${currentConnectionId}):`, error);
+      console.error(
+        `[ws] WebSocket error (connection ${currentConnectionId}):`,
+        error,
+      );
     };
-    
+
     ws.onclose = (event) => {
-      console.log(`[ws] Connection closed (connection ${currentConnectionId}): code=${event.code}, reason=${event.reason}`);
+      console.log(
+        `[ws] Connection closed (connection ${currentConnectionId}): code=${event.code}, reason=${event.reason}`,
+      );
       isConnected = false;
-      
+
       // Stop session polling
       if (sessionPollTimer) {
         clearInterval(sessionPollTimer);
         sessionPollTimer = null;
       }
-      
+
       // Schedule reconnection
       console.log(`[ws] Reconnecting in ${reconnectDelay}ms...`);
       setTimeout(connect, reconnectDelay);
-      
+
       // Exponential backoff
       reconnectDelay = Math.min(reconnectDelay * 2, MAX_RECONNECT_DELAY_MS);
     };
-    
   } catch (err) {
-    console.error(`[ws] Failed to create WebSocket connection (connection ${currentConnectionId}):`, err);
-    
+    console.error(
+      `[ws] Failed to create WebSocket connection (connection ${currentConnectionId}):`,
+      err,
+    );
+
     // Schedule reconnection
     console.log(`[ws] Retrying in ${reconnectDelay}ms...`);
     setTimeout(connect, reconnectDelay);
-    
+
     // Exponential backoff
     reconnectDelay = Math.min(reconnectDelay * 2, MAX_RECONNECT_DELAY_MS);
   }
@@ -535,16 +587,16 @@ async function main(): Promise<void> {
 
   // Historical backfill on startup
   await scanHistoricalTranscripts();
-  
+
   // Start WebSocket connection
   await connect();
-  
+
   // Run alert evaluation every minute
   setInterval(evaluateAlerts, 60000);
-  
+
   // Keep process alive
-  process.on('SIGINT', () => {
-    console.log('[ws] Shutting down...');
+  process.on("SIGINT", () => {
+    console.log("[ws] Shutting down...");
     if (ws) {
       ws.close();
     }
