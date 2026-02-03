@@ -56,7 +56,7 @@ export const CostChartInternal = memo(function CostChartInternal({
   );
 
   return (
-    <div className="h-64">
+    <div className="h-[300px] w-full min-h-[300px]">
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart
           data={formatted}

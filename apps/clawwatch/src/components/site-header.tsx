@@ -9,11 +9,11 @@ import { SidebarTrigger } from "@clawwatch/ui/components/sidebar";
 import { useRouterState } from "@tanstack/react-router";
 
 const ROUTE_LABELS: Record<string, string> = {
-  "/": "Dashboard",
-  "/metrics": "Metrics",
-  "/costs": "Cost Explorer",
-  "/alerts": "Alarms",
-  "/activity": "Activity",
+  "/": "Overview",
+  "/agents": "Agents",
+  "/sessions": "Sessions",
+  "/costs": "Costs",
+  "/alerts": "Alerts",
   "/settings": "Settings",
 };
 

@@ -10,15 +10,22 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as SessionsRouteImport } from './routes/sessions'
 import { Route as MetricsRouteImport } from './routes/metrics'
 import { Route as CostsRouteImport } from './routes/costs'
 import { Route as AlertsRouteImport } from './routes/alerts'
+import { Route as AgentsRouteImport } from './routes/agents'
 import { Route as ActivityRouteImport } from './routes/activity'
 import { Route as IndexRouteImport } from './routes/index'
 
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SessionsRoute = SessionsRouteImport.update({
+  id: '/sessions',
+  path: '/sessions',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MetricsRoute = MetricsRouteImport.update({
@@ -36,6 +43,11 @@ const AlertsRoute = AlertsRouteImport.update({
   path: '/alerts',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AgentsRoute = AgentsRouteImport.update({
+  id: '/agents',
+  path: '/agents',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ActivityRoute = ActivityRouteImport.update({
   id: '/activity',
   path: '/activity',
@@ -50,49 +62,75 @@ const IndexRoute = IndexRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/activity': typeof ActivityRoute
+  '/agents': typeof AgentsRoute
   '/alerts': typeof AlertsRoute
   '/costs': typeof CostsRoute
   '/metrics': typeof MetricsRoute
+  '/sessions': typeof SessionsRoute
   '/settings': typeof SettingsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/activity': typeof ActivityRoute
+  '/agents': typeof AgentsRoute
   '/alerts': typeof AlertsRoute
   '/costs': typeof CostsRoute
   '/metrics': typeof MetricsRoute
+  '/sessions': typeof SessionsRoute
   '/settings': typeof SettingsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/activity': typeof ActivityRoute
+  '/agents': typeof AgentsRoute
   '/alerts': typeof AlertsRoute
   '/costs': typeof CostsRoute
   '/metrics': typeof MetricsRoute
+  '/sessions': typeof SessionsRoute
   '/settings': typeof SettingsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/activity' | '/alerts' | '/costs' | '/metrics' | '/settings'
+  fullPaths:
+    | '/'
+    | '/activity'
+    | '/agents'
+    | '/alerts'
+    | '/costs'
+    | '/metrics'
+    | '/sessions'
+    | '/settings'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/activity' | '/alerts' | '/costs' | '/metrics' | '/settings'
+  to:
+    | '/'
+    | '/activity'
+    | '/agents'
+    | '/alerts'
+    | '/costs'
+    | '/metrics'
+    | '/sessions'
+    | '/settings'
   id:
     | '__root__'
     | '/'
     | '/activity'
+    | '/agents'
     | '/alerts'
     | '/costs'
     | '/metrics'
+    | '/sessions'
     | '/settings'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ActivityRoute: typeof ActivityRoute
+  AgentsRoute: typeof AgentsRoute
   AlertsRoute: typeof AlertsRoute
   CostsRoute: typeof CostsRoute
   MetricsRoute: typeof MetricsRoute
+  SessionsRoute: typeof SessionsRoute
   SettingsRoute: typeof SettingsRoute
 }
 
@@ -103,6 +141,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sessions': {
+      id: '/sessions'
+      path: '/sessions'
+      fullPath: '/sessions'
+      preLoaderRoute: typeof SessionsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/metrics': {
@@ -126,6 +171,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AlertsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/agents': {
+      id: '/agents'
+      path: '/agents'
+      fullPath: '/agents'
+      preLoaderRoute: typeof AgentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/activity': {
       id: '/activity'
       path: '/activity'
@@ -146,9 +198,11 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ActivityRoute: ActivityRoute,
+  AgentsRoute: AgentsRoute,
   AlertsRoute: AlertsRoute,
   CostsRoute: CostsRoute,
   MetricsRoute: MetricsRoute,
+  SessionsRoute: SessionsRoute,
   SettingsRoute: SettingsRoute,
 }
 export const routeTree = rootRouteImport

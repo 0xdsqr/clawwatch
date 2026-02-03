@@ -9,13 +9,15 @@ import { api } from "@convex/api";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "convex/react";
 import { Activity, AlertTriangle, DollarSign, Zap } from "lucide-react";
-import { useMemo } from "react";
-import { AgentStatusCard } from "@/components/agent-status-card";
+import { useState, useMemo } from "react";
 import { AlertBanner } from "@/components/alert-banner";
 import { CostChart } from "@/components/cost-chart";
 import { MiniActivityFeed } from "@/components/mini-activity-feed";
-import { SnitchLeaderboard, SnitchScore } from "@/components/snitch-score";
 import { StatCard } from "@/components/stat-card";
+import { SystemStatus } from "@/components/system-status";
+import { TimeRangeSelector, type TimeRange } from "@/components/time-range-selector";
+import { TokenBreakdown } from "@/components/token-breakdown";
+import { TopModels } from "@/components/top-models";
 import { formatCost, formatTokens } from "@/lib/utils";
 
 export const Route = createFileRoute("/")({
@@ -23,26 +25,33 @@ export const Route = createFileRoute("/")({
 });
 
 function Dashboard() {
+  const [timeRange, setTimeRange] = useState<TimeRange>("24h");
+  
   const agents = useQuery(api.agents.list, {});
   const costSummary = useQuery(api.costs.summary, {});
   const recentAlerts = useQuery(api.alerting.listAlerts, { limit: 5 });
   const recentActivities = useQuery(api.activities.recent, { limit: 10 });
-  const costTimeSeries = useQuery(api.costs.timeSeries, { hours: 24 });
+  
+  // Get time series data based on selected range
+  const hours = useMemo(() => {
+    switch (timeRange) {
+      case "7d": return 24 * 7;
+      case "30d": return 24 * 30;
+      default: return 24;
+    }
+  }, [timeRange]);
+  
+  const costTimeSeries = useQuery(api.costs.timeSeries, { hours });
 
   const unresolvedAlerts = useMemo(
     () => recentAlerts?.filter((a) => !a.resolvedAt) ?? [],
     [recentAlerts],
   );
 
+  // Hero KPI Stats with trends
   const costTodayFormatted = useMemo(
     () => formatCost(costSummary?.today.cost ?? 0),
     [costSummary?.today.cost],
-  );
-
-  const todayRequests = useMemo(
-    () =>
-      costSummary ? `${costSummary.today.requests} requests` : "Loading...",
-    [costSummary?.today.requests],
   );
 
   const totalTokens = useMemo(
@@ -54,84 +63,90 @@ function Dashboard() {
     [costSummary?.today.inputTokens, costSummary?.today.outputTokens],
   );
 
-  const tokenBreakdown = useMemo(
-    () =>
-      `In: ${formatTokens(costSummary?.today.inputTokens ?? 0)} / Out: ${formatTokens(costSummary?.today.outputTokens ?? 0)}`,
-    [costSummary?.today.inputTokens, costSummary?.today.outputTokens],
-  );
-
-  const activeAgentCount = useMemo(
-    () =>
-      `${agents?.filter((a) => a.status === "online").length ?? 0} / ${agents?.length ?? 0}`,
-    [agents],
-  );
-
-  const offlineAgentInfo = useMemo(() => {
-    if (!agents) return { text: "Loading...", type: "neutral" as const };
-    const offlineCount = agents.filter((a) => a.status === "offline").length;
-    return {
-      text: `${offlineCount} offline`,
-      type: offlineCount > 0 ? ("negative" as const) : ("positive" as const),
-    };
+  const activeAgentCount = useMemo(() => {
+    const online = agents?.filter((a) => a.status === "online").length ?? 0;
+    return online.toString();
   }, [agents]);
 
-  const alertInfo = useMemo(() => {
-    const criticalCount = unresolvedAlerts.filter(
-      (a) => a.severity === "critical",
-    ).length;
-    return {
-      text: criticalCount > 0 ? `${criticalCount} critical` : "All clear",
-      type:
-        unresolvedAlerts.length > 0
-          ? ("negative" as const)
-          : ("positive" as const),
-    };
-  }, [unresolvedAlerts]);
+  // Mock trend data (in real app, this would come from Convex)
+  const costTrend = useMemo(() => ({
+    percentage: 8.2,
+    direction: "up" as const,
+  }), []);
 
-  const firstAgentId = agents?.[0]?._id;
+  const tokenTrend = useMemo(() => ({
+    percentage: 15.7,
+    direction: "up" as const,
+  }), []);
+
+  // Mock sparkline data (in real app, this would come from Convex)
+  const costSparkline = useMemo(() => 
+    Array.from({ length: 7 }, (_, i) => ({ value: 50 + Math.sin(i) * 20 + i * 5 })),
+    []
+  );
+
+  const tokenSparkline = useMemo(() => 
+    Array.from({ length: 7 }, (_, i) => ({ value: 100000 + Math.sin(i) * 30000 + i * 10000 })),
+    []
+  );
 
   return (
     <div className="flex flex-1 flex-col gap-6 p-6">
       {/* Alert banner */}
       {unresolvedAlerts.length > 0 && <AlertBanner alerts={unresolvedAlerts} />}
 
-      {/* Stats row */}
+      {/* Row 1: Hero KPI Stats */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
           label="Cost Today"
           value={costTodayFormatted}
-          change={todayRequests}
+          change="vs. yesterday"
           icon={<DollarSign className="h-5 w-5 text-primary" />}
+          trend={costTrend}
+          sparkline={costSparkline}
         />
         <StatCard
           label="Tokens (24h)"
           value={totalTokens}
-          change={tokenBreakdown}
+          change="vs. yesterday"
           icon={<Zap className="h-5 w-5 text-amber-400" />}
+          trend={tokenTrend}
+          sparkline={tokenSparkline}
         />
         <StatCard
           label="Active Agents"
           value={activeAgentCount}
-          change={offlineAgentInfo.text}
-          changeType={offlineAgentInfo.type}
+          change={`${agents?.filter((a) => a.status === "offline").length ?? 0} offline`}
+          changeType={agents?.filter((a) => a.status === "offline").length === 0 ? "positive" : "negative"}
           icon={<Activity className="h-5 w-5 text-emerald-400" />}
         />
         <StatCard
           label="Active Alerts"
           value={unresolvedAlerts.length.toString()}
-          change={alertInfo.text}
-          changeType={alertInfo.type}
+          change={unresolvedAlerts.filter((a) => a.severity === "critical").length > 0 
+            ? `${unresolvedAlerts.filter((a) => a.severity === "critical").length} critical` 
+            : "All clear"}
+          changeType={unresolvedAlerts.length > 0 ? "negative" : "positive"}
           icon={<AlertTriangle className="h-5 w-5 text-red-400" />}
         />
       </div>
 
-      {/* Main content grid */}
+      {/* Row 2: Main Content (2/3 + 1/3 split) */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">
           <Card>
             <CardHeader>
-              <CardTitle>Cost Over Time</CardTitle>
-              <CardDescription>Last 24 hours, hourly buckets</CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Cost Over Time</CardTitle>
+                  <CardDescription>
+                    {timeRange === "24h" && "Last 24 hours, hourly buckets"}
+                    {timeRange === "7d" && "Last 7 days, daily buckets"}
+                    {timeRange === "30d" && "Last 30 days, daily buckets"}
+                  </CardDescription>
+                </div>
+                <TimeRangeSelector value={timeRange} onChange={setTimeRange} />
+              </div>
             </CardHeader>
             <CardContent>
               <CostChart data={costTimeSeries ?? []} />
@@ -151,32 +166,11 @@ function Dashboard() {
         </div>
       </div>
 
-      {/* Snitch scores */}
-      {agents && agents.length > 0 && (
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <SnitchLeaderboard />
-          {firstAgentId && <SnitchScore agentId={firstAgentId} />}
-        </div>
-      )}
-
-      {/* Agent cards */}
-      <div>
-        <h3 className="mb-4 text-lg font-semibold">Agents</h3>
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {agents?.map((agent) => (
-            <AgentStatusCard key={agent._id} agentId={agent._id} />
-          ))}
-          {agents?.length === 0 && (
-            <Card className="col-span-full">
-              <CardContent className="py-8 text-center text-muted-foreground">
-                <p className="text-lg font-medium">No agents connected</p>
-                <p className="mt-1 text-sm">
-                  Connect your Clawdbot gateway to start monitoring
-                </p>
-              </CardContent>
-            </Card>
-          )}
-        </div>
+      {/* Row 3: Secondary Content (1/3 + 1/3 + 1/3) */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <TokenBreakdown />
+        <TopModels />
+        <SystemStatus />
       </div>
     </div>
   );

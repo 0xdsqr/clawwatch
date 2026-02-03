@@ -162,7 +162,7 @@ export function MetricWidget({
         </div>
 
         {/* Chart */}
-        <div style={{ height }}>
+        <div className="w-full min-h-0" style={{ height }}>
           {!mounted ? (
             <div className="flex h-full items-center justify-center text-xs text-muted-foreground">
               Loading...

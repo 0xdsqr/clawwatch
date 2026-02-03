@@ -8,13 +8,12 @@ import {
   SidebarMenuItem,
 } from "@clawwatch/ui/components/sidebar";
 import {
-  Activity,
-  BarChart3,
   Bell,
+  Bot,
   DollarSign,
   LayoutDashboard,
+  MessageSquare,
   Radar,
-  ScrollText,
   Settings,
 } from "lucide-react";
 import { NavFooter } from "@/components/nav-footer";
@@ -28,16 +27,15 @@ export type NavItem = {
 };
 
 const mainItems: NavItem[] = [
-  { title: "Dashboard", url: "/", icon: LayoutDashboard },
-  { title: "Metrics", url: "/metrics", icon: BarChart3 },
-  { title: "Cost Explorer", url: "/costs", icon: DollarSign },
-  { title: "Alarms", url: "/alerts", icon: Bell },
-  { title: "Activity", url: "/activity", icon: Activity },
+  { title: "Overview", url: "/", icon: LayoutDashboard },
+  { title: "Agents", url: "/agents", icon: Bot },
+  { title: "Sessions", url: "/sessions", icon: MessageSquare },
+  { title: "Costs", url: "/costs", icon: DollarSign },
+  { title: "Alerts", url: "/alerts", icon: Bell },
 ];
 
 const secondaryItems: NavItem[] = [
   { title: "Settings", url: "/settings", icon: Settings },
-  { title: "Activity Log", url: "/activity", icon: ScrollText },
 ];
 
 export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
@@ -63,7 +61,7 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
 
       <SidebarContent>
         <NavMain items={mainItems} />
-        <NavSecondary items={secondaryItems} className="mt-auto" />
+        <NavSecondary items={secondaryItems} />
       </SidebarContent>
 
       <SidebarFooter>
