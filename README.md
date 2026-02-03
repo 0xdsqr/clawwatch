@@ -1,36 +1,35 @@
-<p align="center">
-  <img src="apps/clawwatch/public/clawwatch-owl.svg" alt="ClawWatch" width="64" height="64" />
+<div align="center">
+<img src="apps/clawwatch/public/clawwatch-owl.svg" alt="ClawWatch" width="80" />
+
+<h3>ClawWatch</h3>
+
+<p>
+  <a href="https://github.com/0xdsqr/clawwatch"><img src="https://img.shields.io/badge/github-clawwatch-blue?style=for-the-badge&logo=github" alt="GitHub" /></a>
+  <a href="#"><img src="https://img.shields.io/badge/typescript-%23007ACC.svg?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript" /></a>
+  <a href="#"><img src="https://img.shields.io/badge/convex-ff6f61?style=for-the-badge&logo=convex&logoColor=white" alt="Convex" /></a>
+  <a href="#"><img src="https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white" alt="Docker" /></a>
+  <a href="#"><img src="https://img.shields.io/badge/nix-%235277C3.svg?style=for-the-badge&logo=nixos&logoColor=white" alt="Nix" /></a>
 </p>
 
-<h3 align="center">ClawWatch</h3>
+**Self-hosted monitoring and cost management for AI agents.**
+
+*Real-time visibility into costs, tokens, sessions, and system health from a single dashboard.*
+</div>
 
 <p align="center">
-  Self-hosted monitoring and cost management for AI agents.
-</p>
-
-<p align="center">
-  <a href="https://github.com/0xdsqr/clawwatch"><img src="https://img.shields.io/badge/github-clawwatch-blue?style=flat-square&logo=github" alt="GitHub" /></a>
-  <a href="#"><img src="https://img.shields.io/badge/typescript-5.9-blue?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript" /></a>
-  <a href="#"><img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="License" /></a>
+  <img src=".github/assets/dashboard.png" alt="ClawWatch Dashboard" width="800" />
 </p>
 
 ---
 
-ClawWatch is a local-first monitoring system for agentic AI agents. Connect your agents through a WebSocket gateway and get real-time visibility into costs, token usage, sessions, and system health from a single dashboard.
+ClawWatch is a local-first monitoring system for agentic AI agents. Connect your agents through a WebSocket gateway and track everything from a single pane of glass:
 
-### Core Features
-
-**Real-time cost tracking** -- Monitor spend across providers and models as it happens, with projected monthly burn rates and budget controls.
-
-**Multi-agent dashboard** -- Unified view of all connected agents with live status indicators, session counts, and per-agent cost breakdowns.
-
-**Smart alerting** -- Configurable rules for budget thresholds, offline detection, error spikes, and cost anomalies. Supports Discord, email, and webhook notifications.
-
-**Live event stream** -- Filterable, sortable log of all agent activity with level-based coloring, search, and real-time streaming.
-
-**Token analytics** -- Input/output/cache token breakdowns with model comparison tables and usage distribution charts.
-
-**Fully self-hosted** -- Runs on your machine. Data stays local. No external dependencies beyond a Convex backend.
+- 💸 **Real-time cost tracking** - Monitor spend across providers and models as it happens, with projected burn rates and budget controls
+- 🤖 **Multi-agent dashboard** - Unified view of all connected agents with live status, session counts, and per-agent cost breakdowns
+- 🔔 **Smart alerting** - Configurable rules for budget thresholds, offline detection, error spikes, and cost anomalies with Discord, email, and webhook notifications
+- 📡 **Live event stream** - Filterable, sortable log of all agent activity with level-based coloring, search, and real-time streaming
+- 📊 **Token analytics** - Input/output/cache token breakdowns with model comparison tables and usage distribution charts
+- 🏠 **Fully self-hosted** - Runs on your machine, data stays local, no external dependencies beyond a Convex backend
 
 ### Quick Start
 
