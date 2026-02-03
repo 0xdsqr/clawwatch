@@ -11,11 +11,11 @@ export const list = query({
     const limit = args.limit ?? 50; // Default reasonable limit
     const offset = args.offset ?? 0;
     
-    const agents = await ctx.db
+    const all = await ctx.db
       .query("agents")
       .order("desc")
-      .skip(offset)
-      .take(limit);
+      .take(offset + limit);
+    const agents = all.slice(offset);
       
     return agents;
   },

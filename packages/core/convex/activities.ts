@@ -46,7 +46,6 @@ export const recent = query({
   handler: async (ctx, args) => {
     const activities = await ctx.db
       .query("activities")
-      .withIndex("by_creation_time")
       .order("desc")
       .take(args.limit ?? 100);
 

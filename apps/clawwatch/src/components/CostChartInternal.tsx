@@ -30,7 +30,7 @@ const tooltipStyle = {
 
 const tooltipLabelStyle = { color: "#a1a1aa" } as const;
 
-function tooltipFormatter(value: number | undefined, name: string) {
+function tooltipFormatter(value: number | undefined, name: string | undefined) {
   if (name === "cost" && value !== undefined) return [formatCost(value), "Cost"];
   return [value ?? 0, name];
 }

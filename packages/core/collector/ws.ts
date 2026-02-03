@@ -436,10 +436,11 @@ async function connect(): Promise<void> {
               minProtocol: 3,
               maxProtocol: 3,
               client: {
-                id: "clawwatch-collector",
+                id: "gateway-client",
+                displayName: "ClawWatch Collector",
                 version: "0.1.0",
                 platform: "linux",
-                mode: "operator"
+                mode: "backend"
               },
               role: "operator",
               scopes: ["operator.read"],

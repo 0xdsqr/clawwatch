@@ -180,8 +180,8 @@ export function MetricWidget({
                   fontSize: "11px",
                 }}
                 labelStyle={{ color: "#a1a1aa" }}
-                formatter={(value: number, name: string) => [
-                  `${value.toLocaleString()}${unit}`,
+                formatter={(value: number | undefined, name: string | undefined) => [
+                  `${(value ?? 0).toLocaleString()}${unit}`,
                   name,
                 ]}
               />
@@ -249,8 +249,8 @@ export function MetricWidget({
                   fontSize: "11px",
                 }}
                 labelStyle={{ color: "#a1a1aa" }}
-                formatter={(value: number) => [
-                  `${value.toLocaleString()}${unit}`,
+                formatter={(value: number | undefined) => [
+                  `${(value ?? 0).toLocaleString()}${unit}`,
                   title,
                 ]}
               />
@@ -325,8 +325,8 @@ export function MetricWidget({
                   fontSize: "11px",
                 }}
                 labelStyle={{ color: "#a1a1aa" }}
-                formatter={(value: number) => [
-                  `${value.toLocaleString()}${unit}`,
+                formatter={(value: number | undefined) => [
+                  `${(value ?? 0).toLocaleString()}${unit}`,
                   title,
                 ]}
               />

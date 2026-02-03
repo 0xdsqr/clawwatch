@@ -12,7 +12,7 @@ import { SnitchLeaderboard, SnitchScore } from "@/components/SnitchScore";
 import { formatCost, formatTokens } from "@/lib/utils";
 
 export function Dashboard() {
-  const agents = useQuery(api.agents.list);
+  const agents = useQuery(api.agents.list, {});
   const costSummary = useQuery(api.costs.summary, {});
   const recentAlerts = useQuery(api.alerting.listAlerts, { limit: 5 });
   const recentActivities = useQuery(api.activities.recent, { limit: 10 });
