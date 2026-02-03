@@ -257,7 +257,13 @@ async function scanHistoricalTranscripts(): Promise<void> {
               .slice(0, 10);
             const hourKey = Math.floor(entry.timestamp / 3600000) * 3600000;
 
-            for (const key of [`today:${dateStr}`, `hour:${hourKey}`]) {
+            // Aggregate by time bucket AND by model
+            const modelKey = `model:${dateStr}:${entry.model}`;
+            for (const key of [
+              `today:${dateStr}`,
+              `hour:${hourKey}`,
+              modelKey,
+            ]) {
               const existing = cacheDeltas.get(key) ?? {
                 cost: 0,
                 inputTokens: 0,
@@ -403,6 +409,13 @@ async function handleAgentEvent(
         },
         {
           key: `hour:${hourKey}`,
+          cost: costEntry.totalCost,
+          inputTokens: costEntry.inputTokens,
+          outputTokens: costEntry.outputTokens,
+          requests: 1,
+        },
+        {
+          key: `model:${dateStr}:${costEntry.model}`,
           cost: costEntry.totalCost,
           inputTokens: costEntry.inputTokens,
           outputTokens: costEntry.outputTokens,
@@ -655,11 +668,13 @@ async function main(): Promise<void> {
   console.log(`  Sessions dir: ${SESSIONS_DIR}`);
   console.log("");
 
-  // Historical backfill on startup
-  await scanHistoricalTranscripts();
-
-  // Start WebSocket connection
+  // Start WebSocket connection FIRST so heartbeats flow immediately
   await connect();
+
+  // Historical backfill in background (don't block the event loop)
+  scanHistoricalTranscripts().catch((err) =>
+    console.error("[ws] Background backfill error:", err),
+  );
 
   // Run alert evaluation every minute
   setInterval(evaluateAlerts, 60000);

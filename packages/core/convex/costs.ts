@@ -174,19 +174,19 @@ export const byAgent = query({
   },
 });
 
-// Detailed model breakdown
+// Detailed model breakdown — reads from pre-aggregated statsCache
+// Cache keys: "model:YYYY-MM-DD:model-name"
 export const modelBreakdown = query({
   args: { startTime: v.number(), endTime: v.number() },
   handler: async (ctx, args) => {
-    const records = await ctx.db
-      .query("costRecords")
-      .withIndex("by_period", (q) =>
-        q
-          .eq("period", "hourly")
-          .gte("timestamp", args.startTime)
-          .lte("timestamp", args.endTime),
-      )
-      .order("desc").take(500);
+    // Read all cache entries and filter for model:* keys in range
+    const allCache = await ctx.db
+      .query("statsCache")
+      .withIndex("by_key")
+      .take(500);
+
+    const startDate = new Date(args.startTime).toISOString().slice(0, 10);
+    const endDate = new Date(args.endTime).toISOString().slice(0, 10);
 
     const modelTotals = new Map<
       string,
@@ -199,8 +199,16 @@ export const modelBreakdown = query({
         requests: number;
       }
     >();
-    for (const r of records) {
-      const existing = modelTotals.get(r.model) ?? {
+
+    for (const entry of allCache) {
+      if (!entry.key.startsWith("model:")) continue;
+      const parts = entry.key.split(":");
+      if (parts.length < 3) continue;
+      const date = parts[1];
+      const model = parts.slice(2).join(":");
+      if (date < startDate || date > endDate) continue;
+
+      const existing = modelTotals.get(model) ?? {
         cost: 0,
         inputTokens: 0,
         outputTokens: 0,
@@ -208,13 +216,11 @@ export const modelBreakdown = query({
         cacheWriteTokens: 0,
         requests: 0,
       };
-      existing.cost += r.cost;
-      existing.inputTokens += r.inputTokens;
-      existing.outputTokens += r.outputTokens;
-      existing.cacheReadTokens += r.cacheReadTokens ?? 0;
-      existing.cacheWriteTokens += r.cacheWriteTokens ?? 0;
-      existing.requests += 1;
-      modelTotals.set(r.model, existing);
+      existing.cost += entry.cost;
+      existing.inputTokens += entry.inputTokens;
+      existing.outputTokens += entry.outputTokens;
+      existing.requests += entry.requests;
+      modelTotals.set(model, existing);
     }
 
     return Array.from(modelTotals.entries())
