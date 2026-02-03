@@ -3,6 +3,7 @@ node_modules/
 
 # Build
 dist/
+.output/
 
 # Environment files (keep .env.example tracked)
 .env.local
