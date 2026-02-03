@@ -10,10 +10,16 @@ import { memo, useMemo } from "react";
 import { formatTokens } from "@/lib/utils";
 
 export const TopModels = memo(function TopModels() {
-  const costRecords = useQuery(api.costs.byTimeRange, { 
-    startTime: Date.now() - 7 * 24 * 60 * 60 * 1000, // Last 7 days
-    endTime: Date.now(),
-  });
+  // Stable time range — rounded to nearest hour to prevent re-render loops
+  const timeRange = useMemo(() => {
+    const now = Math.floor(Date.now() / 3600000) * 3600000;
+    return {
+      startTime: now - 7 * 24 * 3600000,
+      endTime: now + 3600000,
+    };
+  }, []);
+
+  const costRecords = useQuery(api.costs.byTimeRange, timeRange);
 
   const modelData = useMemo(() => {
     if (!costRecords) return null;
