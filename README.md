@@ -1,7 +1,5 @@
 <div align="center">
-<img src="apps/clawwatch/public/clawwatch-owl.svg" alt="ClawWatch" width="80" />
-
-<h3>ClawWatch</h3>
+<img src=".github/assets/clawwatch-wordmark.svg" alt="ClawWatch" width="200" />
 
 <p>
   <a href="https://github.com/0xdsqr/clawwatch"><img src="https://img.shields.io/badge/github-clawwatch-blue?style=for-the-badge&logo=github" alt="GitHub" /></a>
