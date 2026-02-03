@@ -74,37 +74,53 @@ function Dashboard() {
     return online.toString();
   }, [agents]);
 
-  const costTrend = useMemo(
-    () => ({
-      percentage: 8.2,
-      direction: "up" as const,
-    }),
-    [],
-  );
+  const costTrend = useMemo(() => {
+    if (!costSummary?.today || !costSummary?.week) return undefined;
+    const todayCost = costSummary.today.cost;
+    // Average daily cost over the week (excluding today)
+    const weekCost = costSummary.week.cost;
+    const weekDays = 7;
+    const avgDaily = weekDays > 1 ? (weekCost - todayCost) / (weekDays - 1) : 0;
+    if (avgDaily === 0) return undefined;
+    const pct = ((todayCost - avgDaily) / avgDaily) * 100;
+    return {
+      percentage: Math.abs(pct),
+      direction: pct >= 0 ? ("up" as const) : ("down" as const),
+    };
+  }, [costSummary?.today, costSummary?.week]);
 
-  const tokenTrend = useMemo(
-    () => ({
-      percentage: 15.7,
-      direction: "up" as const,
-    }),
-    [],
-  );
+  const tokenTrend = useMemo(() => {
+    if (!costSummary?.today || !costSummary?.week) return undefined;
+    const todayTokens =
+      (costSummary.today.inputTokens ?? 0) +
+      (costSummary.today.outputTokens ?? 0);
+    const weekTokens =
+      (costSummary.week.inputTokens ?? 0) +
+      (costSummary.week.outputTokens ?? 0);
+    const weekDays = 7;
+    const avgDaily =
+      weekDays > 1 ? (weekTokens - todayTokens) / (weekDays - 1) : 0;
+    if (avgDaily === 0) return undefined;
+    const pct = ((todayTokens - avgDaily) / avgDaily) * 100;
+    return {
+      percentage: Math.abs(pct),
+      direction: pct >= 0 ? ("up" as const) : ("down" as const),
+    };
+  }, [costSummary?.today, costSummary?.week]);
 
-  const costSparkline = useMemo(
-    () =>
-      Array.from({ length: 7 }, (_, i) => ({
-        value: 50 + Math.sin(i) * 20 + i * 5,
-      })),
-    [],
-  );
+  const costSparkline = useMemo(() => {
+    if (!costTimeSeries || costTimeSeries.length === 0) return [];
+    return costTimeSeries.map((point: { cost: number }) => ({
+      value: point.cost,
+    }));
+  }, [costTimeSeries]);
 
-  const tokenSparkline = useMemo(
-    () =>
-      Array.from({ length: 7 }, (_, i) => ({
-        value: 100000 + Math.sin(i) * 30000 + i * 10000,
-      })),
-    [],
-  );
+  const tokenSparkline = useMemo(() => {
+    if (!costTimeSeries || costTimeSeries.length === 0) return [];
+    return costTimeSeries.map((point: { tokens: number }) => ({
+      value: point.tokens,
+    }));
+  }, [costTimeSeries]);
 
   return (
     <div className="flex flex-1 flex-col gap-5 p-5">

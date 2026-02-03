@@ -32,10 +32,12 @@
   },
   "devDependencies": {
     "@clawwatch/tsconfig": "workspace:*",
+    "@types/http-proxy": "^1.17.17",
     "@types/node": "^22.10.2",
     "@types/react": "^19.2.10",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.2",
+    "http-proxy": "^1.18.1",
     "nitro": "3.0.1-alpha.2",
     "typescript": "^5.9.3",
     "vite": "^7.3.1",
