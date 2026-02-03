@@ -319,7 +319,10 @@ async function handleEvent(event: GatewayEvent): Promise<void> {
     return;
   }
 
-  console.log(`[ws] Received event: ${event.event}`);
+  // Only log non-streaming events to avoid spam
+  if (event.event !== "agent" && event.event !== "chat" && event.event !== "tick") {
+    console.log(`[ws] Received event: ${event.event}`);
+  }
 
   try {
     switch (event.event) {
@@ -339,7 +342,7 @@ async function handleEvent(event: GatewayEvent): Promise<void> {
         await handleChatEvent(event.payload);
         break;
       default:
-        console.log(`[ws] Unhandled event type: ${event.event}`, event.payload);
+        console.log(`[ws] Unhandled event type: ${event.event}`, JSON.stringify(event.payload).slice(0, 200));
     }
   } catch (err) {
     console.error(`[ws] Error handling ${event.event} event:`, err);
@@ -354,7 +357,7 @@ async function handleAgentEvent(
   const agentName = String(agent?.name || payload.agentName || "unknown");
   const activityType = String(payload.type || "message_sent");
 
-  let summary = "Agent activity";
+  if (!sessionKey || !stream || !data) return;
 
   const message = payload.message as Record<string, unknown> | undefined;
   if (message?.content) {
@@ -390,8 +393,36 @@ async function handleAgentEvent(
       timestamp: Number(payload.timestamp || Date.now()),
     };
 
-    await convex.mutation(api.collector.ingestCosts, {
-      entries: [costEntry],
+      await convex.mutation(api.collector.ingestActivities, {
+        activities: [{
+          agentName,
+          type: "session_ended",
+          summary: `Run ended${cost ? ` ($${Number(cost.total ?? 0).toFixed(4)})` : ""}`,
+          sessionKey,
+          channel: sessionKey.split(":")[2],
+        }],
+      });
+    }
+  } else if (stream === "tool_call") {
+    const toolName = data.name ?? data.tool ?? "unknown";
+    await convex.mutation(api.collector.ingestActivities, {
+      activities: [{
+        agentName,
+        type: "tool_call",
+        summary: `Tool: ${String(toolName)}`,
+        sessionKey,
+        channel: sessionKey.split(":")[2],
+      }],
+    });
+  } else if (stream === "error") {
+    await convex.mutation(api.collector.ingestActivities, {
+      activities: [{
+        agentName,
+        type: "error",
+        summary: String(data.message ?? data.error ?? "Unknown error").slice(0, 80),
+        sessionKey,
+        channel: sessionKey.split(":")[2],
+      }],
     });
 
     // Update stats cache for real-time data
@@ -450,14 +481,32 @@ async function handleHealthEvent(
   const agent = payload.agent as Record<string, unknown> | undefined;
   const agentName = String(agent?.name || payload.agentName || "unknown");
 
-  await convex.mutation(api.collector.recordHealthCheck, {
-    agentName,
-    responseTimeMs: Number(payload.responseTimeMs || payload.latency || 0),
-    activeSessionCount: Number(payload.activeSessionCount || 0),
-    totalTokensLastHour: Number(payload.totalTokensLastHour || 0),
-    costLastHour: Number(payload.costLastHour || 0),
-    errorCount: Number(payload.errorCount || 0),
-  });
+  // Process each agent from the health snapshot
+  if (agents && Array.isArray(agents)) {
+    for (const agent of agents) {
+      const agentName = String(agent.id ?? agent.name ?? "unknown");
+      await convex.mutation(api.collector.recordHealthCheck, {
+        agentName,
+        responseTimeMs: durationMs,
+        activeSessionCount: sessions ? sessions.filter((s: any) => String(s.key ?? "").includes(agentName)).length : 0,
+        totalTokensLastHour: 0,
+        costLastHour: 0,
+        errorCount: 0,
+      });
+    }
+  } else {
+    // Fallback: record a general health check using defaultAgentId
+    const defaultAgent = String(payload.defaultAgentId ?? "mimizuku");
+    const sessionCount = Array.isArray(sessions) ? sessions.length : 0;
+    await convex.mutation(api.collector.recordHealthCheck, {
+      agentName: defaultAgent,
+      responseTimeMs: durationMs,
+      activeSessionCount: sessionCount,
+      totalTokensLastHour: 0,
+      costLastHour: 0,
+      errorCount: 0,
+    });
+  }
 }
 
 async function handleHeartbeatEvent(
@@ -509,11 +558,17 @@ async function handleChatEvent(
   const agentName = String(agent?.name || payload.agentName || "unknown");
 
   let summary = "Chat message";
-  const message = payload.message as Record<string, unknown> | undefined;
-  if (message?.content) {
-    const content = String(message.content);
-    summary = content.slice(0, 80) + (content.length > 80 ? "..." : "");
+  if (Array.isArray(contentBlocks)) {
+    const textParts = contentBlocks
+      .filter((b) => b.type === "text")
+      .map((b) => b.text)
+      .join(" ");
+    if (textParts) {
+      summary = textParts.slice(0, 80) + (textParts.length > 80 ? "..." : "");
+    }
   }
+
+  const activityType = role === "assistant" ? "message_sent" : "message_received";
 
   await convex.mutation(api.collector.ingestActivities, {
     activities: [
@@ -529,6 +584,26 @@ async function handleChatEvent(
       },
     ],
   });
+
+  // Extract cost from complete messages if present
+  const usage = message.usage as Record<string, unknown> | undefined;
+  const cost = (usage?.cost as Record<string, unknown>) ?? undefined;
+  if (usage && cost) {
+    await convex.mutation(api.collector.ingestCosts, {
+      entries: [{
+        agentName,
+        sessionKey,
+        provider: String(message.provider || "unknown"),
+        model: String(message.model || "unknown"),
+        inputTokens: Number(usage.input ?? usage.inputTokens ?? 0),
+        outputTokens: Number(usage.output ?? usage.outputTokens ?? 0),
+        cacheReadTokens: usage.cacheRead != null ? Number(usage.cacheRead) : undefined,
+        cacheWriteTokens: usage.cacheWrite != null ? Number(usage.cacheWrite) : undefined,
+        totalCost: Number(cost.total ?? 0),
+        timestamp: Number(message.timestamp || Date.now()),
+      }],
+    });
+  }
 }
 
 async function connect(): Promise<void> {

@@ -27,8 +27,8 @@ const RETENTION_MS = {
 } as const;
 
 // Internal mutation called by the cron scheduler
-export const cleanupOldRecords = internalMutation({
-  handler: async (ctx) => {
+export const cleanupOldRecords: ReturnType<typeof internalMutation> = internalMutation({
+  handler: async (ctx: MutationCtx) => {
     const now = Date.now();
     const deleted: Record<string, number> = {};
 

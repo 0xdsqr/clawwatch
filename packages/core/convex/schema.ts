@@ -58,7 +58,9 @@ export default defineSchema({
     period: v.string(), // "hourly" | "daily"
   })
     .index("by_agent_time", ["agentId", "timestamp"])
-    .index("by_period", ["period", "timestamp"]),
+    .index("by_period", ["period", "timestamp"])
+    .index("by_provider_time", ["provider", "timestamp"])
+    .index("by_model", ["model", "timestamp"]),
 
   // Budgets — spending limits
   budgets: defineTable({

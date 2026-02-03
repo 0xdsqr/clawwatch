@@ -55,15 +55,20 @@ export const recent = query({
       .take(args.limit ?? 100);
 
     // Enrich with agent names
-    const agentIds = [...new Set(activities.map((a) => a.agentId))];
-    const agents = await Promise.all(agentIds.map((id) => ctx.db.get(id)));
-    const agentMap = new Map(
-      agents.filter(Boolean).map((a) => [a!._id, a!.name]),
+    const agentIds = [...new Set(activities.map((a) => a.agentId))] as string[];
+    const agents = await Promise.all(
+      agentIds.map((id) => ctx.db.get(id as any))
     );
+    const agentMap = new Map<string, string>();
+    for (const a of agents) {
+      if (a && "_id" in a && "name" in a) {
+        agentMap.set(a._id as string, (a as any).name);
+      }
+    }
 
     return activities.map((activity) => ({
       ...activity,
-      agentName: agentMap.get(activity.agentId) ?? "Unknown",
+      agentName: agentMap.get(activity.agentId as string) ?? "Unknown",
     }));
   },
 });
