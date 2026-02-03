@@ -45,6 +45,7 @@ export const upsert = mutation({
         channel: v.optional(v.string()),
       }),
     ),
+    workspacePath: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const existing = await ctx.db
@@ -68,6 +69,33 @@ export const upsert = mutation({
       lastHeartbeat: now,
       lastSeen: now,
     });
+  },
+});
+
+// Update just the workspace path
+export const updateWorkspacePath = mutation({
+  args: { agentId: v.id("agents"), workspacePath: v.string() },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.agentId, { workspacePath: args.workspacePath });
+  },
+});
+
+// Set default workspace paths for existing agents
+export const setDefaultPaths = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const agents = await ctx.db.query("agents").collect();
+    const defaults: Record<string, string> = {
+      mimizuku: "/home/moltbot/mimizuku",
+      vanilla: "/home/moltbot/vanilla",
+    };
+    for (const agent of agents) {
+      if (!agent.workspacePath) {
+        const path =
+          defaults[agent.name] ?? `/home/moltbot/${agent.name}`;
+        await ctx.db.patch(agent._id, { workspacePath: path });
+      }
+    }
   },
 });
 
@@ -99,7 +127,7 @@ export const markOffline = mutation({
   },
 });
 
-// Get agent health summary
+// Get agent health summary (optimized — bounded scans)
 export const healthSummary = query({
   args: { agentId: v.id("agents") },
   handler: async (ctx, args) => {
@@ -108,21 +136,25 @@ export const healthSummary = query({
 
     const oneHourAgo = Date.now() - 60 * 60 * 1000;
 
-    // Get recent sessions
+    // Get recent sessions — limit scan to 100, count active in-place
     const sessions = await ctx.db
       .query("sessions")
       .withIndex("by_agent", (q) => q.eq("agentId", args.agentId))
-      .collect();
+      .order("desc")
+      .take(100);
 
-    const activeSessions = sessions.filter((s) => s.isActive);
+    let activeSessions = 0;
+    for (const s of sessions) {
+      if (s.isActive) activeSessions++;
+    }
 
-    // Get recent cost records
+    // Get recent cost records (last hour only, already indexed)
     const recentCosts = await ctx.db
       .query("costRecords")
       .withIndex("by_agent_time", (q) =>
         q.eq("agentId", args.agentId).gte("timestamp", oneHourAgo),
       )
-      .collect();
+      .take(500);
 
     const costLastHour = recentCosts.reduce((sum, r) => sum + r.cost, 0);
     const tokensLastHour = recentCosts.reduce(
@@ -130,25 +162,26 @@ export const healthSummary = query({
       0,
     );
 
-    // Get recent errors
+    // Count recent errors — take 50 recent activities and filter by time + type
     const recentActivities = await ctx.db
       .query("activities")
       .withIndex("by_agent", (q) => q.eq("agentId", args.agentId))
       .order("desc")
-      .take(100);
+      .take(50);
 
-    const recentErrors = recentActivities.filter(
-      (a) => a.type === "error" && a._creationTime > oneHourAgo,
-    );
+    let errorCount = 0;
+    for (const a of recentActivities) {
+      if (a.type === "error" && a._creationTime > oneHourAgo) errorCount++;
+    }
 
     return {
       agent,
-      activeSessions: activeSessions.length,
+      activeSessions,
       totalSessions: sessions.length,
       costLastHour: Math.round(costLastHour * 10000) / 10000,
       tokensLastHour,
-      errorCount: recentErrors.length,
-      isHealthy: agent.status === "online" && recentErrors.length < 5,
+      errorCount,
+      isHealthy: agent.status === "online" && errorCount < 5,
     };
   },
 });

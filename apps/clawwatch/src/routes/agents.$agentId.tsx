@@ -26,29 +26,50 @@ import { cn } from "@clawwatch/ui/lib/utils";
 import { api } from "@convex/api";
 import type { Id } from "@convex/dataModel";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useQuery } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import {
   Activity,
   AlertTriangle,
   ArrowLeft,
-  BookOpen,
+  Check,
   ChevronDown,
+  ChevronRight,
   ChevronUp,
   Circle,
   Clock,
   DollarSign,
-  ExternalLink,
+  Edit3,
+  File,
+  FileCode,
+  FileJson,
+  FileText,
+  Folder,
   FolderOpen,
   Hash,
+  Loader2,
+  Pencil,
+  Save,
   Search,
+  Settings,
   X,
   Zap,
 } from "lucide-react";
 import type { ChangeEvent } from "react";
-import { memo, useMemo, useState, useCallback } from "react";
+import {
+  memo,
+  useMemo,
+  useState,
+  useCallback,
+  useEffect,
+} from "react";
 import { CostChart } from "@/components/cost-chart";
 import { StatCard } from "@/components/stat-card";
 import { formatCost, formatTokens, statusColor, timeAgo } from "@/lib/utils";
+import {
+  listFiles,
+  readFileContents,
+  writeFileContents,
+} from "@/server/files";
 
 export const Route = createFileRoute("/agents/$agentId")({
   component: AgentDetailPage,
@@ -56,6 +77,738 @@ export const Route = createFileRoute("/agents/$agentId")({
 
 type SortField = "lastActivity" | "estimatedCost" | "totalTokens";
 type SortDir = "asc" | "desc";
+
+// ─── File icon helper ───
+
+function fileIcon(name: string, isDirectory: boolean) {
+  if (isDirectory) return <Folder className="h-4 w-4 text-blue-400" />;
+  const ext = name.split(".").pop()?.toLowerCase();
+  switch (ext) {
+    case "md":
+      return <FileText className="h-4 w-4 text-emerald-400" />;
+    case "json":
+      return <FileJson className="h-4 w-4 text-amber-400" />;
+    case "ts":
+    case "tsx":
+    case "js":
+    case "jsx":
+      return <FileCode className="h-4 w-4 text-blue-400" />;
+    case "yaml":
+    case "yml":
+    case "toml":
+      return <Settings className="h-4 w-4 text-purple-400" />;
+    default:
+      return <File className="h-4 w-4 text-muted-foreground" />;
+  }
+}
+
+// ─── File tree types ───
+
+interface FileEntry {
+  name: string;
+  path: string;
+  isDirectory: boolean;
+}
+
+interface TreeNode extends FileEntry {
+  children?: TreeNode[];
+  loaded?: boolean;
+  expanded?: boolean;
+}
+
+// ─── File Tree Item ───
+
+function FileTreeItem({
+  node,
+  depth,
+  selectedPath,
+  onSelect,
+  onToggle,
+}: {
+  node: TreeNode;
+  depth: number;
+  selectedPath: string | null;
+  onSelect: (path: string) => void;
+  onToggle: (path: string) => void;
+}) {
+  const isSelected = selectedPath === node.path;
+
+  return (
+    <>
+      <button
+        onClick={() => {
+          if (node.isDirectory) {
+            onToggle(node.path);
+          } else {
+            onSelect(node.path);
+          }
+        }}
+        className={cn(
+          "w-full flex items-center gap-1.5 px-2 py-1 text-sm rounded-md transition-colors text-left",
+          isSelected
+            ? "bg-primary/10 text-primary font-medium"
+            : "hover:bg-muted/50 text-foreground",
+        )}
+        style={{ paddingLeft: `${depth * 16 + 8}px` }}
+      >
+        {node.isDirectory ? (
+          node.expanded ? (
+            <ChevronDown className="h-3 w-3 shrink-0 text-muted-foreground" />
+          ) : (
+            <ChevronRight className="h-3 w-3 shrink-0 text-muted-foreground" />
+          )
+        ) : (
+          <span className="w-3 shrink-0" />
+        )}
+        {fileIcon(node.name, node.isDirectory)}
+        <span className="truncate">{node.name}</span>
+      </button>
+      {node.isDirectory && node.expanded && node.children && (
+        <>
+          {node.children.map((child) => (
+            <FileTreeItem
+              key={child.path}
+              node={child}
+              depth={depth + 1}
+              selectedPath={selectedPath}
+              onSelect={onSelect}
+              onToggle={onToggle}
+            />
+          ))}
+        </>
+      )}
+    </>
+  );
+}
+
+// ─── Files Tab ───
+
+function FilesTab({
+  agentId,
+  agentName,
+  workspacePath,
+}: {
+  agentId: Id<"agents">;
+  agentName: string;
+  workspacePath: string | undefined;
+}) {
+  const updateWorkspacePath = useMutation(api.agents.updateWorkspacePath);
+  const setDefaultPaths = useMutation(api.agents.setDefaultPaths);
+
+  const [pathInput, setPathInput] = useState(
+    () => workspacePath ?? `/home/moltbot/${agentName}`,
+  );
+  const [saving, setSaving] = useState(false);
+
+  // File tree state
+  const [tree, setTree] = useState<TreeNode[]>([]);
+  const [treeLoading, setTreeLoading] = useState(false);
+  const [treeError, setTreeError] = useState<string | null>(null);
+
+  // File viewer state
+  const [selectedFile, setSelectedFile] = useState<string | null>(null);
+  const [fileContent, setFileContent] = useState<string | null>(null);
+  const [fileMeta, setFileMeta] = useState<{
+    size: number;
+    modified: string;
+  } | null>(null);
+  const [fileLoading, setFileLoading] = useState(false);
+  const [fileError, setFileError] = useState<string | null>(null);
+
+  // Editor state
+  const [editing, setEditing] = useState(false);
+  const [editContent, setEditContent] = useState("");
+  const [fileSaving, setFileSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+
+  // Set defaults on mount if no workspace path
+  useEffect(() => {
+    if (!workspacePath) {
+      setDefaultPaths({});
+    }
+  }, [workspacePath, setDefaultPaths]);
+
+  // Load root directory when workspace path changes
+  useEffect(() => {
+    if (!workspacePath) return;
+    loadDirectory();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [workspacePath]);
+
+  const loadDirectory = useCallback(
+    async (subPath?: string) => {
+      if (!workspacePath) return;
+      if (!subPath) setTreeLoading(true);
+      setTreeError(null);
+      try {
+        const entries = await listFiles({
+          data: { workspacePath, subPath },
+        });
+        if (!subPath) {
+          // Root — set top-level tree
+          setTree(
+            entries.map((e: FileEntry) => ({
+              ...e,
+              children: e.isDirectory ? [] : undefined,
+              loaded: false,
+              expanded: false,
+            })),
+          );
+        } else {
+          // Sub-directory — update tree in place
+          setTree((prev) => updateTreeNode(prev, subPath, entries));
+        }
+      } catch (err: unknown) {
+        const msg =
+          err instanceof Error ? err.message : "Failed to load files";
+        if (!subPath) setTreeError(msg);
+      } finally {
+        if (!subPath) setTreeLoading(false);
+      }
+    },
+    [workspacePath],
+  );
+
+  const updateTreeNode = (
+    nodes: TreeNode[],
+    targetPath: string,
+    children: FileEntry[],
+  ): TreeNode[] => {
+    return nodes.map((node) => {
+      if (node.path === targetPath) {
+        return {
+          ...node,
+          expanded: true,
+          loaded: true,
+          children: children.map((e) => ({
+            ...e,
+            children: e.isDirectory ? [] : undefined,
+            loaded: false,
+            expanded: false,
+          })),
+        };
+      }
+      if (node.children && targetPath.startsWith(node.path + "/")) {
+        return {
+          ...node,
+          children: updateTreeNode(node.children, targetPath, children),
+        };
+      }
+      return node;
+    });
+  };
+
+  const toggleDir = useCallback(
+    (path: string) => {
+      const findNode = (nodes: TreeNode[]): TreeNode | undefined => {
+        for (const n of nodes) {
+          if (n.path === path) return n;
+          if (n.children) {
+            const found = findNode(n.children);
+            if (found) return found;
+          }
+        }
+        return undefined;
+      };
+
+      const node = findNode(tree);
+      if (!node) return;
+
+      if (node.expanded) {
+        // Collapse
+        setTree((prev) => collapseNode(prev, path));
+      } else if (node.loaded) {
+        // Expand (already loaded)
+        setTree((prev) => expandNode(prev, path));
+      } else {
+        // Load children
+        loadDirectory(path);
+      }
+    },
+    [tree, loadDirectory],
+  );
+
+  const collapseNode = (nodes: TreeNode[], path: string): TreeNode[] =>
+    nodes.map((n) =>
+      n.path === path
+        ? { ...n, expanded: false }
+        : n.children
+          ? { ...n, children: collapseNode(n.children, path) }
+          : n,
+    );
+
+  const expandNode = (nodes: TreeNode[], path: string): TreeNode[] =>
+    nodes.map((n) =>
+      n.path === path
+        ? { ...n, expanded: true }
+        : n.children
+          ? { ...n, children: expandNode(n.children, path) }
+          : n,
+    );
+
+  const selectFile = useCallback(
+    async (filePath: string) => {
+      if (!workspacePath) return;
+      setSelectedFile(filePath);
+      setFileLoading(true);
+      setFileError(null);
+      setEditing(false);
+      setSaveSuccess(false);
+      try {
+        const result = await readFileContents({
+          data: { workspacePath, filePath },
+        });
+        setFileContent(result.content);
+        setFileMeta({ size: result.size, modified: result.modified });
+      } catch (err: unknown) {
+        const msg =
+          err instanceof Error ? err.message : "Failed to read file";
+        setFileError(msg);
+        setFileContent(null);
+        setFileMeta(null);
+      } finally {
+        setFileLoading(false);
+      }
+    },
+    [workspacePath],
+  );
+
+  const startEditing = useCallback(() => {
+    if (fileContent !== null) {
+      setEditContent(fileContent);
+      setEditing(true);
+      setSaveSuccess(false);
+    }
+  }, [fileContent]);
+
+  const saveFile = useCallback(async () => {
+    if (!workspacePath || !selectedFile) return;
+    setFileSaving(true);
+    setSaveSuccess(false);
+    try {
+      await writeFileContents({
+        data: { workspacePath, filePath: selectedFile, content: editContent },
+      });
+      setFileContent(editContent);
+      setEditing(false);
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 2000);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to save";
+      setFileError(msg);
+    } finally {
+      setFileSaving(false);
+    }
+  }, [workspacePath, selectedFile, editContent]);
+
+  const handleSavePath = useCallback(async () => {
+    setSaving(true);
+    try {
+      await updateWorkspacePath({ agentId, workspacePath: pathInput });
+    } finally {
+      setSaving(false);
+    }
+  }, [agentId, pathInput, updateWorkspacePath]);
+
+  // ─── No workspace path — prompt to set one ───
+  if (!workspacePath) {
+    return (
+      <Card>
+        <CardContent className="py-12">
+          <div className="max-w-md mx-auto text-center space-y-4">
+            <div className="mx-auto mb-4 h-14 w-14 rounded-xl bg-muted flex items-center justify-center">
+              <FolderOpen className="h-7 w-7 text-muted-foreground" />
+            </div>
+            <h3 className="text-lg font-semibold">Set Workspace Path</h3>
+            <p className="text-sm text-muted-foreground">
+              Configure the file system path for this agent&apos;s workspace to
+              browse and edit files.
+            </p>
+            <div className="flex items-center gap-2">
+              <Input
+                value={pathInput}
+                onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                  setPathInput(e.target.value)
+                }
+                placeholder="/home/moltbot/agent-name"
+                className="font-mono text-sm"
+              />
+              <Button onClick={handleSavePath} disabled={saving} size="sm">
+                {saving ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Save className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // ─── File browser ───
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-[280px_1fr] gap-4 min-h-[500px]">
+      {/* Left panel — File Tree */}
+      <Card className="overflow-hidden">
+        <CardHeader className="py-3 px-3 border-b">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-sm font-medium">Files</CardTitle>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 w-6 p-0"
+              onClick={() => loadDirectory()}
+              title="Refresh"
+            >
+              <Loader2
+                className={cn(
+                  "h-3.5 w-3.5",
+                  treeLoading && "animate-spin",
+                )}
+              />
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent className="p-1 overflow-y-auto max-h-[600px]">
+          {treeLoading && tree.length === 0 ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+            </div>
+          ) : treeError ? (
+            <div className="p-3 text-sm text-destructive">{treeError}</div>
+          ) : tree.length === 0 ? (
+            <div className="p-3 text-sm text-muted-foreground text-center">
+              No files found
+            </div>
+          ) : (
+            <div className="space-y-0.5 py-1">
+              {tree.map((node) => (
+                <FileTreeItem
+                  key={node.path}
+                  node={node}
+                  depth={0}
+                  selectedPath={selectedFile}
+                  onSelect={selectFile}
+                  onToggle={toggleDir}
+                />
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Right panel — File Viewer/Editor */}
+      <Card className="overflow-hidden">
+        {!selectedFile ? (
+          <CardContent className="flex items-center justify-center h-full min-h-[400px]">
+            <div className="text-center text-muted-foreground">
+              <FileText className="h-10 w-10 mx-auto mb-3 opacity-40" />
+              <p className="text-sm">Select a file to view</p>
+              <p className="text-xs mt-1 opacity-60">
+                Browse the tree on the left
+              </p>
+            </div>
+          </CardContent>
+        ) : (
+          <>
+            {/* File header */}
+            <CardHeader className="py-3 px-4 border-b">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 min-w-0">
+                  {fileIcon(selectedFile.split("/").pop() ?? "", false)}
+                  <span className="text-sm font-mono truncate">
+                    {selectedFile}
+                  </span>
+                  {fileMeta && (
+                    <span className="text-xs text-muted-foreground shrink-0">
+                      {fileMeta.size < 1024
+                        ? `${fileMeta.size}B`
+                        : `${(fileMeta.size / 1024).toFixed(1)}KB`}
+                      {" · "}
+                      {new Date(fileMeta.modified).toLocaleString()}
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  {saveSuccess && (
+                    <span className="text-xs text-emerald-500 flex items-center gap-1">
+                      <Check className="h-3 w-3" /> Saved
+                    </span>
+                  )}
+                  {editing ? (
+                    <>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7"
+                        onClick={() => setEditing(false)}
+                      >
+                        <X className="h-3.5 w-3.5 mr-1" />
+                        Cancel
+                      </Button>
+                      <Button
+                        size="sm"
+                        className="h-7"
+                        onClick={saveFile}
+                        disabled={fileSaving}
+                      >
+                        {fileSaving ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />
+                        ) : (
+                          <Save className="h-3.5 w-3.5 mr-1" />
+                        )}
+                        Save
+                      </Button>
+                    </>
+                  ) : (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7"
+                      onClick={startEditing}
+                      disabled={fileContent === null}
+                    >
+                      <Pencil className="h-3.5 w-3.5 mr-1" />
+                      Edit
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </CardHeader>
+
+            {/* File content */}
+            <CardContent className="p-0 overflow-auto max-h-[550px]">
+              {fileLoading ? (
+                <div className="flex items-center justify-center py-16">
+                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                </div>
+              ) : fileError ? (
+                <div className="p-4 text-sm text-destructive">{fileError}</div>
+              ) : editing ? (
+                <textarea
+                  value={editContent}
+                  onChange={(e) => setEditContent(e.target.value)}
+                  className="w-full h-[500px] p-4 font-mono text-sm bg-transparent border-0 outline-none resize-none"
+                  spellCheck={false}
+                />
+              ) : fileContent !== null ? (
+                <MarkdownRenderer
+                  content={fileContent}
+                  isMarkdown={selectedFile.endsWith(".md")}
+                />
+              ) : null}
+            </CardContent>
+          </>
+        )}
+      </Card>
+    </div>
+  );
+}
+
+// ─── Basic markdown-aware renderer ───
+
+function MarkdownRenderer({
+  content,
+  isMarkdown,
+}: {
+  content: string;
+  isMarkdown: boolean;
+}) {
+  if (!isMarkdown) {
+    return (
+      <pre className="p-4 font-mono text-sm whitespace-pre-wrap break-words leading-relaxed">
+        {content}
+      </pre>
+    );
+  }
+
+  // Basic markdown highlighting
+  const lines = content.split("\n");
+  let inCodeBlock = false;
+
+  return (
+    <div className="p-4 font-mono text-sm leading-relaxed">
+      {lines.map((line, i) => {
+        if (line.startsWith("```")) {
+          inCodeBlock = !inCodeBlock;
+          return (
+            <div key={i} className="text-muted-foreground text-xs">
+              {line}
+            </div>
+          );
+        }
+
+        if (inCodeBlock) {
+          return (
+            <div
+              key={i}
+              className="bg-muted/40 px-2 -mx-2 text-emerald-400/80"
+            >
+              {line || "\u00A0"}
+            </div>
+          );
+        }
+
+        if (line.startsWith("# ")) {
+          return (
+            <div key={i} className="font-bold text-base mt-4 mb-1">
+              {line.slice(2)}
+            </div>
+          );
+        }
+        if (line.startsWith("## ")) {
+          return (
+            <div key={i} className="font-bold text-sm mt-3 mb-1">
+              {line.slice(3)}
+            </div>
+          );
+        }
+        if (line.startsWith("### ")) {
+          return (
+            <div key={i} className="font-semibold text-sm mt-2 mb-0.5">
+              {line.slice(4)}
+            </div>
+          );
+        }
+        if (line.startsWith("- ") || line.startsWith("* ")) {
+          return (
+            <div key={i} className="pl-4">
+              <span className="text-muted-foreground">•</span> {line.slice(2)}
+            </div>
+          );
+        }
+        if (line.startsWith("> ")) {
+          return (
+            <div
+              key={i}
+              className="border-l-2 border-muted-foreground/30 pl-3 text-muted-foreground italic"
+            >
+              {line.slice(2)}
+            </div>
+          );
+        }
+
+        return (
+          <div key={i} className="whitespace-pre-wrap">
+            {line || "\u00A0"}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─── Configuration Card (for Overview tab) ───
+
+function ConfigurationCard({
+  agentId,
+  agent,
+}: {
+  agentId: Id<"agents">;
+  agent: {
+    gatewayUrl: string;
+    config?: { model?: string; channel?: string };
+    workspacePath?: string;
+  };
+}) {
+  const updateWorkspacePath = useMutation(api.agents.updateWorkspacePath);
+  const [editingPath, setEditingPath] = useState(false);
+  const [pathValue, setPathValue] = useState(agent.workspacePath ?? "");
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = useCallback(async () => {
+    setSaving(true);
+    try {
+      await updateWorkspacePath({ agentId, workspacePath: pathValue });
+      setEditingPath(false);
+    } finally {
+      setSaving(false);
+    }
+  }, [agentId, pathValue, updateWorkspacePath]);
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-sm font-medium flex items-center gap-2">
+          <Settings className="h-4 w-4" />
+          Configuration
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {/* Workspace Path */}
+        <div className="flex items-center justify-between gap-2">
+          <div className="min-w-0">
+            <p className="text-xs text-muted-foreground">Workspace Path</p>
+            {editingPath ? (
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <Input
+                  value={pathValue}
+                  onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                    setPathValue(e.target.value)
+                  }
+                  className="h-7 text-xs font-mono"
+                />
+                <Button
+                  size="sm"
+                  className="h-7 px-2"
+                  onClick={handleSave}
+                  disabled={saving}
+                >
+                  {saving ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <Check className="h-3 w-3" />
+                  )}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 px-2"
+                  onClick={() => setEditingPath(false)}
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1.5">
+                <p className="text-sm font-mono truncate">
+                  {agent.workspacePath || "Not set"}
+                </p>
+                <button
+                  onClick={() => {
+                    setPathValue(agent.workspacePath ?? "");
+                    setEditingPath(true);
+                  }}
+                  className="text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <Edit3 className="h-3 w-3" />
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Gateway URL */}
+        <div>
+          <p className="text-xs text-muted-foreground">Gateway URL</p>
+          <p className="text-sm font-mono truncate">{agent.gatewayUrl}</p>
+        </div>
+
+        {/* Model */}
+        {agent.config?.model && (
+          <div>
+            <p className="text-xs text-muted-foreground">Model</p>
+            <p className="text-sm">{agent.config.model}</p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+// ─── Main Page ───
 
 function AgentDetailPage() {
   const { agentId } = Route.useParams();
@@ -114,8 +867,12 @@ function AgentDetailPage() {
     let result = sessions.filter((session) => {
       const matchesSearch =
         !sessionSearch ||
-        session.sessionKey.toLowerCase().includes(sessionSearch.toLowerCase()) ||
-        session.channel?.toLowerCase().includes(sessionSearch.toLowerCase()) ||
+        session.sessionKey
+          .toLowerCase()
+          .includes(sessionSearch.toLowerCase()) ||
+        session.channel
+          ?.toLowerCase()
+          .includes(sessionSearch.toLowerCase()) ||
         session.kind.toLowerCase().includes(sessionSearch.toLowerCase());
       const matchesKind = kindFilter === "all" || session.kind === kindFilter;
       const matchesStatus =
@@ -128,7 +885,9 @@ function AgentDetailPage() {
     result = [...result].sort((a, b) => {
       const av = a[sortField] ?? 0;
       const bv = b[sortField] ?? 0;
-      return sortDir === "desc" ? (bv as number) - (av as number) : (av as number) - (bv as number);
+      return sortDir === "desc"
+        ? (bv as number) - (av as number)
+        : (av as number) - (bv as number);
     });
 
     return result;
@@ -196,7 +955,10 @@ function AgentDetailPage() {
             <Badge variant="secondary">{agent.config.model}</Badge>
           )}
 
-          <Badge variant={isHealthy ? "default" : "destructive"} className="ml-2">
+          <Badge
+            variant={isHealthy ? "default" : "destructive"}
+            className="ml-2"
+          >
             {isHealthy ? "Healthy" : "Issues Detected"}
           </Badge>
 
@@ -250,7 +1012,9 @@ function AgentDetailPage() {
                 <AlertTriangle
                   className={cn(
                     "h-5 w-5",
-                    errorCount > 0 ? "text-red-400" : "text-muted-foreground",
+                    errorCount > 0
+                      ? "text-red-400"
+                      : "text-muted-foreground",
                   )}
                 />
               }
@@ -274,18 +1038,28 @@ function AgentDetailPage() {
             <Card>
               <CardContent className="pt-6">
                 <div className="flex items-center gap-3">
-                  <div className={cn(
-                    "h-10 w-10 rounded-lg flex items-center justify-center",
-                    agent.status === "online" ? "bg-emerald-500/10" : "bg-red-500/10",
-                  )}>
-                    <Circle className={cn(
-                      "h-4 w-4 fill-current",
-                      statusColor(agent.status),
-                    )} />
+                  <div
+                    className={cn(
+                      "h-10 w-10 rounded-lg flex items-center justify-center",
+                      agent.status === "online"
+                        ? "bg-emerald-500/10"
+                        : "bg-red-500/10",
+                    )}
+                  >
+                    <Circle
+                      className={cn(
+                        "h-4 w-4 fill-current",
+                        statusColor(agent.status),
+                      )}
+                    />
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground uppercase tracking-wider">Status</p>
-                    <p className="text-lg font-semibold capitalize">{agent.status}</p>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider">
+                      Status
+                    </p>
+                    <p className="text-lg font-semibold capitalize">
+                      {agent.status}
+                    </p>
                   </div>
                 </div>
               </CardContent>
@@ -297,8 +1071,12 @@ function AgentDetailPage() {
                     <Activity className="h-4 w-4 text-blue-400" />
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground uppercase tracking-wider">Total Sessions</p>
-                    <p className="text-lg font-semibold">{health.totalSessions}</p>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider">
+                      Total Sessions
+                    </p>
+                    <p className="text-lg font-semibold">
+                      {health.totalSessions}
+                    </p>
                   </div>
                 </div>
               </CardContent>
@@ -310,13 +1088,23 @@ function AgentDetailPage() {
                     <DollarSign className="h-4 w-4 text-amber-400" />
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground uppercase tracking-wider">Cost This Week</p>
-                    <p className="text-lg font-semibold">{formatCost(agentCostSummary?.week.cost ?? 0)}</p>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider">
+                      Cost This Week
+                    </p>
+                    <p className="text-lg font-semibold">
+                      {formatCost(agentCostSummary?.week.cost ?? 0)}
+                    </p>
                   </div>
                 </div>
               </CardContent>
             </Card>
           </div>
+
+          {/* Configuration card */}
+          <ConfigurationCard
+            agentId={agentId as Id<"agents">}
+            agent={agent}
+          />
         </TabsContent>
 
         {/* ─── SESSIONS TAB ─── */}
@@ -328,7 +1116,9 @@ function AgentDetailPage() {
               <Input
                 placeholder="Search sessions..."
                 value={sessionSearch}
-                onChange={(e: ChangeEvent<HTMLInputElement>) => setSessionSearch(e.target.value)}
+                onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                  setSessionSearch(e.target.value)
+                }
                 className="pl-9 h-9"
               />
             </div>
@@ -336,7 +1126,9 @@ function AgentDetailPage() {
             {/* Kind filter */}
             <select
               value={kindFilter}
-              onChange={(e: ChangeEvent<HTMLSelectElement>) => setKindFilter(e.target.value)}
+              onChange={(e: ChangeEvent<HTMLSelectElement>) =>
+                setKindFilter(e.target.value)
+              }
               className="rounded-md border bg-background px-3 py-2 text-sm h-9"
             >
               <option value="all">All kinds</option>
@@ -360,12 +1152,16 @@ function AgentDetailPage() {
                       : "text-muted-foreground hover:text-foreground",
                   )}
                 >
-                  {s === "all" ? "All" : s.charAt(0).toUpperCase() + s.slice(1)}
+                  {s === "all"
+                    ? "All"
+                    : s.charAt(0).toUpperCase() + s.slice(1)}
                 </button>
               ))}
             </div>
 
-            {(sessionSearch || kindFilter !== "all" || statusFilter !== "all") && (
+            {(sessionSearch ||
+              kindFilter !== "all" ||
+              statusFilter !== "all") && (
               <Button
                 variant="ghost"
                 size="sm"
@@ -456,7 +1252,9 @@ function AgentDetailPage() {
                         isExpanded={expandedSession === session._id}
                         onToggle={() =>
                           setExpandedSession(
-                            expandedSession === session._id ? null : session._id,
+                            expandedSession === session._id
+                              ? null
+                              : session._id,
                           )
                         }
                       />
@@ -470,25 +1268,11 @@ function AgentDetailPage() {
 
         {/* ─── FILES TAB ─── */}
         <TabsContent value="files" className="space-y-6">
-          <Card>
-            <CardContent className="py-16 text-center">
-              <div className="mx-auto mb-4 h-14 w-14 rounded-xl bg-muted flex items-center justify-center">
-                <FolderOpen className="h-7 w-7 text-muted-foreground" />
-              </div>
-              <h3 className="text-lg font-semibold">Workspace File Browser</h3>
-              <p className="mt-2 text-sm text-muted-foreground max-w-md mx-auto">
-                Connect your agent's workspace to browse, view, and manage files
-                directly from ClawWatch.
-              </p>
-              <div className="mt-6 flex items-center justify-center gap-3">
-                <Button variant="outline" size="sm">
-                  <BookOpen className="h-4 w-4 mr-2" />
-                  Setup Guide
-                  <ExternalLink className="h-3 w-3 ml-1.5 text-muted-foreground" />
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          <FilesTab
+            agentId={agentId as Id<"agents">}
+            agentName={agent.name}
+            workspacePath={agent.workspacePath}
+          />
         </TabsContent>
       </Tabs>
     </div>
@@ -522,7 +1306,9 @@ const SessionRow = memo(function SessionRow({
   onToggle: () => void;
 }) {
   const duration = useMemo(() => {
-    const ms = (session.isActive ? Date.now() : session.lastActivity) - session.startedAt;
+    const ms =
+      (session.isActive ? Date.now() : session.lastActivity) -
+      session.startedAt;
     const mins = Math.floor(ms / 60000);
     const hours = Math.floor(mins / 60);
     if (hours > 0) return `${hours}h ${mins % 60}m`;
@@ -550,10 +1336,10 @@ const SessionRow = memo(function SessionRow({
             {session.kind}
           </Badge>
         </TableCell>
+        <TableCell className="text-sm">{session.channel || "—"}</TableCell>
         <TableCell className="text-sm">
-          {session.channel || "—"}
+          {timeAgo(session.startedAt)}
         </TableCell>
-        <TableCell className="text-sm">{timeAgo(session.startedAt)}</TableCell>
         <TableCell className="text-sm">
           {timeAgo(session.lastActivity)}
         </TableCell>
@@ -609,14 +1395,8 @@ const SessionRow = memo(function SessionRow({
                     : "—"
                 }
               />
-              <DetailItem
-                label="Kind"
-                value={session.kind}
-              />
-              <DetailItem
-                label="Channel"
-                value={session.channel || "—"}
-              />
+              <DetailItem label="Kind" value={session.kind} />
+              <DetailItem label="Channel" value={session.channel || "—"} />
             </div>
             <div className="mt-3 pt-3 border-t border-border/50">
               <p className="text-xs text-muted-foreground font-mono break-all">
@@ -641,9 +1421,7 @@ function DetailItem({
 }) {
   return (
     <div className="flex items-start gap-2">
-      {icon && (
-        <span className="mt-0.5 text-muted-foreground">{icon}</span>
-      )}
+      {icon && <span className="mt-0.5 text-muted-foreground">{icon}</span>}
       <div>
         <p className="text-xs text-muted-foreground">{label}</p>
         <p className="text-sm font-medium">{value}</p>

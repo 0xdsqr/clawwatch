@@ -19,6 +19,7 @@ export default defineSchema({
         channel: v.optional(v.string()),
       }),
     ),
+    workspacePath: v.optional(v.string()),
   })
     .index("by_status", ["status"])
     .index("by_name", ["name"]),
