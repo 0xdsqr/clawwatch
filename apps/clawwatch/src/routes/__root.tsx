@@ -34,7 +34,7 @@ export const Route = createRootRouteWithContext<{
     ],
     links: [
       { rel: "stylesheet", href: appCss },
-      { rel: "icon", href: "/clawwatch.svg", type: "image/svg+xml" },
+      { rel: "icon", href: "/clawwatch-owl.svg", type: "image/svg+xml" },
     ],
   }),
   shellComponent: RootShell,

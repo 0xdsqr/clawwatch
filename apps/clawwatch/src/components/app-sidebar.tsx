@@ -13,7 +13,6 @@ import {
   Bell,
   Bot,
   LayoutDashboard,
-  Radar,
   Radio,
   Settings,
 } from "lucide-react";
@@ -41,8 +40,8 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" className="pointer-events-none">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                <Radar className="h-4 w-4" />
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg">
+                <img src="/clawwatch-owl.svg" alt="ClawWatch" className="h-8 w-8" />
               </div>
               <div className="flex flex-col gap-0.5 leading-none">
                 <span className="font-semibold">ClawWatch</span>

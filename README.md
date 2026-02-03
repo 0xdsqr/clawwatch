@@ -1,9 +1,9 @@
 <p align="center">
-  <img src="apps/clawwatch/public/clawwatch.svg" alt="ClawWatch" width="64" height="64" />
+  <img src="apps/clawwatch/public/clawwatch-owl.svg" alt="ClawWatch" width="96" height="96" />
 </p>
 
 <p align="center">
-  <strong>Self-hosted monitoring, alerting, and agent management for AI agents.</strong>
+  <strong>ClawWatch</strong>
 </p>
 
 <p align="center">
@@ -22,4 +22,17 @@
 
 ---
 
-ClawWatch gives you full visibility into your AI agents — what they cost, how they perform, and when something goes wrong. Track spending across models and agents, set budgets with hard stops, and get alerted before things spiral. Built for self-hosting with Convex, TanStack Start, and Recharts.
+[ClawWatch](https://github.com/0xdsqr/clawwatch/tree/feat/tanstack-migration) is a local-first, self-hostable monitoring, alerting, and management system for your agentic agents. The tool provides out of the box support for:
+
+- 💰 **Real-time cost monitoring** — track spend across models and agents as it happens
+- 📊 **Token usage analytics** — input, output, cache read/write breakdowns with efficiency metrics
+- 🤖 **Multi-agent management** — monitor all your agents from a single dashboard
+- 🔔 **Smart alerting** — configurable alert rules with severity levels and auto-evaluation
+- 📈 **Interactive charts** — cost over time, model comparison, token distribution (Recharts)
+- 🗂️ **Session tracking** — drill into individual sessions, see cost per conversation
+- 💸 **Budget controls** — set spending limits per agent or globally with projected monthly burn
+- 📁 **File system access** — browse and edit agent workspace files directly from the dashboard
+- ⚡ **Live event stream** — real-time feed of agent activity (messages, tool calls, errors)
+- 🔄 **WebSocket collector** — connects to your gateway for live data ingestion + historical backfill
+- 🌙 **Dark mode** — because obviously
+- 🏠 **Fully self-hosted** — your data stays on your machine, powered by Convex + TanStack Start
