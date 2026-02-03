@@ -54,6 +54,25 @@ export const evaluate = mutation({
               targetAgentId = agent._id;
               // Mark agent offline
               await ctx.db.patch(agent._id, { status: "offline" });
+            } else {
+              // Agent is online — auto-resolve any outstanding offline alerts
+              const unresolvedAlerts = await ctx.db
+                .query("alerts")
+                .order("desc")
+                .take(50);
+              for (const alert of unresolvedAlerts) {
+                if (
+                  alert.type === "agent_offline" &&
+                  alert.agentId === agent._id &&
+                  !alert.resolvedAt
+                ) {
+                  await ctx.db.patch(alert._id, { resolvedAt: now });
+                }
+              }
+              // Ensure agent is marked online
+              if (agent.status === "offline") {
+                await ctx.db.patch(agent._id, { status: "online" });
+              }
             }
           }
           break;
