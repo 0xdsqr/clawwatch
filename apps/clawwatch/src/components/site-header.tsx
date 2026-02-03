@@ -11,7 +11,6 @@ import { useRouterState } from "@tanstack/react-router";
 const ROUTE_LABELS: Record<string, string> = {
   "/": "Overview",
   "/agents": "Agents",
-  "/sessions": "Sessions",
   "/costs": "Costs",
   "/alerts": "Alerts",
   "/settings": "Settings",

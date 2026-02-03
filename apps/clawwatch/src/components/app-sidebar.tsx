@@ -12,7 +12,6 @@ import {
   Bot,
   DollarSign,
   LayoutDashboard,
-  MessageSquare,
   Radar,
   Settings,
 } from "lucide-react";
@@ -29,7 +28,6 @@ export type NavItem = {
 const mainItems: NavItem[] = [
   { title: "Overview", url: "/", icon: LayoutDashboard },
   { title: "Agents", url: "/agents", icon: Bot },
-  { title: "Sessions", url: "/sessions", icon: MessageSquare },
   { title: "Costs", url: "/costs", icon: DollarSign },
   { title: "Alerts", url: "/alerts", icon: Bell },
 ];
