@@ -40,7 +40,7 @@ export const byTimeRange = query({
             .gte("timestamp", args.startTime)
             .lte("timestamp", args.endTime),
         )
-        .take(1000); // Add reasonable limit
+        .order("desc").take(500);
     }
 
     // All agents
@@ -52,7 +52,7 @@ export const byTimeRange = query({
           .gte("timestamp", args.startTime)
           .lte("timestamp", args.endTime),
       )
-      .take(1000); // Add reasonable limit
+      .order("desc").take(500);
   },
 });
 
@@ -142,7 +142,7 @@ export const byAgent = query({
           .gte("timestamp", args.startTime)
           .lte("timestamp", args.endTime),
       )
-      .take(500);
+      .order("desc").take(500);
 
     const agentTotals = new Map<
       string,
@@ -186,7 +186,7 @@ export const modelBreakdown = query({
           .gte("timestamp", args.startTime)
           .lte("timestamp", args.endTime),
       )
-      .take(500);
+      .order("desc").take(500);
 
     const modelTotals = new Map<
       string,
@@ -247,7 +247,7 @@ export const topSessions = query({
           .gte("timestamp", args.startTime)
           .lte("timestamp", args.endTime),
       )
-      .take(500);
+      .order("desc").take(500);
 
     const sessionTotals = new Map<
       string,
