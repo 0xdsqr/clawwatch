@@ -67,6 +67,11 @@ function AgentDetailPage() {
     agentId: agentId as Id<"agents"> 
   });
 
+  const sessions = useQuery(api.sessions.byAgent, { 
+    agentId: agentId as Id<"agents">,
+    limit: 50 
+  });
+
   // Mock file tree data - will be replaced with real API later
   const mockFiles = [
     { name: "SOUL.md", type: "file", content: "# Agent Soul\n\nThis is the core identity and personality of the agent..." },
@@ -258,38 +263,50 @@ function AgentDetailPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {/* Mock data - will be replaced with real session data */}
-                  <TableRow>
-                    <TableCell className="font-mono text-xs">session_123</TableCell>
-                    <TableCell>conversation</TableCell>
-                    <TableCell>discord</TableCell>
-                    <TableCell>2 hours ago</TableCell>
-                    <TableCell>1 min ago</TableCell>
-                    <TableCell>2.4K</TableCell>
-                    <TableCell>{formatCost(0.045)}</TableCell>
-                    <TableCell>
-                      <Badge variant="default">Active</Badge>
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="font-mono text-xs">session_122</TableCell>
-                    <TableCell>task</TableCell>
-                    <TableCell>api</TableCell>
-                    <TableCell>3 hours ago</TableCell>
-                    <TableCell>2 hours ago</TableCell>
-                    <TableCell>1.8K</TableCell>
-                    <TableCell>{formatCost(0.032)}</TableCell>
-                    <TableCell>
-                      <Badge variant="secondary">Completed</Badge>
-                    </TableCell>
-                  </TableRow>
+                  {sessions === undefined ? (
+                    // Loading skeleton
+                    Array.from({ length: 3 }).map((_, i) => (
+                      <TableRow key={i}>
+                        <TableCell><div className="h-4 bg-muted rounded animate-pulse" /></TableCell>
+                        <TableCell><div className="h-4 bg-muted rounded animate-pulse" /></TableCell>
+                        <TableCell><div className="h-4 bg-muted rounded animate-pulse" /></TableCell>
+                        <TableCell><div className="h-4 bg-muted rounded animate-pulse" /></TableCell>
+                        <TableCell><div className="h-4 bg-muted rounded animate-pulse" /></TableCell>
+                        <TableCell><div className="h-4 bg-muted rounded animate-pulse" /></TableCell>
+                        <TableCell><div className="h-4 bg-muted rounded animate-pulse" /></TableCell>
+                        <TableCell><div className="h-6 bg-muted rounded animate-pulse" /></TableCell>
+                      </TableRow>
+                    ))
+                  ) : sessions.length === 0 ? (
+                    // Empty state
+                    <TableRow>
+                      <TableCell colSpan={8} className="py-8 text-center text-muted-foreground">
+                        <p className="text-sm">No sessions found for this agent</p>
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    // Real session data
+                    sessions.map((session) => (
+                      <TableRow key={session._id}>
+                        <TableCell className="font-mono text-xs">
+                          {session.sessionKey.length > 12 ? `${session.sessionKey.substring(0, 12)}...` : session.sessionKey}
+                        </TableCell>
+                        <TableCell>{session.kind}</TableCell>
+                        <TableCell>{session.channel}</TableCell>
+                        <TableCell>{timeAgo(session.startedAt)}</TableCell>
+                        <TableCell>{timeAgo(session.lastActivity)}</TableCell>
+                        <TableCell>{formatTokens(session.totalTokens ?? 0)}</TableCell>
+                        <TableCell>{formatCost(session.estimatedCost ?? 0)}</TableCell>
+                        <TableCell>
+                          <Badge variant={session.isActive ? "default" : "secondary"}>
+                            {session.isActive ? "Active" : "Completed"}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
                 </TableBody>
               </Table>
-              
-              {/* Empty state when no sessions */}
-              <div className="py-8 text-center text-muted-foreground hidden">
-                <p className="text-sm">No sessions found for this agent</p>
-              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -303,24 +320,37 @@ function AgentDetailPage() {
                 <CardDescription>Agent configuration and memory files</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-2">
-                  {mockFiles.map((file) => (
-                    <div
-                      key={file.name}
-                      className={cn(
-                        "flex items-center gap-2 p-2 rounded-md cursor-pointer hover:bg-muted",
-                        selectedFile === file.name && "bg-muted"
-                      )}
-                      onClick={() => handleFileClick(file.name)}
-                    >
-                      {file.type === "folder" ? (
-                        <Folder className="h-4 w-4 text-muted-foreground" />
-                      ) : (
-                        <File className="h-4 w-4 text-muted-foreground" />
-                      )}
-                      <span className="text-sm font-medium">{file.name}</span>
+                <div className="space-y-4">
+                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-md">
+                    <div className="flex items-center gap-2 text-amber-800">
+                      <AlertTriangle className="h-4 w-4" />
+                      <span className="text-sm font-medium">File System Integration Coming Soon</span>
                     </div>
-                  ))}
+                    <p className="text-xs text-amber-700 mt-1">
+                      Real-time file editing and workspace integration is in development. 
+                      For now, showing standard agent files.
+                    </p>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    {mockFiles.map((file) => (
+                      <div
+                        key={file.name}
+                        className={cn(
+                          "flex items-center gap-2 p-2 rounded-md cursor-pointer hover:bg-muted",
+                          selectedFile === file.name && "bg-muted"
+                        )}
+                        onClick={() => handleFileClick(file.name)}
+                      >
+                        {file.type === "folder" ? (
+                          <Folder className="h-4 w-4 text-muted-foreground" />
+                        ) : (
+                          <File className="h-4 w-4 text-muted-foreground" />
+                        )}
+                        <span className="text-sm font-medium">{file.name}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </CardContent>
             </Card>

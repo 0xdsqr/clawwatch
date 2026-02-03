@@ -15,8 +15,8 @@ import {
 import { Input } from "@clawwatch/ui/components/input";
 import { Label } from "@clawwatch/ui/components/label";
 import { api } from "@convex/api";
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "convex/react";
+import { createFileRoute, Link, Outlet, useMatches } from "@tanstack/react-router";
+import { useQuery, useMutation } from "convex/react";
 import { Plus } from "lucide-react";
 import { useState } from "react";
 import { AgentStatusCard } from "@/components/agent-status-card";
@@ -27,17 +27,30 @@ export const Route = createFileRoute("/agents")({
 
 function AgentsPage() {
   const agents = useQuery(api.agents.list, {});
+  const matches = useMatches();
+  const createAgent = useMutation(api.agents.upsert);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [agentName, setAgentName] = useState("");
   const [gatewayUrl, setGatewayUrl] = useState("");
 
-  const handleAddAgent = () => {
-    // TODO: Implement agent creation with api.agents.create
-    console.log("Creating agent:", { name: agentName, gatewayUrl });
+  // Check if we're on a child route (agent detail page)
+  const isOnChildRoute = matches.some(match => match.routeId === '/agents/$agentId');
+
+  const handleAddAgent = async () => {
+    await createAgent({
+      name: agentName.trim(),
+      gatewayUrl: gatewayUrl.trim(),
+      status: "offline",
+    });
     setIsAddDialogOpen(false);
     setAgentName("");
     setGatewayUrl("");
   };
+
+  // If we're on a child route, render the outlet instead of the agents list
+  if (isOnChildRoute) {
+    return <Outlet />;
+  }
 
   if (agents === undefined) {
     return (
