@@ -17,7 +17,7 @@
 </div>
 
 <p align="center">
-  <img src=".github/assets/dashboard.png" alt="ClawWatch Dashboard" width="800" />
+  <img src=".github/assets/dashboard.png" alt="ClawWatch Dashboard" width="680" />
 </p>
 
 ---
