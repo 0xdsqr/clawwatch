@@ -9,9 +9,9 @@ import {
 } from "@clawwatch/ui/components/sidebar";
 import { Link } from "@tanstack/react-router";
 import {
+  Activity,
   Bell,
   Bot,
-  DollarSign,
   LayoutDashboard,
   Radar,
   Settings,
@@ -28,8 +28,8 @@ export type NavItem = {
 const mainItems: NavItem[] = [
   { title: "Overview", url: "/", icon: LayoutDashboard },
   { title: "Agents", url: "/agents", icon: Bot },
-  { title: "Costs", url: "/costs", icon: DollarSign },
-  { title: "Alerts", url: "/alerts", icon: Bell },
+  { title: "Monitoring", url: "/monitoring", icon: Activity },
+  { title: "Alerting", url: "/alerts", icon: Bell },
 ];
 
 export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {

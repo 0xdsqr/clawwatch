@@ -104,6 +104,169 @@ export const summary = query({
   },
 });
 
+// Cost breakdown by agent
+export const byAgent = query({
+  args: { startTime: v.number(), endTime: v.number() },
+  handler: async (ctx, args) => {
+    const records = await ctx.db
+      .query("costRecords")
+      .withIndex("by_period", (q) =>
+        q
+          .eq("period", "hourly")
+          .gte("timestamp", args.startTime)
+          .lte("timestamp", args.endTime),
+      )
+      .collect();
+
+    const agentTotals = new Map<
+      string,
+      { cost: number; tokens: number; requests: number }
+    >();
+    for (const r of records) {
+      const existing = agentTotals.get(r.agentId) ?? {
+        cost: 0,
+        tokens: 0,
+        requests: 0,
+      };
+      existing.cost += r.cost;
+      existing.tokens += r.inputTokens + r.outputTokens;
+      existing.requests += 1;
+      agentTotals.set(r.agentId, existing);
+    }
+
+    // Enrich with agent names
+    const results = [];
+    for (const [agentId, data] of agentTotals) {
+      const agent = await ctx.db.get(agentId as any);
+      results.push({
+        agentId,
+        agentName: (agent as any)?.name ?? "Unknown",
+        ...data,
+      });
+    }
+    return results.sort((a, b) => b.cost - a.cost);
+  },
+});
+
+// Detailed model breakdown
+export const modelBreakdown = query({
+  args: { startTime: v.number(), endTime: v.number() },
+  handler: async (ctx, args) => {
+    const records = await ctx.db
+      .query("costRecords")
+      .withIndex("by_period", (q) =>
+        q
+          .eq("period", "hourly")
+          .gte("timestamp", args.startTime)
+          .lte("timestamp", args.endTime),
+      )
+      .collect();
+
+    const modelTotals = new Map<
+      string,
+      {
+        cost: number;
+        inputTokens: number;
+        outputTokens: number;
+        cacheReadTokens: number;
+        cacheWriteTokens: number;
+        requests: number;
+      }
+    >();
+    for (const r of records) {
+      const existing = modelTotals.get(r.model) ?? {
+        cost: 0,
+        inputTokens: 0,
+        outputTokens: 0,
+        cacheReadTokens: 0,
+        cacheWriteTokens: 0,
+        requests: 0,
+      };
+      existing.cost += r.cost;
+      existing.inputTokens += r.inputTokens;
+      existing.outputTokens += r.outputTokens;
+      existing.cacheReadTokens += r.cacheReadTokens ?? 0;
+      existing.cacheWriteTokens += r.cacheWriteTokens ?? 0;
+      existing.requests += 1;
+      modelTotals.set(r.model, existing);
+    }
+
+    return Array.from(modelTotals.entries())
+      .map(([model, data]) => ({
+        model,
+        ...data,
+        avgCostPerRequest:
+          data.requests > 0 ? data.cost / data.requests : 0,
+        costPer1KTokens:
+          data.inputTokens + data.outputTokens > 0
+            ? (data.cost / (data.inputTokens + data.outputTokens)) * 1000
+            : 0,
+      }))
+      .sort((a, b) => b.cost - a.cost);
+  },
+});
+
+// Top sessions by cost
+export const topSessions = query({
+  args: {
+    startTime: v.number(),
+    endTime: v.number(),
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const records = await ctx.db
+      .query("costRecords")
+      .withIndex("by_period", (q) =>
+        q
+          .eq("period", "hourly")
+          .gte("timestamp", args.startTime)
+          .lte("timestamp", args.endTime),
+      )
+      .collect();
+
+    const sessionTotals = new Map<
+      string,
+      {
+        cost: number;
+        tokens: number;
+        requests: number;
+        model: string;
+        agentId: string;
+        lastSeen: number;
+      }
+    >();
+    for (const r of records) {
+      const key = r.sessionKey ?? "unknown";
+      const existing = sessionTotals.get(key) ?? {
+        cost: 0,
+        tokens: 0,
+        requests: 0,
+        model: r.model,
+        agentId: r.agentId,
+        lastSeen: 0,
+      };
+      existing.cost += r.cost;
+      existing.tokens += r.inputTokens + r.outputTokens;
+      existing.requests += 1;
+      existing.lastSeen = Math.max(existing.lastSeen, r.timestamp);
+      sessionTotals.set(key, existing);
+    }
+
+    const results = [];
+    for (const [sessionKey, data] of sessionTotals) {
+      const agent = await ctx.db.get(data.agentId as any);
+      results.push({
+        sessionKey,
+        agentName: (agent as any)?.name ?? "Unknown",
+        ...data,
+      });
+    }
+    return results
+      .sort((a, b) => b.cost - a.cost)
+      .slice(0, args.limit ?? 10);
+  },
+});
+
 // Get cost over time for charts (hourly buckets)
 export const timeSeries = query({
   args: {

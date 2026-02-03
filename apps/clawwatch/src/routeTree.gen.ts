@@ -10,8 +10,8 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as MonitoringRouteImport } from './routes/monitoring'
 import { Route as MetricsRouteImport } from './routes/metrics'
-import { Route as CostsRouteImport } from './routes/costs'
 import { Route as AlertsRouteImport } from './routes/alerts'
 import { Route as AgentsRouteImport } from './routes/agents'
 import { Route as ActivityRouteImport } from './routes/activity'
@@ -23,14 +23,14 @@ const SettingsRoute = SettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MonitoringRoute = MonitoringRouteImport.update({
+  id: '/monitoring',
+  path: '/monitoring',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MetricsRoute = MetricsRouteImport.update({
   id: '/metrics',
   path: '/metrics',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CostsRoute = CostsRouteImport.update({
-  id: '/costs',
-  path: '/costs',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AlertsRoute = AlertsRouteImport.update({
@@ -64,8 +64,8 @@ export interface FileRoutesByFullPath {
   '/activity': typeof ActivityRoute
   '/agents': typeof AgentsRouteWithChildren
   '/alerts': typeof AlertsRoute
-  '/costs': typeof CostsRoute
   '/metrics': typeof MetricsRoute
+  '/monitoring': typeof MonitoringRoute
   '/settings': typeof SettingsRoute
   '/agents/$agentId': typeof AgentsAgentIdRoute
 }
@@ -74,8 +74,8 @@ export interface FileRoutesByTo {
   '/activity': typeof ActivityRoute
   '/agents': typeof AgentsRouteWithChildren
   '/alerts': typeof AlertsRoute
-  '/costs': typeof CostsRoute
   '/metrics': typeof MetricsRoute
+  '/monitoring': typeof MonitoringRoute
   '/settings': typeof SettingsRoute
   '/agents/$agentId': typeof AgentsAgentIdRoute
 }
@@ -85,8 +85,8 @@ export interface FileRoutesById {
   '/activity': typeof ActivityRoute
   '/agents': typeof AgentsRouteWithChildren
   '/alerts': typeof AlertsRoute
-  '/costs': typeof CostsRoute
   '/metrics': typeof MetricsRoute
+  '/monitoring': typeof MonitoringRoute
   '/settings': typeof SettingsRoute
   '/agents/$agentId': typeof AgentsAgentIdRoute
 }
@@ -97,8 +97,8 @@ export interface FileRouteTypes {
     | '/activity'
     | '/agents'
     | '/alerts'
-    | '/costs'
     | '/metrics'
+    | '/monitoring'
     | '/settings'
     | '/agents/$agentId'
   fileRoutesByTo: FileRoutesByTo
@@ -107,8 +107,8 @@ export interface FileRouteTypes {
     | '/activity'
     | '/agents'
     | '/alerts'
-    | '/costs'
     | '/metrics'
+    | '/monitoring'
     | '/settings'
     | '/agents/$agentId'
   id:
@@ -117,8 +117,8 @@ export interface FileRouteTypes {
     | '/activity'
     | '/agents'
     | '/alerts'
-    | '/costs'
     | '/metrics'
+    | '/monitoring'
     | '/settings'
     | '/agents/$agentId'
   fileRoutesById: FileRoutesById
@@ -128,8 +128,8 @@ export interface RootRouteChildren {
   ActivityRoute: typeof ActivityRoute
   AgentsRoute: typeof AgentsRouteWithChildren
   AlertsRoute: typeof AlertsRoute
-  CostsRoute: typeof CostsRoute
   MetricsRoute: typeof MetricsRoute
+  MonitoringRoute: typeof MonitoringRoute
   SettingsRoute: typeof SettingsRoute
 }
 
@@ -142,18 +142,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/monitoring': {
+      id: '/monitoring'
+      path: '/monitoring'
+      fullPath: '/monitoring'
+      preLoaderRoute: typeof MonitoringRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/metrics': {
       id: '/metrics'
       path: '/metrics'
       fullPath: '/metrics'
       preLoaderRoute: typeof MetricsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/costs': {
-      id: '/costs'
-      path: '/costs'
-      fullPath: '/costs'
-      preLoaderRoute: typeof CostsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/alerts': {
@@ -210,8 +210,8 @@ const rootRouteChildren: RootRouteChildren = {
   ActivityRoute: ActivityRoute,
   AgentsRoute: AgentsRouteWithChildren,
   AlertsRoute: AlertsRoute,
-  CostsRoute: CostsRoute,
   MetricsRoute: MetricsRoute,
+  MonitoringRoute: MonitoringRoute,
   SettingsRoute: SettingsRoute,
 }
 export const routeTree = rootRouteImport
