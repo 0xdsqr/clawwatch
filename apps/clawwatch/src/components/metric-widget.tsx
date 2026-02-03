@@ -6,7 +6,7 @@ import {
   CardTitle,
 } from "@clawwatch/ui/components/card";
 import { cn } from "@clawwatch/ui/lib/utils";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Area,
   AreaChart,
@@ -100,6 +100,9 @@ export function MetricWidget({
 
   const isAlarming = alarm && current > alarm.value;
 
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   return (
     <Card className={cn(isAlarming && "border-red-500/30")}>
       <CardHeader>
@@ -160,6 +163,11 @@ export function MetricWidget({
 
         {/* Chart */}
         <div style={{ height }}>
+          {!mounted ? (
+            <div className="flex h-full items-center justify-center text-xs text-muted-foreground">
+              Loading...
+            </div>
+          ) : (
           <ResponsiveContainer width="100%" height="100%">
             {multiLine ? (
               <LineChart
@@ -355,6 +363,7 @@ export function MetricWidget({
               </AreaChart>
             )}
           </ResponsiveContainer>
+          )}
         </div>
       </CardContent>
     </Card>
