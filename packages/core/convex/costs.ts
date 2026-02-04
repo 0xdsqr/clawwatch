@@ -58,13 +58,46 @@ export const byTimeRange = query({
 // Get cost summary — reads from pre-aggregated statsCache for instant response
 export const summary = query({
   args: { agentId: v.optional(v.id("agents")) },
-  handler: async (ctx) => {
+  handler: async (ctx, args) => {
     const now = Date.now();
+    const zero = { cost: 0, inputTokens: 0, outputTokens: 0, requests: 0 };
+
+    if (args.agentId) {
+      const hourStart = now - 60 * 60 * 1000;
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
+      const weekStart = now - 7 * 24 * 60 * 60 * 1000;
+      const monthStart = now - 31 * 24 * 60 * 60 * 1000;
+
+      const records = await ctx.db
+        .query("costRecords")
+        .withIndex("by_agent_time", (q) => q.eq("agentId", args.agentId!).gte("timestamp", monthStart))
+        .collect();
+
+      const summarize = (start: number) => {
+        const result = { ...zero };
+        for (const r of records) {
+          if (r.timestamp < start) continue;
+          result.cost += r.cost;
+          result.inputTokens += r.inputTokens;
+          result.outputTokens += r.outputTokens;
+          result.requests += 1;
+        }
+        result.cost = Math.round(result.cost * 10000) / 10000;
+        return result;
+      };
+
+      return {
+        today: summarize(todayStart.getTime()),
+        lastHour: summarize(hourStart),
+        week: summarize(weekStart),
+        month: summarize(monthStart),
+      };
+    }
+
     const todayStr = new Date().toISOString().slice(0, 10);
     const currentHourKey = Math.floor(now / 3600000) * 3600000;
     const prevHourKey = currentHourKey - 3600000;
-
-    const zero = { cost: 0, inputTokens: 0, outputTokens: 0, requests: 0 };
 
     // Read today's cache
     const todayCache = await ctx.db
@@ -294,6 +327,35 @@ export const timeSeries = query({
   handler: async (ctx, args) => {
     const now = Date.now();
     const currentHourKey = Math.floor(now / 3600000) * 3600000;
+    if (args.agentId) {
+      const startTime = currentHourKey - (args.hours - 1) * 3600000;
+      const records = await ctx.db
+        .query("costRecords")
+        .withIndex("by_agent_time", (q) =>
+          q.eq("agentId", args.agentId!).gte("timestamp", startTime).lte("timestamp", now),
+        )
+        .collect();
+
+      const buckets = new Map<number, { cost: number; tokens: number; requests: number }>();
+      for (const r of records) {
+        const hourKey = Math.floor(r.timestamp / 3600000) * 3600000;
+        const existing = buckets.get(hourKey) ?? { cost: 0, tokens: 0, requests: 0 };
+        existing.cost += r.cost;
+        existing.tokens += r.inputTokens + r.outputTokens;
+        existing.requests += 1;
+        buckets.set(hourKey, existing);
+      }
+
+      return Array.from(buckets.entries())
+        .map(([timestamp, data]) => ({
+          timestamp,
+          cost: Math.round(data.cost * 10000) / 10000,
+          tokens: data.tokens,
+          requests: data.requests,
+        }))
+        .sort((a, b) => a.timestamp - b.timestamp);
+    }
+
     const results = [];
 
     // Read hour cache entries for the requested range
