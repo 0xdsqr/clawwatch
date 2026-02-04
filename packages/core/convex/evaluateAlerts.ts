@@ -27,7 +27,7 @@ export const evaluate = mutation({
           for (const budget of budgets.filter((b) => b.isActive)) {
             if (budget.currentSpend >= budget.limitDollars) {
               shouldFire = true;
-              severity = budget.hardStop ? "critical" : "warning";
+              severity = (rule.config.hardStop ?? budget.hardStop) ? "critical" : "warning";
               title = `Budget "${budget.name}" exceeded`;
               message = `Spend $${budget.currentSpend.toFixed(2)} >= limit $${budget.limitDollars.toFixed(2)} (${budget.period})`;
               targetAgentId = budget.agentId ?? undefined;

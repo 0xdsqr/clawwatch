@@ -124,6 +124,13 @@ export const ingestCosts = mutation({
   },
   handler: async (ctx, args) => {
     let ingested = 0;
+    const budgets = await ctx.db.query("budgets").collect();
+    const budgetState = new Map(
+      budgets.map((budget) => [
+        budget._id,
+        { currentSpend: budget.currentSpend, resetAt: budget.resetAt, period: budget.period },
+      ]),
+    );
 
     for (const entry of args.entries) {
       // Find agent
@@ -148,12 +155,57 @@ export const ingestCosts = mutation({
         timestamp: entry.timestamp,
       });
 
+      const matchingBudgets = budgets.filter(
+        (budget) =>
+          budget.isActive && (budget.agentId === undefined || budget.agentId === agent._id),
+      );
+
+      for (const budget of matchingBudgets) {
+        const state = budgetState.get(budget._id);
+        if (!state) continue;
+
+        let { currentSpend, resetAt } = state;
+        if (entry.timestamp >= resetAt) {
+          currentSpend = 0;
+          resetAt = calculateNextReset(budget.period, entry.timestamp);
+        }
+
+        currentSpend += entry.totalCost;
+        await ctx.db.patch(budget._id, { currentSpend, resetAt });
+        budgetState.set(budget._id, { ...state, currentSpend, resetAt });
+      }
+
       ingested++;
     }
 
     return { ingested };
   },
 });
+
+function calculateNextReset(
+  period: "hourly" | "daily" | "weekly" | "monthly",
+  now: number,
+): number {
+  const date = new Date(now);
+  switch (period) {
+    case "hourly":
+      date.setHours(date.getHours() + 1, 0, 0, 0);
+      break;
+    case "daily":
+      date.setDate(date.getDate() + 1);
+      date.setHours(0, 0, 0, 0);
+      break;
+    case "weekly":
+      date.setDate(date.getDate() + (7 - date.getDay()));
+      date.setHours(0, 0, 0, 0);
+      break;
+    case "monthly":
+      date.setMonth(date.getMonth() + 1, 1);
+      date.setHours(0, 0, 0, 0);
+      break;
+  }
+  return date.getTime();
+}
 
 // Ingest activities from transcript entries
 export const ingestActivities = mutation({
