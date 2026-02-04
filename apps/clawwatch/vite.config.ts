@@ -5,10 +5,8 @@ import viteReact from "@vitejs/plugin-react";
 import httpProxy from "http-proxy";
 import { nitro } from "nitro/vite";
 import type { Plugin } from "vite";
-import { defineConfig } from "vite";
+import { defineConfig, loadEnv } from "vite";
 import viteTsConfigPaths from "vite-tsconfig-paths";
-
-const CONVEX_BACKEND = "http://100.115.177.85:3210";
 
 /**
  * Custom Vite plugin to proxy /_convex → Convex backend.
@@ -18,12 +16,12 @@ const CONVEX_BACKEND = "http://100.115.177.85:3210";
  * This plugin hooks into configureServer to register middleware + WebSocket
  * upgrade handling BEFORE the SSR middleware processes the request.
  */
-function convexProxy(): Plugin {
+function convexProxy(convexBackend: string): Plugin {
   return {
     name: "convex-proxy",
     configureServer(server) {
       const proxy = httpProxy.createProxyServer({
-        target: CONVEX_BACKEND,
+        target: convexBackend,
         changeOrigin: true,
         ws: true,
       });
@@ -57,24 +55,28 @@ function convexProxy(): Plugin {
   };
 }
 
-const config = defineConfig({
-  envDir: path.resolve(import.meta.dirname, "../.."),
-  plugins: [
-    // convexProxy MUST be first so its middleware runs before everything else
-    convexProxy(),
-    viteTsConfigPaths({
-      projects: ["./tsconfig.json"],
-    }),
-    tailwindcss(),
-    tanstackStart(),
-    viteReact(),
-    nitro(),
-  ],
-  server: {
-    host: "0.0.0.0",
-    port: 5173,
-    allowedHosts: true,
-  },
-});
+export default defineConfig(({ mode }) => {
+  const envDir = path.resolve(import.meta.dirname, "../..");
+  const env = loadEnv(mode, envDir, "");
+  const convexBackend = env.VITE_CONVEX_URL || env.CONVEX_URL || "http://127.0.0.1:3210";
 
-export default config;
+  return {
+    envDir,
+    plugins: [
+      // convexProxy MUST be first so its middleware runs before everything else
+      convexProxy(convexBackend),
+      viteTsConfigPaths({
+        projects: ["./tsconfig.json"],
+      }),
+      tailwindcss(),
+      tanstackStart(),
+      viteReact(),
+      nitro(),
+    ],
+    server: {
+      host: "0.0.0.0",
+      port: 5173,
+      allowedHosts: true,
+    },
+  };
+});

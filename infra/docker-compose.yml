@@ -9,8 +9,8 @@ services:
     volumes:
       - convex-data:/convex/data
     environment:
-      - CONVEX_CLOUD_ORIGIN=${CONVEX_CLOUD_ORIGIN:-http://100.115.177.85:3210}
-      - CONVEX_SITE_ORIGIN=${CONVEX_SITE_ORIGIN:-http://100.115.177.85:3211}
+      - CONVEX_CLOUD_ORIGIN=${CONVEX_CLOUD_ORIGIN:-http://127.0.0.1:3210}
+      - CONVEX_SITE_ORIGIN=${CONVEX_SITE_ORIGIN:-http://127.0.0.1:3211}
       - DOCUMENT_RETENTION_DELAY=${DOCUMENT_RETENTION_DELAY:-172800}
       - DO_NOT_REQUIRE_SSL=true
       - RUST_LOG=${RUST_LOG:-info}
