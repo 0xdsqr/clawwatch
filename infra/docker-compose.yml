@@ -44,7 +44,7 @@ services:
       context: ..
       dockerfile: infra/Dockerfile
     ports:
-      - "5173:5173"
+      - "5173:3000"
     environment:
       - VITE_CONVEX_URL=${VITE_CONVEX_URL:-http://127.0.0.1:3210}
     depends_on:
