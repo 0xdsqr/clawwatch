@@ -72,15 +72,9 @@ export const AlertBanner = memo(function AlertBanner({ alerts }: Props) {
   const acknowledge = useMutation(api.alerting.acknowledge);
   const resolve = useMutation(api.alerting.resolve);
 
-  const handleAcknowledge = useCallback(
-    (id: Id<"alerts">) => acknowledge({ id }),
-    [acknowledge],
-  );
+  const handleAcknowledge = useCallback((id: Id<"alerts">) => acknowledge({ id }), [acknowledge]);
 
-  const handleResolve = useCallback(
-    (id: Id<"alerts">) => resolve({ id }),
-    [resolve],
-  );
+  const handleResolve = useCallback((id: Id<"alerts">) => resolve({ id }), [resolve]);
 
   const criticalCount = useMemo(
     () => alerts.filter((a) => a.severity === "critical").length,
@@ -93,9 +87,7 @@ export const AlertBanner = memo(function AlertBanner({ alerts }: Props) {
     <div
       className={cn(
         "rounded-lg border p-3.5 animate-fade-in",
-        criticalCount > 0
-          ? "border-red-500/20 bg-red-500/5"
-          : "border-amber-500/20 bg-amber-500/5",
+        criticalCount > 0 ? "border-red-500/20 bg-red-500/5" : "border-amber-500/20 bg-amber-500/5",
       )}
     >
       <div className="flex items-start gap-2.5">
@@ -109,9 +101,7 @@ export const AlertBanner = memo(function AlertBanner({ alerts }: Props) {
           <p className="text-[13px] font-medium">
             {alerts.length} unresolved alert{alerts.length > 1 ? "s" : ""}
             {criticalCount > 0 && (
-              <span className="ml-1.5 text-red-400">
-                ({criticalCount} critical)
-              </span>
+              <span className="ml-1.5 text-red-400">({criticalCount} critical)</span>
             )}
           </p>
           <div className="mt-1.5 space-y-1">

@@ -9,18 +9,13 @@ function ResizablePanelGroup({
   return (
     <ResizablePrimitive.Group
       data-slot="resizable-panel-group"
-      className={cn(
-        "flex h-full w-full data-[panel-group-direction=vertical]:flex-col",
-        className,
-      )}
+      className={cn("flex h-full w-full data-[panel-group-direction=vertical]:flex-col", className)}
       {...props}
     />
   );
 }
 
-function ResizablePanel({
-  ...props
-}: React.ComponentProps<typeof ResizablePrimitive.Panel>) {
+function ResizablePanel({ ...props }: React.ComponentProps<typeof ResizablePrimitive.Panel>) {
   return <ResizablePrimitive.Panel data-slot="resizable-panel" {...props} />;
 }
 
@@ -40,9 +35,7 @@ function ResizableHandle({
       )}
       {...props}
     >
-      {withHandle && (
-        <div className="bg-border h-6 w-1 rounded-lg z-10 flex shrink-0" />
-      )}
+      {withHandle && <div className="bg-border h-6 w-1 rounded-lg z-10 flex shrink-0" />}
     </ResizablePrimitive.Separator>
   );
 }

@@ -24,9 +24,7 @@ interface CachePerformanceProps {
   data: CacheData;
 }
 
-export const CachePerformance = memo(function CachePerformance({
-  data,
-}: CachePerformanceProps) {
+export const CachePerformance = memo(function CachePerformance({ data }: CachePerformanceProps) {
   return (
     <ClientOnly fallback={chartFallback}>
       <Suspense fallback={chartFallback}>

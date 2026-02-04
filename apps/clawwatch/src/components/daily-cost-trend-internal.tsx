@@ -1,12 +1,5 @@
 import { memo } from "react";
-import {
-  Line,
-  LineChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { formatCost } from "@/lib/utils";
 
 interface DailyCostData {
@@ -36,16 +29,11 @@ function yAxisFormatter(v: number) {
   return formatCost(v);
 }
 
-export const DailyCostTrendInternal = memo(function DailyCostTrendInternal({
-  data,
-}: Props) {
+export const DailyCostTrendInternal = memo(function DailyCostTrendInternal({ data }: Props) {
   return (
     <div className="h-[250px] w-full min-h-[250px]">
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart
-          data={data}
-          margin={{ top: 4, right: 4, left: 0, bottom: 0 }}
-        >
+        <LineChart data={data} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
           <XAxis
             dataKey="date"
             className="text-muted-foreground"

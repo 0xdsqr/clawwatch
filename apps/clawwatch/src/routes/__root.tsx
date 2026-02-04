@@ -1,14 +1,6 @@
-import {
-  SidebarInset,
-  SidebarProvider,
-} from "@clawwatch/ui/components/sidebar";
+import { SidebarInset, SidebarProvider } from "@clawwatch/ui/components/sidebar";
 import type { QueryClient } from "@tanstack/react-query";
-import {
-  createRootRouteWithContext,
-  HeadContent,
-  Outlet,
-  Scripts,
-} from "@tanstack/react-router";
+import { createRootRouteWithContext, HeadContent, Outlet, Scripts } from "@tanstack/react-router";
 import { ConvexProvider, ConvexReactClient } from "convex/react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";

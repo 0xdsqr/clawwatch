@@ -1,9 +1,4 @@
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@clawwatch/ui/components/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@clawwatch/ui/components/card";
 import { api } from "@convex/api";
 import { useQuery } from "convex/react";
 import { memo, useMemo } from "react";
@@ -29,10 +24,7 @@ export const TopModels = memo(function TopModels() {
     costRecords.forEach((record: CostRecord) => {
       const existing = modelMap.get(record.model) ?? { tokens: 0, cost: 0 };
       modelMap.set(record.model, {
-        tokens:
-          existing.tokens +
-          (record.inputTokens ?? 0) +
-          (record.outputTokens ?? 0),
+        tokens: existing.tokens + (record.inputTokens ?? 0) + (record.outputTokens ?? 0),
         cost: existing.cost + record.cost,
       });
     });
@@ -95,9 +87,7 @@ export const TopModels = memo(function TopModels() {
               style={{ animationDelay: `${i * 60}ms` }}
             >
               <div className="flex justify-between items-baseline gap-2">
-                <span className="text-[13px] font-medium truncate flex-1">
-                  {model.name}
-                </span>
+                <span className="text-[13px] font-medium truncate flex-1">{model.name}</span>
                 <span className="text-[11px] font-mono tabular-nums text-muted-foreground shrink-0">
                   {formatTokens(model.tokens)}
                 </span>

@@ -14,7 +14,6 @@
 
 import { Glob } from "bun";
 import { ConvexHttpClient } from "convex/browser";
-import { existsSync } from "fs";
 import { join, resolve } from "path";
 import { api } from "./convex/_generated/api.js";
 
@@ -24,9 +23,7 @@ const PORT = parseInt(Bun.env.PORT ?? "5173");
 const GATEWAY_URL = Bun.env.GATEWAY_URL;
 const GATEWAY_TOKEN = Bun.env.GATEWAY_TOKEN;
 const CONVEX_URL = Bun.env.CONVEX_URL ?? "http://127.0.0.1:3210";
-const SESSION_POLL_INTERVAL_MS = parseInt(
-  Bun.env.SESSION_POLL_INTERVAL ?? "60000",
-);
+const SESSION_POLL_INTERVAL_MS = parseInt(Bun.env.SESSION_POLL_INTERVAL ?? "60000");
 const SESSIONS_DIR = Bun.env.SESSIONS_DIR ?? "/home/moltbot/.clawdbot/agents";
 
 if (!GATEWAY_URL) {
@@ -151,9 +148,7 @@ async function pollSessions(): Promise<void> {
       sessions: mapped,
     });
 
-    console.log(
-      `[collector] Session poll: ingested ${ingested} sessions (${responseTimeMs}ms)`,
-    );
+    console.log(`[collector] Session poll: ingested ${ingested} sessions (${responseTimeMs}ms)`);
   } catch (err) {
     console.error("[collector] Error in session polling:", err);
   }
@@ -235,12 +230,7 @@ async function scanTranscripts(): Promise<void> {
 
       const activities: Array<{
         agentName: string;
-        type:
-          | "message_sent"
-          | "message_received"
-          | "tool_call"
-          | "error"
-          | "heartbeat";
+        type: "message_sent" | "message_received" | "tool_call" | "error" | "heartbeat";
         summary: string;
         sessionKey: string | undefined;
         channel: string | undefined;
@@ -304,22 +294,15 @@ async function scanTranscripts(): Promise<void> {
         const { ingested } = await convex.mutation(api.collector.ingestCosts, {
           entries: costEntries,
         });
-        console.log(
-          `[collector] Ingested ${ingested} cost entries from ${agentDir}/${file}`,
-        );
+        console.log(`[collector] Ingested ${ingested} cost entries from ${agentDir}/${file}`);
       }
 
       if (activities.length > 0) {
         const recentActivities = activities.slice(-20);
-        const { ingested } = await convex.mutation(
-          api.collector.ingestActivities,
-          {
-            activities: recentActivities,
-          },
-        );
-        console.log(
-          `[collector] Ingested ${ingested} activities from ${agentDir}/${file}`,
-        );
+        const { ingested } = await convex.mutation(api.collector.ingestActivities, {
+          activities: recentActivities,
+        });
+        console.log(`[collector] Ingested ${ingested} activities from ${agentDir}/${file}`);
       }
     }
 
@@ -376,9 +359,7 @@ async function handleEvent(event: GatewayEvent): Promise<void> {
   }
 }
 
-async function handleAgentEvent(
-  payload: Record<string, unknown>,
-): Promise<void> {
+async function handleAgentEvent(payload: Record<string, unknown>): Promise<void> {
   const agent = payload.agent as Record<string, unknown> | undefined;
   const agentName = String(agent?.name || payload.agentName || "unknown");
   const activityType = String(payload.type || "message_sent");
@@ -387,9 +368,7 @@ async function handleAgentEvent(
 
   const message = payload.message as Record<string, unknown> | undefined;
   if (message?.content) {
-    const contentBlocks = message.content as
-      | Array<Record<string, string>>
-      | string;
+    const contentBlocks = message.content as Array<Record<string, string>> | string;
     const content = Array.isArray(contentBlocks)
       ? contentBlocks.map((c) => c.text || c.type || "").join(" ")
       : String(contentBlocks);
@@ -412,10 +391,8 @@ async function handleAgentEvent(
           model: String(message?.model || "unknown"),
           inputTokens: Number(usage.input || 0),
           outputTokens: Number(usage.output || 0),
-          cacheReadTokens:
-            usage.cacheRead != null ? Number(usage.cacheRead) : undefined,
-          cacheWriteTokens:
-            usage.cacheWrite != null ? Number(usage.cacheWrite) : undefined,
+          cacheReadTokens: usage.cacheRead != null ? Number(usage.cacheRead) : undefined,
+          cacheWriteTokens: usage.cacheWrite != null ? Number(usage.cacheWrite) : undefined,
           totalCost: Number(usageCost.total || 0),
           timestamp: Number(payload.timestamp || Date.now()),
         },
@@ -441,9 +418,7 @@ async function handleAgentEvent(
   });
 }
 
-async function handleHealthEvent(
-  payload: Record<string, unknown>,
-): Promise<void> {
+async function handleHealthEvent(payload: Record<string, unknown>): Promise<void> {
   const agent = payload.agent as Record<string, unknown> | undefined;
   const agentName = String(agent?.name || payload.agentName || "unknown");
 
@@ -457,9 +432,7 @@ async function handleHealthEvent(
   });
 }
 
-async function handleHeartbeatEvent(
-  payload: Record<string, unknown>,
-): Promise<void> {
+async function handleHeartbeatEvent(payload: Record<string, unknown>): Promise<void> {
   const agent = payload.agent as Record<string, unknown> | undefined;
   const agentName = String(agent?.name || payload.agentName || "unknown");
 
@@ -476,9 +449,7 @@ async function handleHeartbeatEvent(
   });
 }
 
-async function handlePresenceEvent(
-  payload: Record<string, unknown>,
-): Promise<void> {
+async function handlePresenceEvent(payload: Record<string, unknown>): Promise<void> {
   const agent = payload.agent as Record<string, unknown> | undefined;
   const agentName = String(agent?.name || payload.agentName || "unknown");
   const status = String(payload.status || payload.presence || "unknown");
@@ -487,10 +458,7 @@ async function handlePresenceEvent(
     activities: [
       {
         agentName,
-        type:
-          status === "online"
-            ? ("session_started" as const)
-            : ("session_ended" as const),
+        type: status === "online" ? ("session_started" as const) : ("session_ended" as const),
         summary: `Agent ${status}`,
         sessionKey: payload.sessionKey as string | undefined,
         channel: payload.channel as string | undefined,
@@ -499,9 +467,7 @@ async function handlePresenceEvent(
   });
 }
 
-async function handleChatEvent(
-  payload: Record<string, unknown>,
-): Promise<void> {
+async function handleChatEvent(payload: Record<string, unknown>): Promise<void> {
   const agent = payload.agent as Record<string, unknown> | undefined;
   const agentName = String(agent?.name || payload.agentName || "unknown");
 
@@ -533,17 +499,13 @@ async function handleChatEvent(
 async function connectGateway(): Promise<void> {
   const currentConnectionId = connectionId++;
 
-  console.log(
-    `[ws] Connecting to ${wsUrl} (connection ${currentConnectionId})...`,
-  );
+  console.log(`[ws] Connecting to ${wsUrl} (connection ${currentConnectionId})...`);
 
   try {
     ws = new WebSocket(wsUrl);
 
     ws.onopen = () => {
-      console.log(
-        `[ws] Connected to gateway WebSocket (connection ${currentConnectionId})`,
-      );
+      console.log(`[ws] Connected to gateway WebSocket (connection ${currentConnectionId})`);
     };
 
     ws.onmessage = async (event) => {
@@ -584,10 +546,7 @@ async function connectGateway(): Promise<void> {
             reconnectDelay = INITIAL_RECONNECT_DELAY_MS;
 
             if (sessionPollTimer) clearInterval(sessionPollTimer);
-            sessionPollTimer = setInterval(
-              pollSessions,
-              SESSION_POLL_INTERVAL_MS,
-            );
+            sessionPollTimer = setInterval(pollSessions, SESSION_POLL_INTERVAL_MS);
           } else {
             console.error("[ws] Authentication failed:", frame.error);
             ws!.close();
@@ -601,10 +560,7 @@ async function connectGateway(): Promise<void> {
     };
 
     ws.onerror = (error) => {
-      console.error(
-        `[ws] WebSocket error (connection ${currentConnectionId}):`,
-        error,
-      );
+      console.error(`[ws] WebSocket error (connection ${currentConnectionId}):`, error);
     };
 
     ws.onclose = (event) => {
@@ -657,10 +613,7 @@ const server = Bun.serve({
     // Serve frontend
     if (hasDistBuild) {
       // Production: serve from dist/
-      const filePath = join(
-        distDir,
-        url.pathname === "/" ? "index.html" : url.pathname,
-      );
+      const filePath = join(distDir, url.pathname === "/" ? "index.html" : url.pathname);
       const file = Bun.file(filePath);
 
       if (await file.exists()) {

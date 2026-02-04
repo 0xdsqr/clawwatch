@@ -2,10 +2,7 @@ import { Badge } from "@clawwatch/ui/components/badge";
 import { Button } from "@clawwatch/ui/components/button";
 import { Filter, X } from "lucide-react";
 import { memo } from "react";
-import {
-  type TimeRange,
-  TimeRangeSelector,
-} from "@/components/time-range-selector";
+import { type TimeRange, TimeRangeSelector } from "@/components/time-range-selector";
 
 interface MonitoringFiltersProps {
   timeRange: TimeRange;
@@ -55,9 +52,7 @@ export const MonitoringFilters = memo(function MonitoringFilters({
     <div className="flex flex-wrap items-center gap-3">
       <div className="flex items-center gap-2 text-muted-foreground">
         <Filter className="h-4 w-4" />
-        <span className="text-xs font-medium uppercase tracking-wider">
-          Filters
-        </span>
+        <span className="text-xs font-medium uppercase tracking-wider">Filters</span>
       </div>
 
       {/* Model filter badges */}
@@ -84,9 +79,7 @@ export const MonitoringFilters = memo(function MonitoringFilters({
             {availableAgents.map((agent) => (
               <Badge
                 key={agent.id}
-                variant={
-                  selectedAgents.includes(agent.id) ? "default" : "outline"
-                }
+                variant={selectedAgents.includes(agent.id) ? "default" : "outline"}
                 className="cursor-pointer text-xs"
                 onClick={() => toggleAgent(agent.id)}
               >

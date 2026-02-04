@@ -34,11 +34,7 @@ export const upsert = mutation({
   args: {
     name: v.string(),
     gatewayUrl: v.string(),
-    status: v.union(
-      v.literal("online"),
-      v.literal("offline"),
-      v.literal("degraded"),
-    ),
+    status: v.union(v.literal("online"), v.literal("offline"), v.literal("degraded")),
     config: v.optional(
       v.object({
         model: v.optional(v.string()),
@@ -102,11 +98,7 @@ export const setDefaultPaths = mutation({
 export const heartbeat = mutation({
   args: {
     agentId: v.id("agents"),
-    status: v.union(
-      v.literal("online"),
-      v.literal("offline"),
-      v.literal("degraded"),
-    ),
+    status: v.union(v.literal("online"), v.literal("offline"), v.literal("degraded")),
   },
   handler: async (ctx, args) => {
     const now = Date.now();
@@ -150,16 +142,11 @@ export const healthSummary = query({
     // Get recent cost records (last hour only, already indexed)
     const recentCosts = await ctx.db
       .query("costRecords")
-      .withIndex("by_agent_time", (q) =>
-        q.eq("agentId", args.agentId).gte("timestamp", oneHourAgo),
-      )
+      .withIndex("by_agent_time", (q) => q.eq("agentId", args.agentId).gte("timestamp", oneHourAgo))
       .take(500);
 
     const costLastHour = recentCosts.reduce((sum, r) => sum + r.cost, 0);
-    const tokensLastHour = recentCosts.reduce(
-      (sum, r) => sum + r.inputTokens + r.outputTokens,
-      0,
-    );
+    const tokensLastHour = recentCosts.reduce((sum, r) => sum + r.inputTokens + r.outputTokens, 0);
 
     // Count recent errors — take 50 recent activities and filter by time + type
     const recentActivities = await ctx.db

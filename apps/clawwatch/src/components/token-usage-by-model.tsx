@@ -23,9 +23,7 @@ interface TokenUsageByModelProps {
   data: TokenUsageData[];
 }
 
-export const TokenUsageByModel = memo(function TokenUsageByModel({
-  data,
-}: TokenUsageByModelProps) {
+export const TokenUsageByModel = memo(function TokenUsageByModel({ data }: TokenUsageByModelProps) {
   return (
     <ClientOnly fallback={chartFallback}>
       <Suspense fallback={chartFallback}>

@@ -46,9 +46,7 @@ function yAxisFormatter(v: number) {
   return formatCost(v);
 }
 
-export const CostByModelChartInternal = memo(function CostByModelChartInternal({
-  data,
-}: Props) {
+export const CostByModelChartInternal = memo(function CostByModelChartInternal({ data }: Props) {
   const processedData = useMemo(() => {
     // Group data by timestamp and aggregate by model
     const grouped = data.reduce(
@@ -81,10 +79,7 @@ export const CostByModelChartInternal = memo(function CostByModelChartInternal({
   return (
     <div className="h-[300px] w-full min-h-[300px]">
       <ResponsiveContainer width="100%" height="100%">
-        <AreaChart
-          data={processedData}
-          margin={{ top: 4, right: 4, left: 0, bottom: 0 }}
-        >
+        <AreaChart data={processedData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
           <defs>
             {models.map((model) => (
               <linearGradient
@@ -95,16 +90,8 @@ export const CostByModelChartInternal = memo(function CostByModelChartInternal({
                 x2="0"
                 y2="1"
               >
-                <stop
-                  offset="5%"
-                  stopColor={getModelColor(model)}
-                  stopOpacity={0.5}
-                />
-                <stop
-                  offset="95%"
-                  stopColor={getModelColor(model)}
-                  stopOpacity={0.05}
-                />
+                <stop offset="5%" stopColor={getModelColor(model)} stopOpacity={0.5} />
+                <stop offset="95%" stopColor={getModelColor(model)} stopOpacity={0.05} />
               </linearGradient>
             ))}
           </defs>

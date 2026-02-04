@@ -90,10 +90,7 @@ export const cleanupOldRecords: ReturnType<typeof internalMutation> = internalMu
       .query("alerts")
       .order("asc")
       .filter((q) =>
-        q.and(
-          q.lt(q.field("_creationTime"), alertCutoff),
-          q.neq(q.field("resolvedAt"), undefined),
-        ),
+        q.and(q.lt(q.field("_creationTime"), alertCutoff), q.neq(q.field("resolvedAt"), undefined)),
       )
       .take(BATCH_SIZE);
 
@@ -168,10 +165,7 @@ export const manualCleanup = mutation({
         .query("alerts")
         .order("asc")
         .filter((q) =>
-          q.and(
-            q.lt(q.field("_creationTime"), cutoff),
-            q.neq(q.field("resolvedAt"), undefined),
-          ),
+          q.and(q.lt(q.field("_creationTime"), cutoff), q.neq(q.field("resolvedAt"), undefined)),
         )
         .take(BATCH_SIZE);
       for (const doc of docs) {
@@ -188,13 +182,7 @@ export const manualCleanup = mutation({
 export const retentionStats = mutation({
   args: {},
   handler: async (ctx) => {
-    const tables = [
-      "activities",
-      "healthChecks",
-      "costRecords",
-      "snitchEvents",
-      "alerts",
-    ] as const;
+    const tables = ["activities", "healthChecks", "costRecords", "snitchEvents", "alerts"] as const;
 
     const stats: Record<string, { total: number; oldest: number | null }> = {};
 

@@ -11,10 +11,7 @@ export const evaluate = mutation({
 
     for (const rule of activeRules) {
       // Check cooldown
-      if (
-        rule.lastTriggered &&
-        now - rule.lastTriggered < rule.cooldownMinutes * 60000
-      ) {
+      if (rule.lastTriggered && now - rule.lastTriggered < rule.cooldownMinutes * 60000) {
         continue;
       }
 
@@ -47,19 +44,14 @@ export const evaluate = mutation({
               shouldFire = true;
               severity = "critical";
               title = `Agent "${agent.name}" is offline`;
-              const minsOffline = Math.round(
-                (now - agent.lastHeartbeat) / 60000,
-              );
+              const minsOffline = Math.round((now - agent.lastHeartbeat) / 60000);
               message = `No heartbeat for ${minsOffline} minutes`;
               targetAgentId = agent._id;
               // Mark agent offline
               await ctx.db.patch(agent._id, { status: "offline" });
             } else {
               // Agent is online — auto-resolve any outstanding offline alerts
-              const unresolvedAlerts = await ctx.db
-                .query("alerts")
-                .order("desc")
-                .take(50);
+              const unresolvedAlerts = await ctx.db.query("alerts").order("desc").take(50);
               for (const alert of unresolvedAlerts) {
                 if (
                   alert.type === "agent_offline" &&

@@ -25,9 +25,7 @@ function assertSafePath(fullPath: string, basePath: string): void {
 
 // List files in workspace directory
 export const listFiles = createServerFn({ method: "GET" })
-  .inputValidator(
-    (d: unknown) => d as { workspacePath: string; subPath?: string },
-  )
+  .inputValidator((d: unknown) => d as { workspacePath: string; subPath?: string })
   .handler(async ({ data }) => {
     const basePath = data.workspacePath;
     const dirPath = data.subPath ? join(basePath, data.subPath) : basePath;
@@ -52,9 +50,7 @@ export const listFiles = createServerFn({ method: "GET" })
 
 // Read file contents
 export const readFileContents = createServerFn({ method: "GET" })
-  .inputValidator(
-    (d: unknown) => d as { workspacePath: string; filePath: string },
-  )
+  .inputValidator((d: unknown) => d as { workspacePath: string; filePath: string })
   .handler(async ({ data }) => {
     const fullPath = join(data.workspacePath, data.filePath);
     assertSafePath(fullPath, data.workspacePath);
@@ -74,10 +70,7 @@ export const readFileContents = createServerFn({ method: "GET" })
 
 // Write file contents
 export const writeFileContents = createServerFn({ method: "POST" })
-  .inputValidator(
-    (d: unknown) =>
-      d as { workspacePath: string; filePath: string; content: string },
-  )
+  .inputValidator((d: unknown) => d as { workspacePath: string; filePath: string; content: string })
   .handler(async ({ data }) => {
     const fullPath = join(data.workspacePath, data.filePath);
     assertSafePath(fullPath, data.workspacePath);

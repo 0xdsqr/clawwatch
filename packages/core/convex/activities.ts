@@ -17,10 +17,7 @@ export const record = mutation({
     ),
     summary: v.string(),
     details: v.optional(
-      v.record(
-        v.string(),
-        v.union(v.string(), v.number(), v.boolean(), v.null()),
-      ),
+      v.record(v.string(), v.union(v.string(), v.number(), v.boolean(), v.null())),
     ),
     sessionKey: v.optional(v.string()),
     channel: v.optional(v.string()),
@@ -56,9 +53,7 @@ export const recent = query({
 
     // Enrich with agent names
     const agentIds = [...new Set(activities.map((a) => a.agentId))] as string[];
-    const agents = await Promise.all(
-      agentIds.map((id) => ctx.db.get(id as any))
-    );
+    const agents = await Promise.all(agentIds.map((id) => ctx.db.get(id as any)));
     const agentMap = new Map<string, string>();
     for (const a of agents) {
       if (a && "_id" in a && "name" in a) {
@@ -95,9 +90,7 @@ export const events = query({
     // Enrich with agent names
     const agentIds = [...new Set(activities.map((a) => a.agentId))];
     const agents = await Promise.all(agentIds.map((id) => ctx.db.get(id)));
-    const agentMap = new Map(
-      agents.filter(Boolean).map((a) => [a!._id, a!.name]),
-    );
+    const agentMap = new Map(agents.filter(Boolean).map((a) => [a!._id, a!.name]));
 
     let results = activities.map((activity) => ({
       ...activity,

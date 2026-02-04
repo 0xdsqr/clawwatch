@@ -25,9 +25,7 @@ export function NavSecondary({ items, ...props }: NavSecondaryProps) {
               <SidebarMenuButton
                 size="sm"
                 isActive={currentPath.startsWith(item.url)}
-                render={({ ref: _ref, ...props }) => (
-                  <Link {...props} to={item.url} />
-                )}
+                render={({ ref: _ref, ...props }) => <Link {...props} to={item.url} />}
               >
                 <item.icon />
                 <span>{item.title}</span>

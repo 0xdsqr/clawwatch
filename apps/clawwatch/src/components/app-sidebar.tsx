@@ -8,14 +8,7 @@ import {
   SidebarMenuItem,
 } from "@clawwatch/ui/components/sidebar";
 import { Link } from "@tanstack/react-router";
-import {
-  Activity,
-  Bell,
-  Bot,
-  LayoutDashboard,
-  Radio,
-  Settings,
-} from "lucide-react";
+import { Activity, Bell, Bot, LayoutDashboard, Radio, Settings } from "lucide-react";
 import { NavFooter } from "@/components/nav-footer";
 import { NavMain } from "@/components/nav-main";
 
@@ -41,19 +34,11 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" className="pointer-events-none">
               <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary/10">
-                <img
-                  src="/clawwatch-owl.svg"
-                  alt="ClawWatch"
-                  className="h-4.5 w-4.5"
-                />
+                <img src="/clawwatch-owl.svg" alt="ClawWatch" className="h-4.5 w-4.5" />
               </div>
               <div className="flex flex-col gap-0 leading-none">
-                <span className="text-sm font-semibold tracking-tight">
-                  ClawWatch
-                </span>
-                <span className="text-[11px] text-muted-foreground">
-                  Agent Monitoring
-                </span>
+                <span className="text-sm font-semibold tracking-tight">ClawWatch</span>
+                <span className="text-[11px] text-muted-foreground">Agent Monitoring</span>
               </div>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -69,9 +54,7 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
           <SidebarMenuItem>
             <SidebarMenuButton
               size="sm"
-              render={({ ref: _ref, ...props }) => (
-                <Link {...props} to="/settings" />
-              )}
+              render={({ ref: _ref, ...props }) => <Link {...props} to="/settings" />}
             >
               <Settings className="h-4 w-4" />
               <span>Settings</span>

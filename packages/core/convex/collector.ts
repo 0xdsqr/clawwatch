@@ -23,8 +23,7 @@ export const ingestSessions = mutation({
 
     for (const session of args.sessions) {
       // Extract agent name from session key
-      const agentName =
-        session.agentId ?? session.key.split(":")[1] ?? "unknown";
+      const agentName = session.agentId ?? session.key.split(":")[1] ?? "unknown";
 
       // Find or create agent
       let agent = await ctx.db
@@ -55,7 +54,7 @@ export const ingestSessions = mutation({
       const isMainSession = session.key.endsWith(":main");
       const newModel = isMainSession
         ? (session.model ?? agent.config?.model)
-        : agent.config?.model ?? session.model;
+        : (agent.config?.model ?? session.model);
 
       await ctx.db.patch(agent._id, {
         status: "online",

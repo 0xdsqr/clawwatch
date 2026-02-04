@@ -1,12 +1,5 @@
 import { memo } from "react";
-import {
-  Bar,
-  BarChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { formatCost } from "@/lib/utils";
 
 interface ModelCostData {
@@ -41,48 +34,48 @@ function tooltipFormatter(value: number | undefined) {
   return [0, "Cost"];
 }
 
-export const ModelCostBreakdownInternal = memo(
-  function ModelCostBreakdownInternal({ data }: Props) {
-    // Add color to each data point
-    const dataWithColors = data.map((item) => ({
-      ...item,
-      fill: getModelColor(item.model),
-    }));
+export const ModelCostBreakdownInternal = memo(function ModelCostBreakdownInternal({
+  data,
+}: Props) {
+  // Add color to each data point
+  const dataWithColors = data.map((item) => ({
+    ...item,
+    fill: getModelColor(item.model),
+  }));
 
-    return (
-      <div className="h-[250px] w-full min-h-[250px]">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart
-            data={dataWithColors}
-            layout="horizontal"
-            margin={{ top: 4, right: 4, left: 60, bottom: 4 }}
-          >
-            <XAxis
-              type="number"
-              className="text-muted-foreground"
-              tick={{ fill: "currentColor", fontSize: 11 }}
-              tickLine={false}
-              axisLine={false}
-              tickFormatter={formatCost}
-            />
-            <YAxis
-              type="category"
-              dataKey="model"
-              className="text-muted-foreground"
-              tick={{ fill: "currentColor", fontSize: 11 }}
-              tickLine={false}
-              axisLine={false}
-              width={56}
-            />
-            <Tooltip
-              contentStyle={tooltipStyle}
-              labelStyle={tooltipLabelStyle}
-              formatter={tooltipFormatter}
-            />
-            <Bar dataKey="cost" radius={[0, 4, 4, 0]} />
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
-    );
-  },
-);
+  return (
+    <div className="h-[250px] w-full min-h-[250px]">
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart
+          data={dataWithColors}
+          layout="horizontal"
+          margin={{ top: 4, right: 4, left: 60, bottom: 4 }}
+        >
+          <XAxis
+            type="number"
+            className="text-muted-foreground"
+            tick={{ fill: "currentColor", fontSize: 11 }}
+            tickLine={false}
+            axisLine={false}
+            tickFormatter={formatCost}
+          />
+          <YAxis
+            type="category"
+            dataKey="model"
+            className="text-muted-foreground"
+            tick={{ fill: "currentColor", fontSize: 11 }}
+            tickLine={false}
+            axisLine={false}
+            width={56}
+          />
+          <Tooltip
+            contentStyle={tooltipStyle}
+            labelStyle={tooltipLabelStyle}
+            formatter={tooltipFormatter}
+          />
+          <Bar dataKey="cost" radius={[0, 4, 4, 0]} />
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  );
+});

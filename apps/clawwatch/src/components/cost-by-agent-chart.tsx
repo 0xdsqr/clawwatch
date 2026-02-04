@@ -25,9 +25,7 @@ interface CostByAgentChartProps {
   data: AgentCostData[];
 }
 
-export const CostByAgentChart = memo(function CostByAgentChart({
-  data,
-}: CostByAgentChartProps) {
+export const CostByAgentChart = memo(function CostByAgentChart({ data }: CostByAgentChartProps) {
   return (
     <ClientOnly fallback={chartFallback}>
       <Suspense fallback={chartFallback}>

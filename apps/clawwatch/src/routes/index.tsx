@@ -15,10 +15,7 @@ import { CostChart } from "@/components/cost-chart";
 import { MiniActivityFeed } from "@/components/mini-activity-feed";
 import { StatCard } from "@/components/stat-card";
 import { SystemStatus } from "@/components/system-status";
-import {
-  type TimeRange,
-  TimeRangeSelector,
-} from "@/components/time-range-selector";
+import { type TimeRange, TimeRangeSelector } from "@/components/time-range-selector";
 import { TokenBreakdown } from "@/components/token-breakdown";
 import { TopModels } from "@/components/top-models";
 import { formatCost, formatTokens } from "@/lib/utils";
@@ -61,16 +58,12 @@ function Dashboard() {
 
   const totalTokens = useMemo(
     () =>
-      formatTokens(
-        (costSummary?.today.inputTokens ?? 0) +
-          (costSummary?.today.outputTokens ?? 0),
-      ),
+      formatTokens((costSummary?.today.inputTokens ?? 0) + (costSummary?.today.outputTokens ?? 0)),
     [costSummary?.today.inputTokens, costSummary?.today.outputTokens],
   );
 
   const activeAgentCount = useMemo(() => {
-    const online =
-      agents?.filter((a: Agent) => a.status === "online").length ?? 0;
+    const online = agents?.filter((a: Agent) => a.status === "online").length ?? 0;
     return online.toString();
   }, [agents]);
 
@@ -92,14 +85,10 @@ function Dashboard() {
   const tokenTrend = useMemo(() => {
     if (!costSummary?.today || !costSummary?.week) return undefined;
     const todayTokens =
-      (costSummary.today.inputTokens ?? 0) +
-      (costSummary.today.outputTokens ?? 0);
-    const weekTokens =
-      (costSummary.week.inputTokens ?? 0) +
-      (costSummary.week.outputTokens ?? 0);
+      (costSummary.today.inputTokens ?? 0) + (costSummary.today.outputTokens ?? 0);
+    const weekTokens = (costSummary.week.inputTokens ?? 0) + (costSummary.week.outputTokens ?? 0);
     const weekDays = 7;
-    const avgDaily =
-      weekDays > 1 ? (weekTokens - todayTokens) / (weekDays - 1) : 0;
+    const avgDaily = weekDays > 1 ? (weekTokens - todayTokens) / (weekDays - 1) : 0;
     if (avgDaily === 0) return undefined;
     const pct = ((todayTokens - avgDaily) / avgDaily) * 100;
     return {
@@ -160,8 +149,7 @@ function Dashboard() {
           label="Active Alerts"
           value={unresolvedAlerts.length.toString()}
           change={
-            unresolvedAlerts.filter((a: Alert) => a.severity === "critical")
-              .length > 0
+            unresolvedAlerts.filter((a: Alert) => a.severity === "critical").length > 0
               ? `${unresolvedAlerts.filter((a: Alert) => a.severity === "critical").length} critical`
               : "All clear"
           }
@@ -177,9 +165,7 @@ function Dashboard() {
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle className="text-sm font-medium">
-                    Cost Over Time
-                  </CardTitle>
+                  <CardTitle className="text-sm font-medium">Cost Over Time</CardTitle>
                   <CardDescription className="text-xs">
                     {timeRange === "24h" && "Last 24 hours"}
                     {timeRange === "7d" && "Last 7 days"}
@@ -204,9 +190,7 @@ function Dashboard() {
                 </span>
                 Live Events
               </CardTitle>
-              <CardDescription className="text-xs">
-                Real-time agent activity
-              </CardDescription>
+              <CardDescription className="text-xs">Real-time agent activity</CardDescription>
             </CardHeader>
             <CardContent className="pt-0">
               <MiniActivityFeed activities={recentActivities ?? []} />

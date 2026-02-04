@@ -26,11 +26,7 @@ export const recordSnitch = mutation({
       v.literal("tattled_on_user"), // Told someone about the user
     ),
     description: v.string(),
-    severity: v.union(
-      v.literal("snitch"),
-      v.literal("hall_monitor"),
-      v.literal("narc"),
-    ),
+    severity: v.union(v.literal("snitch"), v.literal("hall_monitor"), v.literal("narc")),
   },
   handler: async (ctx, args) => {
     return await ctx.db.insert("snitchEvents", {
@@ -72,10 +68,7 @@ export const getScore = query({
       tattled_on_user: 5,
     };
 
-    const totalWeight = events.reduce(
-      (sum, e) => sum + (weights[e.type] ?? 1),
-      0,
-    );
+    const totalWeight = events.reduce((sum, e) => sum + (weights[e.type] ?? 1), 0);
 
     // Normalize to 0-100
     // More events + higher weights = higher score
@@ -160,19 +153,12 @@ export const leaderboard = query({
         tattled_on_user: 5,
       };
 
-      const totalWeight = events.reduce(
-        (sum, e) => sum + (weights[e.type] ?? 1),
-        0,
-      );
+      const totalWeight = events.reduce((sum, e) => sum + (weights[e.type] ?? 1), 0);
 
       const raw =
         events.length === 0
           ? 0
-          : Math.min(
-              100,
-              (totalWeight / Math.max(events.length, 1)) * 10 +
-                events.length * 0.5,
-            );
+          : Math.min(100, (totalWeight / Math.max(events.length, 1)) * 10 + events.length * 0.5);
 
       results.push({
         agentId: agent._id,

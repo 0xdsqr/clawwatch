@@ -1,9 +1,4 @@
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@clawwatch/ui/components/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@clawwatch/ui/components/card";
 import { api } from "@convex/api";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "convex/react";

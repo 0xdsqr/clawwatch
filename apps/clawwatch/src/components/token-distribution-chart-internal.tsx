@@ -32,85 +32,74 @@ function tooltipFormatter(value: number | undefined) {
   return [0, "Tokens"];
 }
 
-export const TokenDistributionChartInternal = memo(
-  function TokenDistributionChartInternal({ data }: Props) {
-    const chartData = useMemo(() => {
-      const items = [
-        { name: "Input", value: data.inputTokens, color: COLORS.input },
-        { name: "Output", value: data.outputTokens, color: COLORS.output },
-        {
-          name: "Cache Read",
-          value: data.cacheReadTokens,
-          color: COLORS.cacheRead,
-        },
-        {
-          name: "Cache Write",
-          value: data.cacheWriteTokens,
-          color: COLORS.cacheWrite,
-        },
-      ];
-      return items.filter((item) => item.value > 0);
-    }, [data]);
+export const TokenDistributionChartInternal = memo(function TokenDistributionChartInternal({
+  data,
+}: Props) {
+  const chartData = useMemo(() => {
+    const items = [
+      { name: "Input", value: data.inputTokens, color: COLORS.input },
+      { name: "Output", value: data.outputTokens, color: COLORS.output },
+      {
+        name: "Cache Read",
+        value: data.cacheReadTokens,
+        color: COLORS.cacheRead,
+      },
+      {
+        name: "Cache Write",
+        value: data.cacheWriteTokens,
+        color: COLORS.cacheWrite,
+      },
+    ];
+    return items.filter((item) => item.value > 0);
+  }, [data]);
 
-    const total = useMemo(
-      () => chartData.reduce((sum, item) => sum + item.value, 0),
-      [chartData],
-    );
+  const total = useMemo(() => chartData.reduce((sum, item) => sum + item.value, 0), [chartData]);
 
-    if (total === 0) {
-      return (
-        <div className="flex h-[250px] items-center justify-center text-muted-foreground">
-          <p className="text-sm">No token data available</p>
-        </div>
-      );
-    }
-
+  if (total === 0) {
     return (
-      <div className="flex h-[250px] items-center gap-4">
-        <div className="h-full flex-1">
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={chartData}
-                cx="50%"
-                cy="50%"
-                innerRadius={55}
-                outerRadius={85}
-                paddingAngle={3}
-                dataKey="value"
-                strokeWidth={0}
-              >
-                {chartData.map((entry) => (
-                  <Cell key={entry.name} fill={entry.color} />
-                ))}
-              </Pie>
-              <Tooltip
-                contentStyle={tooltipStyle}
-                formatter={tooltipFormatter}
-              />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
-        <div className="space-y-2 pr-2">
-          {chartData.map((item) => (
-            <div key={item.name} className="flex items-center gap-2">
-              <div
-                className="h-2.5 w-2.5 rounded-full"
-                style={{ backgroundColor: item.color }}
-              />
-              <div className="text-xs">
-                <span className="text-muted-foreground">{item.name}</span>
-                <span className="ml-2 font-mono font-medium">
-                  {formatTokens(item.value)}
-                </span>
-                <span className="ml-1 text-muted-foreground">
-                  ({((item.value / total) * 100).toFixed(0)}%)
-                </span>
-              </div>
-            </div>
-          ))}
-        </div>
+      <div className="flex h-[250px] items-center justify-center text-muted-foreground">
+        <p className="text-sm">No token data available</p>
       </div>
     );
-  },
-);
+  }
+
+  return (
+    <div className="flex h-[250px] items-center gap-4">
+      <div className="h-full flex-1">
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <Pie
+              data={chartData}
+              cx="50%"
+              cy="50%"
+              innerRadius={55}
+              outerRadius={85}
+              paddingAngle={3}
+              dataKey="value"
+              strokeWidth={0}
+            >
+              {chartData.map((entry) => (
+                <Cell key={entry.name} fill={entry.color} />
+              ))}
+            </Pie>
+            <Tooltip contentStyle={tooltipStyle} formatter={tooltipFormatter} />
+          </PieChart>
+        </ResponsiveContainer>
+      </div>
+      <div className="space-y-2 pr-2">
+        {chartData.map((item) => (
+          <div key={item.name} className="flex items-center gap-2">
+            <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: item.color }} />
+            <div className="text-xs">
+              <span className="text-muted-foreground">{item.name}</span>
+              <span className="ml-2 font-mono font-medium">{formatTokens(item.value)}</span>
+              <span className="ml-1 text-muted-foreground">
+                ({((item.value / total) * 100).toFixed(0)}%)
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+});

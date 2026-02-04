@@ -126,14 +126,11 @@ function AlertingPage() {
 
   // Smart suggestions computed from real data
   const suggestions = useMemo(() => {
-    const items: { icon: typeof Lightbulb; text: string; action?: string }[] =
-      [];
+    const items: { icon: typeof Lightbulb; text: string; action?: string }[] = [];
     if (!costSummary || !agents || !rules) return items;
 
     const dailyCost = costSummary.today.cost;
-    const hasBudgetRule = rules.some(
-      (r: AlertRule) => r.type === "budget_exceeded",
-    );
+    const hasBudgetRule = rules.some((r: AlertRule) => r.type === "budget_exceeded");
     if (dailyCost > 0 && !hasBudgetRule) {
       const suggested = Math.ceil((dailyCost * 1.5) / 10) * 10;
       items.push({
@@ -143,9 +140,7 @@ function AlertingPage() {
       });
     }
 
-    const hasOfflineRule = rules.some(
-      (r: AlertRule) => r.type === "agent_offline",
-    );
+    const hasOfflineRule = rules.some((r: AlertRule) => r.type === "agent_offline");
     if (!hasOfflineRule && agents.length > 0) {
       items.push({
         icon: Wifi,
@@ -169,8 +164,7 @@ function AlertingPage() {
   const filteredAlerts = useMemo(() => {
     if (!alerts) return undefined;
     return alerts.filter((alert: Alert) => {
-      const matchesSeverity =
-        severityFilter === "all" || alert.severity === severityFilter;
+      const matchesSeverity = severityFilter === "all" || alert.severity === severityFilter;
       const matchesResolved =
         resolvedFilter === "all" ||
         (resolvedFilter === "resolved" && alert.resolvedAt) ||
@@ -275,9 +269,7 @@ function AlertingPage() {
                       <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
-                          <p className="text-sm font-medium truncate">
-                            {rule.name}
-                          </p>
+                          <p className="text-sm font-medium truncate">{rule.name}</p>
                           {rule.severity && (
                             <span
                               className={cn(
@@ -290,11 +282,9 @@ function AlertingPage() {
                           )}
                         </div>
                         <p className="text-xs text-muted-foreground">
-                          {rule.type.replace(/_/g, " ")} ·{" "}
-                          {rule.channels.join(", ")} · {rule.cooldownMinutes}min
-                          cooldown
-                          {rule.config?.threshold &&
-                            ` · threshold: ${rule.config.threshold}`}
+                          {rule.type.replace(/_/g, " ")} · {rule.channels.join(", ")} ·{" "}
+                          {rule.cooldownMinutes}min cooldown
+                          {rule.config?.threshold && ` · threshold: ${rule.config.threshold}`}
                           {rule.config?.windowMinutes &&
                             ` · ${rule.config.windowMinutes}min window`}
                         </p>
@@ -335,10 +325,7 @@ function AlertingPage() {
           ) : (
             <div className="space-y-2">
               {Array.from({ length: 3 }).map((_, i) => (
-                <div
-                  key={i}
-                  className="h-14 bg-muted rounded-lg animate-pulse"
-                />
+                <div key={i} className="h-14 bg-muted rounded-lg animate-pulse" />
               ))}
             </div>
           )}
@@ -358,9 +345,7 @@ function AlertingPage() {
             <div className="flex items-center gap-2">
               <select
                 value={severityFilter}
-                onChange={(e: ChangeEvent<HTMLSelectElement>) =>
-                  setSeverityFilter(e.target.value)
-                }
+                onChange={(e: ChangeEvent<HTMLSelectElement>) => setSeverityFilter(e.target.value)}
                 className="rounded-md border bg-background px-2 py-1 text-xs"
               >
                 <option value="all">All severity</option>
@@ -370,9 +355,7 @@ function AlertingPage() {
               </select>
               <select
                 value={resolvedFilter}
-                onChange={(e: ChangeEvent<HTMLSelectElement>) =>
-                  setResolvedFilter(e.target.value)
-                }
+                onChange={(e: ChangeEvent<HTMLSelectElement>) => setResolvedFilter(e.target.value)}
                 className="rounded-md border bg-background px-2 py-1 text-xs"
               >
                 <option value="all">All status</option>
@@ -396,9 +379,7 @@ function AlertingPage() {
                         key={alert._id}
                         className={cn(
                           "flex items-start justify-between rounded-lg border p-3 transition-colors",
-                          alert.resolvedAt
-                            ? "bg-muted/30 opacity-60"
-                            : "bg-card",
+                          alert.resolvedAt ? "bg-muted/30 opacity-60" : "bg-card",
                         )}
                       >
                         <div className="flex items-start gap-3">
@@ -412,9 +393,7 @@ function AlertingPage() {
                           </span>
                           <div>
                             <p className="text-sm font-medium">{alert.title}</p>
-                            <p className="mt-0.5 text-xs text-muted-foreground">
-                              {alert.message}
-                            </p>
+                            <p className="mt-0.5 text-xs text-muted-foreground">{alert.message}</p>
                             <p className="mt-1 text-xs text-muted-foreground/50">
                               {timeAgo(alert._creationTime)}
                               {alert.acknowledgedAt && " · Acknowledged"}
@@ -459,10 +438,7 @@ function AlertingPage() {
           ) : (
             <div className="space-y-2">
               {Array.from({ length: 3 }).map((_, i) => (
-                <div
-                  key={i}
-                  className="h-16 bg-muted rounded-lg animate-pulse"
-                />
+                <div key={i} className="h-16 bg-muted rounded-lg animate-pulse" />
               ))}
             </div>
           )}
@@ -490,12 +466,8 @@ function CreateAlertRuleDialog({
   const [threshold, setThreshold] = useState("100");
   const [windowMinutes, setWindowMinutes] = useState("15");
   const [cooldownMinutes, setCooldownMinutes] = useState("30");
-  const [severity, setSeverity] = useState<"info" | "warning" | "critical">(
-    "warning",
-  );
-  const [selectedChannels, setSelectedChannels] = useState<string[]>([
-    "discord",
-  ]);
+  const [severity, setSeverity] = useState<"info" | "warning" | "critical">("warning");
+  const [selectedChannels, setSelectedChannels] = useState<string[]>(["discord"]);
   const [hardStop, setHardStop] = useState(false);
   const [percentageThreshold, setPercentageThreshold] = useState("50");
 
@@ -554,9 +526,7 @@ function CreateAlertRuleDialog({
           <Input
             id="rule-name"
             value={name}
-            onChange={(e: ChangeEvent<HTMLInputElement>) =>
-              setName(e.target.value)
-            }
+            onChange={(e: ChangeEvent<HTMLInputElement>) => setName(e.target.value)}
             placeholder="e.g. Daily Budget Warning"
           />
         </div>
@@ -574,17 +544,13 @@ function CreateAlertRuleDialog({
                   onClick={() => setType(t.value)}
                   className={cn(
                     "flex items-center gap-3 rounded-lg border p-3 text-left transition-colors",
-                    type === t.value
-                      ? "border-primary bg-primary/5"
-                      : "hover:bg-muted/50",
+                    type === t.value ? "border-primary bg-primary/5" : "hover:bg-muted/50",
                   )}
                 >
                   <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
                   <div>
                     <p className="text-sm font-medium">{t.label}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {t.description}
-                    </p>
+                    <p className="text-xs text-muted-foreground">{t.description}</p>
                   </div>
                 </button>
               );
@@ -597,9 +563,7 @@ function CreateAlertRuleDialog({
           <Label>Agent Scope</Label>
           <select
             value={agentScope}
-            onChange={(e: ChangeEvent<HTMLSelectElement>) =>
-              setAgentScope(e.target.value)
-            }
+            onChange={(e: ChangeEvent<HTMLSelectElement>) => setAgentScope(e.target.value)}
             className="rounded-md border bg-background px-3 py-2 text-sm"
           >
             <option value="all">All agents</option>
@@ -612,9 +576,7 @@ function CreateAlertRuleDialog({
         </div>
 
         {/* Type-specific config */}
-        {(type === "budget_exceeded" ||
-          type === "error_spike" ||
-          type === "high_token_usage") && (
+        {(type === "budget_exceeded" || type === "error_spike" || type === "high_token_usage") && (
           <div className="grid gap-2">
             <Label>
               {type === "budget_exceeded"
@@ -627,9 +589,7 @@ function CreateAlertRuleDialog({
               type="number"
               step={type === "budget_exceeded" ? "1" : "1"}
               value={threshold}
-              onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                setThreshold(e.target.value)
-              }
+              onChange={(e: ChangeEvent<HTMLInputElement>) => setThreshold(e.target.value)}
             />
           </div>
         )}
@@ -647,17 +607,13 @@ function CreateAlertRuleDialog({
           </div>
         )}
 
-        {(type === "agent_offline" ||
-          type === "error_spike" ||
-          type === "cost_spike") && (
+        {(type === "agent_offline" || type === "error_spike" || type === "cost_spike") && (
           <div className="grid gap-2">
             <Label>Time Window (minutes)</Label>
             <Input
               type="number"
               value={windowMinutes}
-              onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                setWindowMinutes(e.target.value)
-              }
+              onChange={(e: ChangeEvent<HTMLInputElement>) => setWindowMinutes(e.target.value)}
             />
           </div>
         )}
@@ -689,9 +645,7 @@ function CreateAlertRuleDialog({
                 onClick={() => setSeverity(s)}
                 className={cn(
                   "rounded-md px-3 py-1.5 text-xs font-medium border transition-colors flex-1",
-                  severity === s
-                    ? severityColor(s)
-                    : "text-muted-foreground hover:bg-muted/50",
+                  severity === s ? severityColor(s) : "text-muted-foreground hover:bg-muted/50",
                 )}
               >
                 {s.charAt(0).toUpperCase() + s.slice(1)}
@@ -728,9 +682,7 @@ function CreateAlertRuleDialog({
           <Input
             type="number"
             value={cooldownMinutes}
-            onChange={(e: ChangeEvent<HTMLInputElement>) =>
-              setCooldownMinutes(e.target.value)
-            }
+            onChange={(e: ChangeEvent<HTMLInputElement>) => setCooldownMinutes(e.target.value)}
           />
         </div>
       </div>

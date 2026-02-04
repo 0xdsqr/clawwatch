@@ -1,12 +1,5 @@
 import { memo } from "react";
-import {
-  Bar,
-  BarChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { formatCost } from "@/lib/utils";
 
 interface AgentCostData {
@@ -47,9 +40,7 @@ function tooltipFormatter(value: number | undefined) {
   return [0, "Cost"];
 }
 
-export const CostByAgentChartInternal = memo(function CostByAgentChartInternal({
-  data,
-}: Props) {
+export const CostByAgentChartInternal = memo(function CostByAgentChartInternal({ data }: Props) {
   const dataWithColors = data.map((item, i) => ({
     ...item,
     fill: AGENT_COLORS[i % AGENT_COLORS.length],

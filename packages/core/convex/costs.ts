@@ -40,19 +40,18 @@ export const byTimeRange = query({
             .gte("timestamp", args.startTime)
             .lte("timestamp", args.endTime),
         )
-        .order("desc").take(500);
+        .order("desc")
+        .take(500);
     }
 
     // All agents
     return await ctx.db
       .query("costRecords")
       .withIndex("by_period", (q) =>
-        q
-          .eq("period", "hourly")
-          .gte("timestamp", args.startTime)
-          .lte("timestamp", args.endTime),
+        q.eq("period", "hourly").gte("timestamp", args.startTime).lte("timestamp", args.endTime),
       )
-      .order("desc").take(500);
+      .order("desc")
+      .take(500);
   },
 });
 
@@ -137,17 +136,12 @@ export const byAgent = query({
     const records = await ctx.db
       .query("costRecords")
       .withIndex("by_period", (q) =>
-        q
-          .eq("period", "hourly")
-          .gte("timestamp", args.startTime)
-          .lte("timestamp", args.endTime),
+        q.eq("period", "hourly").gte("timestamp", args.startTime).lte("timestamp", args.endTime),
       )
-      .order("desc").take(500);
+      .order("desc")
+      .take(500);
 
-    const agentTotals = new Map<
-      string,
-      { cost: number; tokens: number; requests: number }
-    >();
+    const agentTotals = new Map<string, { cost: number; tokens: number; requests: number }>();
     for (const r of records) {
       const existing = agentTotals.get(r.agentId) ?? {
         cost: 0,
@@ -180,10 +174,7 @@ export const modelBreakdown = query({
   args: { startTime: v.number(), endTime: v.number() },
   handler: async (ctx, args) => {
     // Read all cache entries and filter for model:* keys in range
-    const allCache = await ctx.db
-      .query("statsCache")
-      .withIndex("by_key")
-      .take(500);
+    const allCache = await ctx.db.query("statsCache").withIndex("by_key").take(500);
 
     const startDate = new Date(args.startTime).toISOString().slice(0, 10);
     const endDate = new Date(args.endTime).toISOString().slice(0, 10);
@@ -248,12 +239,10 @@ export const topSessions = query({
     const records = await ctx.db
       .query("costRecords")
       .withIndex("by_period", (q) =>
-        q
-          .eq("period", "hourly")
-          .gte("timestamp", args.startTime)
-          .lte("timestamp", args.endTime),
+        q.eq("period", "hourly").gte("timestamp", args.startTime).lte("timestamp", args.endTime),
       )
-      .order("desc").take(500);
+      .order("desc")
+      .take(500);
 
     const sessionTotals = new Map<
       string,

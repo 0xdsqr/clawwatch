@@ -19,9 +19,7 @@ import { api } from "../convex/_generated/api.js";
 const GATEWAY_URL = Bun.env.GATEWAY_URL;
 const GATEWAY_TOKEN = Bun.env.GATEWAY_TOKEN;
 const CONVEX_URL = Bun.env.CONVEX_URL ?? "http://127.0.0.1:3210";
-const SESSION_POLL_INTERVAL_MS = parseInt(
-  Bun.env.SESSION_POLL_INTERVAL ?? "60000",
-); // 60 seconds
+const SESSION_POLL_INTERVAL_MS = parseInt(Bun.env.SESSION_POLL_INTERVAL ?? "60000"); // 60 seconds
 const SESSIONS_DIR = Bun.env.SESSIONS_DIR ?? "/home/moltbot/.clawdbot/agents";
 
 // Connection management
@@ -116,9 +114,7 @@ async function pollSessions(): Promise<void> {
       sessions: mapped,
     });
 
-    console.log(
-      `[ws] Session poll: ingested ${ingested} sessions (${responseTimeMs}ms)`,
-    );
+    console.log(`[ws] Session poll: ingested ${ingested} sessions (${responseTimeMs}ms)`);
   } catch (err) {
     console.error("[ws] Error in session polling:", err);
   }
@@ -156,12 +152,7 @@ async function scanHistoricalTranscripts(): Promise<void> {
 
         const activities: Array<{
           agentName: string;
-          type:
-            | "message_sent"
-            | "message_received"
-            | "tool_call"
-            | "error"
-            | "heartbeat";
+          type: "message_sent" | "message_received" | "tool_call" | "error" | "heartbeat";
           summary: string;
           sessionKey: string | undefined;
           channel: string | undefined;
@@ -170,8 +161,7 @@ async function scanHistoricalTranscripts(): Promise<void> {
         for (const line of lines) {
           try {
             const entry = JSON.parse(line);
-            if (entry.type !== "message" || !entry.message?.usage?.cost)
-              continue;
+            if (entry.type !== "message" || !entry.message?.usage?.cost) continue;
 
             const msg = entry.message;
             const ts = msg.timestamp ?? new Date(entry.timestamp).getTime();
@@ -199,9 +189,7 @@ async function scanHistoricalTranscripts(): Promise<void> {
 
             // Extract activity
             if (msg.role === "assistant" && msg.content) {
-              for (const block of Array.isArray(msg.content)
-                ? msg.content
-                : []) {
+              for (const block of Array.isArray(msg.content) ? msg.content : []) {
                 if (block.type === "toolCall") {
                   activities.push({
                     agentName: agentDir,
@@ -234,10 +222,9 @@ async function scanHistoricalTranscripts(): Promise<void> {
 
           for (let i = 0; i < costEntries.length; i += CHUNK_SIZE) {
             const chunk = costEntries.slice(i, i + CHUNK_SIZE);
-            const { ingested } = await convex.mutation(
-              api.collector.ingestCosts,
-              { entries: chunk },
-            );
+            const { ingested } = await convex.mutation(api.collector.ingestCosts, {
+              entries: chunk,
+            });
             totalIngested += ingested;
           }
 
@@ -252,18 +239,12 @@ async function scanHistoricalTranscripts(): Promise<void> {
             }
           >();
           for (const entry of costEntries) {
-            const dateStr = new Date(entry.timestamp)
-              .toISOString()
-              .slice(0, 10);
+            const dateStr = new Date(entry.timestamp).toISOString().slice(0, 10);
             const hourKey = Math.floor(entry.timestamp / 3600000) * 3600000;
 
             // Aggregate by time bucket AND by model
             const modelKey = `model:${dateStr}:${entry.model}`;
-            for (const key of [
-              `today:${dateStr}`,
-              `hour:${hourKey}`,
-              modelKey,
-            ]) {
+            for (const key of [`today:${dateStr}`, `hour:${hourKey}`, modelKey]) {
               const existing = cacheDeltas.get(key) ?? {
                 cost: 0,
                 inputTokens: 0,
@@ -279,9 +260,10 @@ async function scanHistoricalTranscripts(): Promise<void> {
           }
 
           // Send aggregated cache updates in small batches
-          const cacheUpdates = Array.from(cacheDeltas.entries()).map(
-            ([key, data]) => ({ key, ...data }),
-          );
+          const cacheUpdates = Array.from(cacheDeltas.entries()).map(([key, data]) => ({
+            key,
+            ...data,
+          }));
           for (let i = 0; i < cacheUpdates.length; i += 10) {
             await convex.mutation(api.collector.updateStatsCache, {
               updates: cacheUpdates.slice(i, i + 10),
@@ -296,12 +278,9 @@ async function scanHistoricalTranscripts(): Promise<void> {
         // Limit activities to prevent flooding
         if (activities.length > 0) {
           const recentActivities = activities.slice(-20);
-          const { ingested } = await convex.mutation(
-            api.collector.ingestActivities,
-            {
-              activities: recentActivities,
-            },
-          );
+          const { ingested } = await convex.mutation(api.collector.ingestActivities, {
+            activities: recentActivities,
+          });
           console.log(
             `[ws] Historical backfill: ingested ${ingested} activities from ${agentDir}/${file}`,
           );
@@ -342,28 +321,29 @@ async function handleEvent(event: GatewayEvent): Promise<void> {
         await handleChatEvent(event.payload);
         break;
       default:
-        console.log(`[ws] Unhandled event type: ${event.event}`, JSON.stringify(event.payload).slice(0, 200));
+        console.log(
+          `[ws] Unhandled event type: ${event.event}`,
+          JSON.stringify(event.payload).slice(0, 200),
+        );
     }
   } catch (err) {
     console.error(`[ws] Error handling ${event.event} event:`, err);
   }
 }
 
-async function handleAgentEvent(
-  payload: Record<string, unknown>,
-): Promise<void> {
+async function handleAgentEvent(payload: Record<string, unknown>): Promise<void> {
   // Extract agent info from payload and ingest as activity
   const agent = payload.agent as Record<string, unknown> | undefined;
   const agentName = String(agent?.name || payload.agentName || "unknown");
-  const activityType = String(payload.type || "message_sent");
-
-  if (!sessionKey || !stream || !data) return;
+  let activityType = String(payload.type || "message_sent");
+  const sessionKey = payload.sessionKey as string | undefined;
+  const stream = payload.stream as string | undefined;
+  const data = payload.data as Record<string, unknown> | undefined;
+  let summary = "Agent activity";
 
   const message = payload.message as Record<string, unknown> | undefined;
   if (message?.content) {
-    const contentBlocks = message.content as
-      | Array<Record<string, string>>
-      | string;
+    const contentBlocks = message.content as Array<Record<string, string>> | string;
     const content = Array.isArray(contentBlocks)
       ? contentBlocks.map((c) => c.text || c.type || "").join(" ")
       : String(contentBlocks);
@@ -372,6 +352,22 @@ async function handleAgentEvent(
     summary = `Tool call: ${String(payload.tool)}`;
   } else if (payload.activity) {
     summary = String(payload.activity).slice(0, 80);
+  }
+
+  if (stream === "tool_call") {
+    const toolName = data?.name ?? data?.tool ?? "unknown";
+    activityType = "tool_call";
+    summary = `Tool: ${String(toolName)}`;
+  } else if (stream === "error") {
+    activityType = "error";
+    summary = String(data?.message ?? data?.error ?? "Unknown error").slice(0, 80);
+  }
+
+  if (activityType === "session_ended") {
+    const cost = (message?.usage as Record<string, unknown> | undefined)?.cost as
+      | Record<string, unknown>
+      | undefined;
+    summary = `Run ended${cost ? ` ($${Number(cost.total ?? 0).toFixed(4)})` : ""}`;
   }
 
   // Ingest cost if available
@@ -385,44 +381,14 @@ async function handleAgentEvent(
       model: String(message?.model || "unknown"),
       inputTokens: Number(usage.input || 0),
       outputTokens: Number(usage.output || 0),
-      cacheReadTokens:
-        usage.cacheRead != null ? Number(usage.cacheRead) : undefined,
-      cacheWriteTokens:
-        usage.cacheWrite != null ? Number(usage.cacheWrite) : undefined,
+      cacheReadTokens: usage.cacheRead != null ? Number(usage.cacheRead) : undefined,
+      cacheWriteTokens: usage.cacheWrite != null ? Number(usage.cacheWrite) : undefined,
       totalCost: Number(usageCost.total || 0),
       timestamp: Number(payload.timestamp || Date.now()),
     };
 
-      await convex.mutation(api.collector.ingestActivities, {
-        activities: [{
-          agentName,
-          type: "session_ended",
-          summary: `Run ended${cost ? ` ($${Number(cost.total ?? 0).toFixed(4)})` : ""}`,
-          sessionKey,
-          channel: sessionKey.split(":")[2],
-        }],
-      });
-    }
-  } else if (stream === "tool_call") {
-    const toolName = data.name ?? data.tool ?? "unknown";
-    await convex.mutation(api.collector.ingestActivities, {
-      activities: [{
-        agentName,
-        type: "tool_call",
-        summary: `Tool: ${String(toolName)}`,
-        sessionKey,
-        channel: sessionKey.split(":")[2],
-      }],
-    });
-  } else if (stream === "error") {
-    await convex.mutation(api.collector.ingestActivities, {
-      activities: [{
-        agentName,
-        type: "error",
-        summary: String(data.message ?? data.error ?? "Unknown error").slice(0, 80),
-        sessionKey,
-        channel: sessionKey.split(":")[2],
-      }],
+    await convex.mutation(api.collector.ingestCosts, {
+      entries: [costEntry],
     });
 
     // Update stats cache for real-time data
@@ -475,9 +441,7 @@ async function handleAgentEvent(
   });
 }
 
-async function handleHealthEvent(
-  payload: Record<string, unknown>,
-): Promise<void> {
+async function handleHealthEvent(payload: Record<string, unknown>): Promise<void> {
   const agent = payload.agent as Record<string, unknown> | undefined;
   const agentName = String(agent?.name || payload.agentName || "unknown");
 
@@ -488,7 +452,9 @@ async function handleHealthEvent(
       await convex.mutation(api.collector.recordHealthCheck, {
         agentName,
         responseTimeMs: durationMs,
-        activeSessionCount: sessions ? sessions.filter((s: any) => String(s.key ?? "").includes(agentName)).length : 0,
+        activeSessionCount: sessions
+          ? sessions.filter((s: any) => String(s.key ?? "").includes(agentName)).length
+          : 0,
         totalTokensLastHour: 0,
         costLastHour: 0,
         errorCount: 0,
@@ -509,9 +475,7 @@ async function handleHealthEvent(
   }
 }
 
-async function handleHeartbeatEvent(
-  payload: Record<string, unknown>,
-): Promise<void> {
+async function handleHeartbeatEvent(payload: Record<string, unknown>): Promise<void> {
   const agent = payload.agent as Record<string, unknown> | undefined;
   const agentName = String(agent?.name || payload.agentName || "unknown");
 
@@ -528,9 +492,7 @@ async function handleHeartbeatEvent(
   });
 }
 
-async function handlePresenceEvent(
-  payload: Record<string, unknown>,
-): Promise<void> {
+async function handlePresenceEvent(payload: Record<string, unknown>): Promise<void> {
   const agent = payload.agent as Record<string, unknown> | undefined;
   const agentName = String(agent?.name || payload.agentName || "unknown");
   const status = String(payload.status || payload.presence || "unknown");
@@ -539,10 +501,7 @@ async function handlePresenceEvent(
     activities: [
       {
         agentName,
-        type:
-          status === "online"
-            ? ("session_started" as const)
-            : ("session_ended" as const),
+        type: status === "online" ? ("session_started" as const) : ("session_ended" as const),
         summary: `Agent ${status}`,
         sessionKey: payload.sessionKey as string | undefined,
         channel: payload.channel as string | undefined,
@@ -551,9 +510,7 @@ async function handlePresenceEvent(
   });
 }
 
-async function handleChatEvent(
-  payload: Record<string, unknown>,
-): Promise<void> {
+async function handleChatEvent(payload: Record<string, unknown>): Promise<void> {
   const agent = payload.agent as Record<string, unknown> | undefined;
   const agentName = String(agent?.name || payload.agentName || "unknown");
 
@@ -590,18 +547,20 @@ async function handleChatEvent(
   const cost = (usage?.cost as Record<string, unknown>) ?? undefined;
   if (usage && cost) {
     await convex.mutation(api.collector.ingestCosts, {
-      entries: [{
-        agentName,
-        sessionKey,
-        provider: String(message.provider || "unknown"),
-        model: String(message.model || "unknown"),
-        inputTokens: Number(usage.input ?? usage.inputTokens ?? 0),
-        outputTokens: Number(usage.output ?? usage.outputTokens ?? 0),
-        cacheReadTokens: usage.cacheRead != null ? Number(usage.cacheRead) : undefined,
-        cacheWriteTokens: usage.cacheWrite != null ? Number(usage.cacheWrite) : undefined,
-        totalCost: Number(cost.total ?? 0),
-        timestamp: Number(message.timestamp || Date.now()),
-      }],
+      entries: [
+        {
+          agentName,
+          sessionKey,
+          provider: String(message.provider || "unknown"),
+          model: String(message.model || "unknown"),
+          inputTokens: Number(usage.input ?? usage.inputTokens ?? 0),
+          outputTokens: Number(usage.output ?? usage.outputTokens ?? 0),
+          cacheReadTokens: usage.cacheRead != null ? Number(usage.cacheRead) : undefined,
+          cacheWriteTokens: usage.cacheWrite != null ? Number(usage.cacheWrite) : undefined,
+          totalCost: Number(cost.total ?? 0),
+          timestamp: Number(message.timestamp || Date.now()),
+        },
+      ],
     });
   }
 }
@@ -609,17 +568,13 @@ async function handleChatEvent(
 async function connect(): Promise<void> {
   const currentConnectionId = connectionId++;
 
-  console.log(
-    `[ws] Connecting to ${wsUrl} (connection ${currentConnectionId})...`,
-  );
+  console.log(`[ws] Connecting to ${wsUrl} (connection ${currentConnectionId})...`);
 
   try {
     ws = new WebSocket(wsUrl);
 
     ws.onopen = async () => {
-      console.log(
-        `[ws] Connected to gateway WebSocket (connection ${currentConnectionId})`,
-      );
+      console.log(`[ws] Connected to gateway WebSocket (connection ${currentConnectionId})`);
     };
 
     ws.onmessage = async (event) => {
@@ -664,10 +619,7 @@ async function connect(): Promise<void> {
 
             // Start session polling timer
             if (sessionPollTimer) clearInterval(sessionPollTimer);
-            sessionPollTimer = setInterval(
-              pollSessions,
-              SESSION_POLL_INTERVAL_MS,
-            );
+            sessionPollTimer = setInterval(pollSessions, SESSION_POLL_INTERVAL_MS);
           } else {
             console.error("[ws] Authentication failed:", frame.error);
             ws!.close();
@@ -682,10 +634,7 @@ async function connect(): Promise<void> {
     };
 
     ws.onerror = (error) => {
-      console.error(
-        `[ws] WebSocket error (connection ${currentConnectionId}):`,
-        error,
-      );
+      console.error(`[ws] WebSocket error (connection ${currentConnectionId}):`, error);
     };
 
     ws.onclose = (event) => {
@@ -726,9 +675,7 @@ async function evaluateAlerts(): Promise<void> {
   try {
     const result = await convex.mutation(api.evaluateAlerts.evaluate, {});
     if (result.fired > 0) {
-      console.log(
-        `[ws] ⚠️  Fired ${result.fired} alerts (evaluated ${result.evaluated} rules)`,
-      );
+      console.log(`[ws] ⚠️  Fired ${result.fired} alerts (evaluated ${result.evaluated} rules)`);
     }
   } catch (err) {
     console.error("[ws] Error evaluating alerts:", err);
@@ -747,9 +694,7 @@ async function main(): Promise<void> {
   await connect();
 
   // Historical backfill in background (don't block the event loop)
-  scanHistoricalTranscripts().catch((err) =>
-    console.error("[ws] Background backfill error:", err),
-  );
+  scanHistoricalTranscripts().catch((err) => console.error("[ws] Background backfill error:", err));
 
   // Run alert evaluation every minute
   setInterval(evaluateAlerts, 60000);

@@ -1,8 +1,4 @@
-import {
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-} from "@clawwatch/ui/components/sidebar";
+import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@clawwatch/ui/components/sidebar";
 import { Monitor, Moon, Sun } from "lucide-react";
 import { useTheme } from "@/components/theme-provider";
 
@@ -33,9 +29,7 @@ export function NavFooter() {
       </SidebarMenuItem>
       <SidebarMenuItem>
         <div className="px-2 py-1">
-          <span className="text-[10px] font-mono text-muted-foreground/40">
-            v0.1.0
-          </span>
+          <span className="text-[10px] font-mono text-muted-foreground/40">v0.1.0</span>
         </div>
       </SidebarMenuItem>
     </SidebarMenu>

@@ -23,14 +23,8 @@ export function NavMain({ items }: NavMainProps) {
           {items.map((item) => (
             <SidebarMenuItem key={item.title}>
               <SidebarMenuButton
-                isActive={
-                  item.url === "/"
-                    ? currentPath === "/"
-                    : currentPath.startsWith(item.url)
-                }
-                render={({ ref: _ref, ...props }) => (
-                  <Link {...props} to={item.url} />
-                )}
+                isActive={item.url === "/" ? currentPath === "/" : currentPath.startsWith(item.url)}
+                render={({ ref: _ref, ...props }) => <Link {...props} to={item.url} />}
               >
                 <item.icon />
                 <span>{item.title}</span>

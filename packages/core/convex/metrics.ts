@@ -25,9 +25,7 @@ export const healthTimeSeries = query({
       for (const agent of agents) {
         const agentChecks = await ctx.db
           .query("healthChecks")
-          .withIndex("by_agent_time", (q) =>
-            q.eq("agentId", agent._id).gte("timestamp", startTime),
-          )
+          .withIndex("by_agent_time", (q) => q.eq("agentId", agent._id).gte("timestamp", startTime))
           .collect();
         checks.push(...agentChecks);
       }
@@ -67,9 +65,7 @@ export const costTimeSeries = query({
     } else {
       records = await ctx.db
         .query("costRecords")
-        .withIndex("by_period", (q) =>
-          q.eq("period", "hourly").gte("timestamp", startTime),
-        )
+        .withIndex("by_period", (q) => q.eq("period", "hourly").gte("timestamp", startTime))
         .collect();
     }
 
@@ -125,8 +121,7 @@ export const activityTimeSeries = query({
       bucket.total++;
       if (a.type === "error") bucket.errors++;
       if (a.type === "tool_call") bucket.toolCalls++;
-      if (a.type === "message_sent" || a.type === "message_received")
-        bucket.messages++;
+      if (a.type === "message_sent" || a.type === "message_received") bucket.messages++;
       buckets.set(key, bucket);
     }
 

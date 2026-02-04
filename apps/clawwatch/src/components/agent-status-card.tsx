@@ -13,9 +13,7 @@ interface Props {
   agentId: Id<"agents">;
 }
 
-export const AgentStatusCard = memo(function AgentStatusCard({
-  agentId,
-}: Props) {
+export const AgentStatusCard = memo(function AgentStatusCard({ agentId }: Props) {
   const health = useQuery(api.agents.healthSummary, { agentId });
 
   const formattedCost = useMemo(
@@ -51,28 +49,17 @@ export const AgentStatusCard = memo(function AgentStatusCard({
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Circle
-              className={cn(
-                "h-2.5 w-2.5 fill-current",
-                statusColor(agent.status),
-              )}
-            />
+            <Circle className={cn("h-2.5 w-2.5 fill-current", statusColor(agent.status))} />
             <span className="font-semibold">{agent.name}</span>
           </div>
-          <span className="text-xs text-muted-foreground">
-            {formattedHeartbeat}
-          </span>
+          <span className="text-xs text-muted-foreground">{formattedHeartbeat}</span>
         </div>
 
         {/* Model / Channel */}
         {agent.config && (
           <div className="flex gap-2">
-            {agent.config.model && (
-              <Badge variant="secondary">{agent.config.model}</Badge>
-            )}
-            {agent.config.channel && (
-              <Badge variant="secondary">{agent.config.channel}</Badge>
-            )}
+            {agent.config.model && <Badge variant="secondary">{agent.config.model}</Badge>}
+            {agent.config.channel && <Badge variant="secondary">{agent.config.channel}</Badge>}
           </div>
         )}
 
@@ -110,12 +97,7 @@ export const AgentStatusCard = memo(function AgentStatusCard({
             />
             <div>
               <p className="text-xs text-muted-foreground">Errors</p>
-              <p
-                className={cn(
-                  "text-sm font-medium",
-                  errorCount > 0 ? "text-red-400" : "",
-                )}
-              >
+              <p className={cn("text-sm font-medium", errorCount > 0 ? "text-red-400" : "")}>
                 {errorCount}
               </p>
             </div>
@@ -123,21 +105,14 @@ export const AgentStatusCard = memo(function AgentStatusCard({
         </div>
 
         {/* Health bar */}
-        <div
-          className={cn(
-            "h-1 rounded-full",
-            isHealthy ? "bg-emerald-500/40" : "bg-red-500/40",
-          )}
-        >
+        <div className={cn("h-1 rounded-full", isHealthy ? "bg-emerald-500/40" : "bg-red-500/40")}>
           <div
             className={cn(
               "h-full rounded-full transition-all",
               isHealthy ? "bg-emerald-500" : "bg-red-500",
             )}
             style={{
-              width: isHealthy
-                ? "100%"
-                : `${Math.max(10, 100 - errorCount * 20)}%`,
+              width: isHealthy ? "100%" : `${Math.max(10, 100 - errorCount * 20)}%`,
             }}
           />
         </div>

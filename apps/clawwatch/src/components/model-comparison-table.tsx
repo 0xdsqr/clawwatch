@@ -45,9 +45,7 @@ export const ModelComparisonTable = memo(function ModelComparisonTable({
       const aVal = a[sortKey];
       const bVal = b[sortKey];
       if (typeof aVal === "string" && typeof bVal === "string") {
-        return sortDir === "asc"
-          ? aVal.localeCompare(bVal)
-          : bVal.localeCompare(aVal);
+        return sortDir === "asc" ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
       }
       return sortDir === "asc"
         ? (aVal as number) - (bVal as number)
@@ -66,9 +64,7 @@ export const ModelComparisonTable = memo(function ModelComparisonTable({
 
   const SortIcon = ({ column }: { column: SortKey }) => {
     if (sortKey !== column) {
-      return (
-        <ArrowUpDown className="ml-1 inline h-3 w-3 text-muted-foreground/50" />
-      );
+      return <ArrowUpDown className="ml-1 inline h-3 w-3 text-muted-foreground/50" />;
     }
     return sortDir === "asc" ? (
       <ArrowUp className="ml-1 inline h-3 w-3" />
@@ -132,18 +128,14 @@ export const ModelComparisonTable = memo(function ModelComparisonTable({
           {sortedData.map((row) => (
             <TableRow key={row.model}>
               <TableCell className="text-xs font-medium">{row.model}</TableCell>
-              <TableCell className="text-right font-mono text-xs">
-                {row.requests}
-              </TableCell>
+              <TableCell className="text-right font-mono text-xs">{row.requests}</TableCell>
               <TableCell className="text-right font-mono text-xs">
                 {formatTokens(row.inputTokens)}
               </TableCell>
               <TableCell className="text-right font-mono text-xs">
                 {formatTokens(row.outputTokens)}
               </TableCell>
-              <TableCell className="text-right font-mono text-xs">
-                {formatCost(row.cost)}
-              </TableCell>
+              <TableCell className="text-right font-mono text-xs">{formatCost(row.cost)}</TableCell>
               <TableCell className="text-right font-mono text-xs">
                 {formatCost(row.costPer1KTokens)}
               </TableCell>

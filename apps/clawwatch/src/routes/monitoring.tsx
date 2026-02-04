@@ -58,37 +58,27 @@ function MonitoringPage() {
   // Memoize time range arguments to prevent infinite re-renders
   const timeRangeArgs = useMemo(() => {
     const now = new Date();
-    const roundedTime = new Date(
-      Math.floor(now.getTime() / (60 * 60 * 1000)) * (60 * 60 * 1000),
-    );
+    const roundedTime = new Date(Math.floor(now.getTime() / (60 * 60 * 1000)) * (60 * 60 * 1000));
 
     switch (timeRange) {
       case "24h":
         return {
-          startTime: new Date(
-            roundedTime.getTime() - 24 * 60 * 60 * 1000,
-          ).getTime(),
+          startTime: new Date(roundedTime.getTime() - 24 * 60 * 60 * 1000).getTime(),
           endTime: roundedTime.getTime(),
         };
       case "7d":
         return {
-          startTime: new Date(
-            roundedTime.getTime() - 7 * 24 * 60 * 60 * 1000,
-          ).getTime(),
+          startTime: new Date(roundedTime.getTime() - 7 * 24 * 60 * 60 * 1000).getTime(),
           endTime: roundedTime.getTime(),
         };
       case "30d":
         return {
-          startTime: new Date(
-            roundedTime.getTime() - 30 * 24 * 60 * 60 * 1000,
-          ).getTime(),
+          startTime: new Date(roundedTime.getTime() - 30 * 24 * 60 * 60 * 1000).getTime(),
           endTime: roundedTime.getTime(),
         };
       default:
         return {
-          startTime: new Date(
-            roundedTime.getTime() - 24 * 60 * 60 * 1000,
-          ).getTime(),
+          startTime: new Date(roundedTime.getTime() - 24 * 60 * 60 * 1000).getTime(),
           endTime: roundedTime.getTime(),
         };
     }
@@ -105,13 +95,9 @@ function MonitoringPage() {
   // Daily cost trend for 30 days
   const dailyCostArgs = useMemo(() => {
     const now = new Date();
-    const roundedTime = new Date(
-      Math.floor(now.getTime() / (60 * 60 * 1000)) * (60 * 60 * 1000),
-    );
+    const roundedTime = new Date(Math.floor(now.getTime() / (60 * 60 * 1000)) * (60 * 60 * 1000));
     return {
-      startTime: new Date(
-        roundedTime.getTime() - 30 * 24 * 60 * 60 * 1000,
-      ).getTime(),
+      startTime: new Date(roundedTime.getTime() - 30 * 24 * 60 * 60 * 1000).getTime(),
       endTime: roundedTime.getTime(),
     };
   }, []);
@@ -137,10 +123,8 @@ function MonitoringPage() {
   const filteredCostData = useMemo(() => {
     if (!costData) return [];
     return costData.filter((r: CostRecord) => {
-      if (selectedModels.length > 0 && !selectedModels.includes(r.model))
-        return false;
-      if (selectedAgents.length > 0 && !selectedAgents.includes(r.agentId))
-        return false;
+      if (selectedModels.length > 0 && !selectedModels.includes(r.model)) return false;
+      if (selectedAgents.length > 0 && !selectedAgents.includes(r.agentId)) return false;
       return true;
     });
   }, [costData, selectedModels, selectedAgents]);
@@ -239,10 +223,7 @@ function MonitoringPage() {
 
   // Summary stat calculations
   const periodCost = useMemo(() => {
-    const total = filteredCostData.reduce(
-      (sum: number, r: CostRecord) => sum + r.cost,
-      0,
-    );
+    const total = filteredCostData.reduce((sum: number, r: CostRecord) => sum + r.cost, 0);
     return formatCost(total);
   }, [filteredCostData]);
 
@@ -260,10 +241,7 @@ function MonitoringPage() {
 
   const projectedMonthlyCost = useMemo(() => {
     if (!filteredCostData.length) return "$0.00";
-    const total = filteredCostData.reduce(
-      (sum: number, r: CostRecord) => sum + r.cost,
-      0,
-    );
+    const total = filteredCostData.reduce((sum: number, r: CostRecord) => sum + r.cost, 0);
 
     // Calculate time span of data
     const hours = timeRange === "24h" ? 24 : timeRange === "7d" ? 168 : 720;
@@ -276,9 +254,7 @@ function MonitoringPage() {
   const costSparkline = useMemo(() => {
     if (!filteredCostData.length) return [];
     // Bucket into chunks for sparkline
-    const sorted = [...filteredCostData].sort(
-      (a, b) => (a.timestamp || 0) - (b.timestamp || 0),
-    );
+    const sorted = [...filteredCostData].sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
     const bucketSize = Math.max(1, Math.floor(sorted.length / 20));
     const sparkline: { value: number }[] = [];
     for (let i = 0; i < sorted.length; i += bucketSize) {
@@ -291,17 +267,12 @@ function MonitoringPage() {
 
   const tokenSparkline = useMemo(() => {
     if (!filteredCostData.length) return [];
-    const sorted = [...filteredCostData].sort(
-      (a, b) => (a.timestamp || 0) - (b.timestamp || 0),
-    );
+    const sorted = [...filteredCostData].sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
     const bucketSize = Math.max(1, Math.floor(sorted.length / 20));
     const sparkline: { value: number }[] = [];
     for (let i = 0; i < sorted.length; i += bucketSize) {
       const slice = sorted.slice(i, i + bucketSize);
-      const value = slice.reduce(
-        (sum, r) => sum + r.inputTokens + r.outputTokens,
-        0,
-      );
+      const value = slice.reduce((sum, r) => sum + r.inputTokens + r.outputTokens, 0);
       sparkline.push({ value });
     }
     return sparkline;
@@ -378,9 +349,7 @@ function MonitoringPage() {
       <Card>
         <CardHeader>
           <CardTitle>Cost Over Time by Model</CardTitle>
-          <CardDescription>
-            Stacked breakdown showing cost contribution per model
-          </CardDescription>
+          <CardDescription>Stacked breakdown showing cost contribution per model</CardDescription>
         </CardHeader>
         <CardContent>
           <CostByModelChart data={costByModelTimeSeriesData} />
@@ -421,9 +390,7 @@ function MonitoringPage() {
         <Card>
           <CardHeader>
             <CardTitle>Daily Cost Trend</CardTitle>
-            <CardDescription>
-              Cost per day over the last 30 days
-            </CardDescription>
+            <CardDescription>Cost per day over the last 30 days</CardDescription>
           </CardHeader>
           <CardContent>
             <DailyCostTrend data={dailyTrendData} />
@@ -433,9 +400,7 @@ function MonitoringPage() {
         <Card>
           <CardHeader>
             <CardTitle>Cache Performance</CardTitle>
-            <CardDescription>
-              Cache utilization and estimated savings
-            </CardDescription>
+            <CardDescription>Cache utilization and estimated savings</CardDescription>
           </CardHeader>
           <CardContent>
             <CachePerformance data={cacheData} />
@@ -448,9 +413,7 @@ function MonitoringPage() {
         <Card>
           <CardHeader>
             <CardTitle>Token Distribution</CardTitle>
-            <CardDescription>
-              Input vs output vs cache token usage
-            </CardDescription>
+            <CardDescription>Input vs output vs cache token usage</CardDescription>
           </CardHeader>
           <CardContent>
             <TokenDistributionChart data={tokenDistributionData} />
@@ -460,9 +423,7 @@ function MonitoringPage() {
         <Card>
           <CardHeader>
             <CardTitle>Top Sessions by Cost</CardTitle>
-            <CardDescription>
-              Highest cost sessions in this period
-            </CardDescription>
+            <CardDescription>Highest cost sessions in this period</CardDescription>
           </CardHeader>
           <CardContent>
             <TopSessionsTable data={topSessionsData ?? []} />
@@ -492,12 +453,9 @@ function MonitoringPage() {
                   <div key={budget._id} className="rounded-lg border p-4">
                     <div className="mb-2 flex items-center justify-between">
                       <div>
-                        <span className="text-sm font-medium">
-                          {budget.name}
-                        </span>
+                        <span className="text-sm font-medium">{budget.name}</span>
                         <span className="ml-2 text-xs text-muted-foreground">
-                          {budget.period} ·{" "}
-                          {budget.hardStop ? "Hard stop" : "Alert only"}
+                          {budget.period} · {budget.hardStop ? "Hard stop" : "Alert only"}
                         </span>
                       </div>
                       <span className="font-mono text-sm">

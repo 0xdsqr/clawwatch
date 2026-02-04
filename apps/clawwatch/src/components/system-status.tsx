@@ -1,9 +1,4 @@
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@clawwatch/ui/components/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@clawwatch/ui/components/card";
 import { cn } from "@clawwatch/ui/lib/utils";
 import { api } from "@convex/api";
 import { useQuery } from "convex/react";
@@ -21,9 +16,7 @@ export const SystemStatus = memo(function SystemStatus() {
     if (!agents || agents.length === 0) return null;
 
     const now = Date.now();
-    const mostRecentHeartbeat = Math.max(
-      ...agents.map((a: Agent) => a.lastHeartbeat),
-    );
+    const mostRecentHeartbeat = Math.max(...agents.map((a: Agent) => a.lastHeartbeat));
     const gatewayConnected = now - mostRecentHeartbeat < STALE_THRESHOLD_MS;
     const onlineCount = agents.filter(
       (a: Agent) => now - a.lastHeartbeat < STALE_THRESHOLD_MS,
@@ -56,8 +49,7 @@ export const SystemStatus = memo(function SystemStatus() {
     );
   }
 
-  const { gatewayConnected, lastHeartbeat, onlineCount, offlineCount } =
-    statusInfo;
+  const { gatewayConnected, lastHeartbeat, onlineCount, offlineCount } = statusInfo;
 
   return (
     <Card className="border-border/50">
@@ -88,10 +80,7 @@ export const SystemStatus = memo(function SystemStatus() {
           <div className="flex items-center justify-between">
             <span className="text-muted-foreground">Last heartbeat</span>
             <span
-              className={cn(
-                "font-mono tabular-nums text-xs",
-                !gatewayConnected && "text-red-400",
-              )}
+              className={cn("font-mono tabular-nums text-xs", !gatewayConnected && "text-red-400")}
             >
               {timeAgo(lastHeartbeat)}
             </span>
@@ -103,9 +92,7 @@ export const SystemStatus = memo(function SystemStatus() {
               <span
                 className={cn(
                   "text-xs font-medium",
-                  onlineCount > 0
-                    ? "text-emerald-400"
-                    : "text-muted-foreground",
+                  onlineCount > 0 ? "text-emerald-400" : "text-muted-foreground",
                 )}
               >
                 {onlineCount} online
@@ -113,9 +100,7 @@ export const SystemStatus = memo(function SystemStatus() {
               {offlineCount > 0 && (
                 <>
                   <span className="text-muted-foreground/30">/</span>
-                  <span className="text-xs font-medium text-red-400">
-                    {offlineCount} offline
-                  </span>
+                  <span className="text-xs font-medium text-red-400">{offlineCount} offline</span>
                 </>
               )}
             </span>

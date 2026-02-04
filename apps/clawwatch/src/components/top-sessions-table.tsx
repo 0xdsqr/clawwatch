@@ -28,9 +28,7 @@ function truncateSessionKey(key: string): string {
   return `${key.slice(0, 8)}…${key.slice(-6)}`;
 }
 
-export const TopSessionsTable = memo(function TopSessionsTable({
-  data,
-}: TopSessionsTableProps) {
+export const TopSessionsTable = memo(function TopSessionsTable({ data }: TopSessionsTableProps) {
   if (data.length === 0) {
     return (
       <div className="flex h-[250px] items-center justify-center text-muted-foreground">

@@ -1,9 +1,4 @@
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@clawwatch/ui/components/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@clawwatch/ui/components/card";
 import { api } from "@convex/api";
 import { useQuery } from "convex/react";
 import { memo, useMemo } from "react";
@@ -100,9 +95,7 @@ export const TokenBreakdown = memo(function TokenBreakdown() {
           tokenTypes.map((type) => (
             <div key={type.label} className="space-y-1">
               <div className="flex justify-between items-baseline">
-                <span className="text-[13px] text-muted-foreground">
-                  {type.label}
-                </span>
+                <span className="text-[13px] text-muted-foreground">{type.label}</span>
                 <span className="text-[13px] font-mono tabular-nums text-foreground/80">
                   {formatTokens(type.data.count)}
                 </span>

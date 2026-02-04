@@ -1,14 +1,14 @@
 {
   "name": "clawwatch",
-  "description": "Agent monitoring, cost control, and alerting for Clawdbot and OpenClaw agents",
-  "type": "module",
   "private": true,
+  "description": "Agent monitoring, cost control, and alerting for Clawdbot and OpenClaw agents",
   "workspaces": [
     "apps/clawwatch",
     "packages/core",
     "packages/ui",
     "tooling/typescript"
   ],
+  "type": "module",
   "scripts": {
     "codegen": "bun run --filter='@clawwatch/core' codegen",
     "dev": "bun run codegen && bun run --filter='clawwatch-app' dev",
@@ -17,7 +17,10 @@
     "collector": "bun run --filter='@clawwatch/core' collector",
     "clean": "rm -rf packages/*/dist apps/*/dist apps/*/.output node_modules",
     "typecheck": "bun run --filter '*' typecheck",
-    "style:fix": "nix fmt ."
+    "lint": "bunx oxlint .",
+    "lint:fix": "bunx oxlint . --fix",
+    "format": "bunx oxfmt .",
+    "style:fix": "bunx oxfmt ."
   },
   "devDependencies": {
     "@types/bun": "latest",

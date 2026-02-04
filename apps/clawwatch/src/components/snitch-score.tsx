@@ -68,9 +68,7 @@ export const SnitchScore = memo(function SnitchScore({ agentId }: Props) {
   const sortedBreakdown = useMemo(
     () =>
       score
-        ? Object.entries(score.breakdown).sort(
-            ([, a], [, b]) => (b as number) - (a as number),
-          )
+        ? Object.entries(score.breakdown).sort(([, a], [, b]) => (b as number) - (a as number))
         : [],
     [score?.breakdown],
   );
@@ -99,16 +97,12 @@ export const SnitchScore = memo(function SnitchScore({ agentId }: Props) {
           </div>
           <div>
             <div className="flex items-baseline gap-2">
-              <span
-                className={cn("tabular-nums text-3xl font-bold", styles.color)}
-              >
+              <span className={cn("tabular-nums text-3xl font-bold", styles.color)}>
                 {score.score}
               </span>
               <span className="text-sm text-muted-foreground">/ 100</span>
             </div>
-            <p className={cn("text-sm font-medium", styles.color)}>
-              {score.label}
-            </p>
+            <p className={cn("text-sm font-medium", styles.color)}>{score.label}</p>
           </div>
         </div>
 
@@ -129,15 +123,10 @@ export const SnitchScore = memo(function SnitchScore({ agentId }: Props) {
             {sortedBreakdown.map(([type, count]) => {
               const Icon = TYPE_ICONS[type] ?? Eye;
               return (
-                <div
-                  key={type}
-                  className="flex items-center justify-between text-sm"
-                >
+                <div key={type} className="flex items-center justify-between text-sm">
                   <div className="flex items-center gap-2">
                     <Icon className="h-3.5 w-3.5 text-muted-foreground" />
-                    <span className="text-muted-foreground">
-                      {TYPE_LABELS[type] ?? type}
-                    </span>
+                    <span className="text-muted-foreground">{TYPE_LABELS[type] ?? type}</span>
                   </div>
                   <span className="font-mono text-xs">{count as number}</span>
                 </div>
@@ -153,10 +142,7 @@ export const SnitchScore = memo(function SnitchScore({ agentId }: Props) {
               Recent Snitching
             </p>
             {score.recentSnitches.map((snitch: SnitchEvent, i: number) => (
-              <div
-                key={i}
-                className="flex items-center gap-2 text-xs text-muted-foreground"
-              >
+              <div key={i} className="flex items-center gap-2 text-xs text-muted-foreground">
                 <span
                   className={cn(
                     "rounded px-1.5 py-0.5",
@@ -218,9 +204,7 @@ export const SnitchLeaderboard = memo(function SnitchLeaderboard() {
                 className="flex items-center justify-between rounded-lg p-2 hover:bg-muted/50"
               >
                 <div className="flex items-center gap-3">
-                  <span className="w-6 text-center text-lg">
-                    {i < 3 ? medals[i] : `${i + 1}.`}
-                  </span>
+                  <span className="w-6 text-center text-lg">{i < 3 ? medals[i] : `${i + 1}.`}</span>
                   <span className="text-sm font-medium">{entry.agentName}</span>
                 </div>
                 <div className="flex items-center gap-3">
@@ -228,10 +212,7 @@ export const SnitchLeaderboard = memo(function SnitchLeaderboard() {
                     {entry.totalSnitches} events
                   </span>
                   <span
-                    className={cn(
-                      "tabular-nums text-sm font-bold",
-                      scoreStyles(entry.score).color,
-                    )}
+                    className={cn("tabular-nums text-sm font-bold", scoreStyles(entry.score).color)}
                   >
                     {entry.score}
                   </span>

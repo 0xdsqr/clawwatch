@@ -69,19 +69,13 @@ export const createRule = mutation({
     config: v.object({
       threshold: v.optional(v.number()),
       windowMinutes: v.optional(v.number()),
-      comparison: v.optional(
-        v.union(v.literal("gt"), v.literal("lt"), v.literal("eq")),
-      ),
+      comparison: v.optional(v.union(v.literal("gt"), v.literal("lt"), v.literal("eq"))),
       metric: v.optional(v.string()),
       hardStop: v.optional(v.boolean()),
       percentageThreshold: v.optional(v.number()),
     }),
-    severity: v.optional(
-      v.union(v.literal("info"), v.literal("warning"), v.literal("critical")),
-    ),
-    channels: v.array(
-      v.union(v.literal("discord"), v.literal("email"), v.literal("webhook")),
-    ),
+    severity: v.optional(v.union(v.literal("info"), v.literal("warning"), v.literal("critical"))),
+    channels: v.array(v.union(v.literal("discord"), v.literal("email"), v.literal("webhook"))),
     cooldownMinutes: v.number(),
   },
   handler: async (ctx, args) => {
@@ -101,16 +95,12 @@ export const updateRule = mutation({
       v.object({
         threshold: v.optional(v.number()),
         windowMinutes: v.optional(v.number()),
-        comparison: v.optional(
-          v.union(v.literal("gt"), v.literal("lt"), v.literal("eq")),
-        ),
+        comparison: v.optional(v.union(v.literal("gt"), v.literal("lt"), v.literal("eq"))),
         metric: v.optional(v.string()),
       }),
     ),
     channels: v.optional(
-      v.array(
-        v.union(v.literal("discord"), v.literal("email"), v.literal("webhook")),
-      ),
+      v.array(v.union(v.literal("discord"), v.literal("email"), v.literal("webhook"))),
     ),
     isActive: v.optional(v.boolean()),
     cooldownMinutes: v.optional(v.number()),
@@ -138,19 +128,10 @@ export const fire = mutation({
     ruleId: v.id("alertRules"),
     agentId: v.optional(v.id("agents")),
     type: v.string(),
-    severity: v.union(
-      v.literal("info"),
-      v.literal("warning"),
-      v.literal("critical"),
-    ),
+    severity: v.union(v.literal("info"), v.literal("warning"), v.literal("critical")),
     title: v.string(),
     message: v.string(),
-    data: v.optional(
-      v.record(
-        v.string(),
-        v.union(v.string(), v.number(), v.boolean(), v.null()),
-      ),
-    ),
+    data: v.optional(v.record(v.string(), v.union(v.string(), v.number(), v.boolean(), v.null()))),
     channels: v.array(v.string()),
   },
   handler: async (ctx, args) => {

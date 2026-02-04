@@ -12,13 +12,10 @@ interface Props {
   data: CacheData;
 }
 
-export const CachePerformanceInternal = memo(function CachePerformanceInternal({
-  data,
-}: Props) {
+export const CachePerformanceInternal = memo(function CachePerformanceInternal({ data }: Props) {
   // Hit rate = cache reads / (cache reads + uncached input tokens)
   const totalRequested = data.cacheReadTokens + data.totalInputTokens;
-  const hitRate =
-    totalRequested > 0 ? (data.cacheReadTokens / totalRequested) * 100 : 0;
+  const hitRate = totalRequested > 0 ? (data.cacheReadTokens / totalRequested) * 100 : 0;
 
   const totalCacheTokens = data.cacheReadTokens + data.cacheWriteTokens;
 
@@ -53,12 +50,9 @@ export const CachePerformanceInternal = memo(function CachePerformanceInternal({
           </div>
         </div>
         <div className="space-y-1">
-          <p className="text-sm font-medium text-muted-foreground">
-            Cache Hit Rate
-          </p>
+          <p className="text-sm font-medium text-muted-foreground">Cache Hit Rate</p>
           <p className="text-xs text-muted-foreground">
-            {formatTokens(data.cacheReadTokens)} read /{" "}
-            {formatTokens(data.totalInputTokens)} input
+            {formatTokens(data.cacheReadTokens)} read / {formatTokens(data.totalInputTokens)} input
           </p>
         </div>
       </div>
@@ -66,33 +60,23 @@ export const CachePerformanceInternal = memo(function CachePerformanceInternal({
       {/* Stats Grid */}
       <div className="grid grid-cols-2 gap-4">
         <div className="rounded-lg border border-border p-3">
-          <p className="text-xs font-medium text-muted-foreground">
-            Cache Reads
-          </p>
+          <p className="text-xs font-medium text-muted-foreground">Cache Reads</p>
           <p className="mt-1 text-lg font-bold text-emerald-400">
             {formatTokens(data.cacheReadTokens)}
           </p>
         </div>
         <div className="rounded-lg border border-border p-3">
-          <p className="text-xs font-medium text-muted-foreground">
-            Cache Writes
-          </p>
+          <p className="text-xs font-medium text-muted-foreground">Cache Writes</p>
           <p className="mt-1 text-lg font-bold text-blue-400">
             {formatTokens(data.cacheWriteTokens)}
           </p>
         </div>
         <div className="rounded-lg border border-border p-3">
-          <p className="text-xs font-medium text-muted-foreground">
-            Total Cached
-          </p>
-          <p className="mt-1 text-lg font-bold">
-            {formatTokens(totalCacheTokens)}
-          </p>
+          <p className="text-xs font-medium text-muted-foreground">Total Cached</p>
+          <p className="mt-1 text-lg font-bold">{formatTokens(totalCacheTokens)}</p>
         </div>
         <div className="rounded-lg border border-border p-3">
-          <p className="text-xs font-medium text-muted-foreground">
-            Est. Savings
-          </p>
+          <p className="text-xs font-medium text-muted-foreground">Est. Savings</p>
           <p className="mt-1 text-lg font-bold text-emerald-400">
             {formatCost(data.estimatedSavings)}
           </p>

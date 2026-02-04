@@ -36,8 +36,7 @@ const tooltipLabelStyle = {
 } as const;
 
 function tooltipFormatter(value: number | undefined, name: string | undefined) {
-  if (name === "cost" && value !== undefined)
-    return [formatCost(value), "Cost"];
+  if (name === "cost" && value !== undefined) return [formatCost(value), "Cost"];
   return [value ?? 0, name];
 }
 
@@ -45,9 +44,7 @@ function yAxisFormatter(v: number) {
   return formatCost(v);
 }
 
-export const CostChartInternal = memo(function CostChartInternal({
-  data,
-}: Props) {
+export const CostChartInternal = memo(function CostChartInternal({ data }: Props) {
   const formatted = useMemo(
     () =>
       data.map((d) => ({
@@ -63,21 +60,14 @@ export const CostChartInternal = memo(function CostChartInternal({
   return (
     <div className="h-[280px] w-full min-h-[280px]">
       <ResponsiveContainer width="100%" height="100%">
-        <AreaChart
-          data={formatted}
-          margin={{ top: 4, right: 4, left: -8, bottom: 0 }}
-        >
+        <AreaChart data={formatted} margin={{ top: 4, right: 4, left: -8, bottom: 0 }}>
           <defs>
             <linearGradient id="costGradient" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="#a855f7" stopOpacity={0.35} />
               <stop offset="100%" stopColor="#a855f7" stopOpacity={0.02} />
             </linearGradient>
           </defs>
-          <CartesianGrid
-            strokeDasharray="3 3"
-            stroke="oklch(0.22 0.007 285)"
-            vertical={false}
-          />
+          <CartesianGrid strokeDasharray="3 3" stroke="oklch(0.22 0.007 285)" vertical={false} />
           <XAxis
             dataKey="time"
             tick={{ fill: "oklch(0.45 0 0)", fontSize: 11 }}

@@ -16,12 +16,7 @@ import {
   TableHeader,
   TableRow,
 } from "@clawwatch/ui/components/table";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@clawwatch/ui/components/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@clawwatch/ui/components/tabs";
 import { cn } from "@clawwatch/ui/lib/utils";
 import { api } from "@convex/api";
 import type { Id } from "@convex/dataModel";
@@ -186,9 +181,7 @@ function FilesTab({
   const updateWorkspacePath = useMutation(api.agents.updateWorkspacePath);
   const setDefaultPaths = useMutation(api.agents.setDefaultPaths);
 
-  const [pathInput, setPathInput] = useState(
-    () => workspacePath ?? `/home/moltbot/${agentName}`,
-  );
+  const [pathInput, setPathInput] = useState(() => workspacePath ?? `/home/moltbot/${agentName}`);
   const [saving, setSaving] = useState(false);
 
   // File tree state
@@ -410,15 +403,13 @@ function FilesTab({
             </div>
             <h3 className="text-lg font-semibold">Set Workspace Path</h3>
             <p className="text-sm text-muted-foreground">
-              Configure the file system path for this agent&apos;s workspace to
-              browse and edit files.
+              Configure the file system path for this agent&apos;s workspace to browse and edit
+              files.
             </p>
             <div className="flex items-center gap-2">
               <Input
                 value={pathInput}
-                onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                  setPathInput(e.target.value)
-                }
+                onChange={(e: ChangeEvent<HTMLInputElement>) => setPathInput(e.target.value)}
                 placeholder="/home/moltbot/agent-name"
                 className="font-mono text-sm"
               />
@@ -451,9 +442,7 @@ function FilesTab({
               onClick={() => loadDirectory()}
               title="Refresh"
             >
-              <Loader2
-                className={cn("h-3.5 w-3.5", treeLoading && "animate-spin")}
-              />
+              <Loader2 className={cn("h-3.5 w-3.5", treeLoading && "animate-spin")} />
             </Button>
           </div>
         </CardHeader>
@@ -465,9 +454,7 @@ function FilesTab({
           ) : treeError ? (
             <div className="p-3 text-sm text-destructive">{treeError}</div>
           ) : tree.length === 0 ? (
-            <div className="p-3 text-sm text-muted-foreground text-center">
-              No files found
-            </div>
+            <div className="p-3 text-sm text-muted-foreground text-center">No files found</div>
           ) : (
             <div className="space-y-0.5 py-1">
               {tree.map((node) => (
@@ -492,9 +479,7 @@ function FilesTab({
             <div className="text-center text-muted-foreground">
               <FileText className="h-10 w-10 mx-auto mb-3 opacity-40" />
               <p className="text-sm">Select a file to view</p>
-              <p className="text-xs mt-1 opacity-60">
-                Browse the tree on the left
-              </p>
+              <p className="text-xs mt-1 opacity-60">Browse the tree on the left</p>
             </div>
           </CardContent>
         ) : (
@@ -504,9 +489,7 @@ function FilesTab({
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 min-w-0">
                   {fileIcon(selectedFile.split("/").pop() ?? "", false)}
-                  <span className="text-sm font-mono truncate">
-                    {selectedFile}
-                  </span>
+                  <span className="text-sm font-mono truncate">{selectedFile}</span>
                   {fileMeta && (
                     <span className="text-xs text-muted-foreground shrink-0">
                       {fileMeta.size < 1024
@@ -534,12 +517,7 @@ function FilesTab({
                         <X className="h-3.5 w-3.5 mr-1" />
                         Cancel
                       </Button>
-                      <Button
-                        size="sm"
-                        className="h-7"
-                        onClick={saveFile}
-                        disabled={fileSaving}
-                      >
+                      <Button size="sm" className="h-7" onClick={saveFile} disabled={fileSaving}>
                         {fileSaving ? (
                           <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />
                         ) : (
@@ -580,10 +558,7 @@ function FilesTab({
                   spellCheck={false}
                 />
               ) : fileContent !== null ? (
-                <MarkdownRenderer
-                  content={fileContent}
-                  isMarkdown={selectedFile.endsWith(".md")}
-                />
+                <MarkdownRenderer content={fileContent} isMarkdown={selectedFile.endsWith(".md")} />
               ) : null}
             </CardContent>
           </>
@@ -595,13 +570,7 @@ function FilesTab({
 
 // ─── Basic markdown-aware renderer ───
 
-function MarkdownRenderer({
-  content,
-  isMarkdown,
-}: {
-  content: string;
-  isMarkdown: boolean;
-}) {
+function MarkdownRenderer({ content, isMarkdown }: { content: string; isMarkdown: boolean }) {
   if (!isMarkdown) {
     return (
       <pre className="p-4 font-mono text-sm whitespace-pre-wrap break-words leading-relaxed">
@@ -728,17 +697,10 @@ function ConfigurationCard({
               <div className="flex items-center gap-1.5 mt-0.5">
                 <Input
                   value={pathValue}
-                  onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                    setPathValue(e.target.value)
-                  }
+                  onChange={(e: ChangeEvent<HTMLInputElement>) => setPathValue(e.target.value)}
                   className="h-7 text-xs font-mono"
                 />
-                <Button
-                  size="sm"
-                  className="h-7 px-2"
-                  onClick={handleSave}
-                  disabled={saving}
-                >
+                <Button size="sm" className="h-7 px-2" onClick={handleSave} disabled={saving}>
                   {saving ? (
                     <Loader2 className="h-3 w-3 animate-spin" />
                   ) : (
@@ -756,9 +718,7 @@ function ConfigurationCard({
               </div>
             ) : (
               <div className="flex items-center gap-1.5">
-                <p className="text-sm font-mono truncate">
-                  {agent.workspacePath || "Not set"}
-                </p>
+                <p className="text-sm font-mono truncate">{agent.workspacePath || "Not set"}</p>
                 <button
                   type="button"
                   onClick={() => {
@@ -832,8 +792,7 @@ function AgentDetailPage() {
   const formattedAgentTokens = useMemo(
     () =>
       formatTokens(
-        (agentCostSummary?.today.inputTokens ?? 0) +
-          (agentCostSummary?.today.outputTokens ?? 0),
+        (agentCostSummary?.today.inputTokens ?? 0) + (agentCostSummary?.today.outputTokens ?? 0),
       ),
     [agentCostSummary?.today.inputTokens, agentCostSummary?.today.outputTokens],
   );
@@ -851,9 +810,7 @@ function AgentDetailPage() {
     let result = sessions.filter((session: Session) => {
       const matchesSearch =
         !sessionSearch ||
-        session.sessionKey
-          .toLowerCase()
-          .includes(sessionSearch.toLowerCase()) ||
+        session.sessionKey.toLowerCase().includes(sessionSearch.toLowerCase()) ||
         session.channel?.toLowerCase().includes(sessionSearch.toLowerCase()) ||
         session.kind.toLowerCase().includes(sessionSearch.toLowerCase());
       const matchesKind = kindFilter === "all" || session.kind === kindFilter;
@@ -867,9 +824,7 @@ function AgentDetailPage() {
     result = [...result].sort((a, b) => {
       const av = a[sortField] ?? 0;
       const bv = b[sortField] ?? 0;
-      return sortDir === "desc"
-        ? (bv as number) - (av as number)
-        : (av as number) - (bv as number);
+      return sortDir === "desc" ? (bv as number) - (av as number) : (av as number) - (bv as number);
     });
 
     return result;
@@ -928,19 +883,12 @@ function AgentDetailPage() {
         </Button>
 
         <div className="flex items-center gap-3 flex-1">
-          <Circle
-            className={cn("h-3 w-3 fill-current", statusColor(agent.status))}
-          />
+          <Circle className={cn("h-3 w-3 fill-current", statusColor(agent.status))} />
           <h1 className="text-2xl font-bold tracking-tight">{agent.name}</h1>
 
-          {agent.config?.model && (
-            <Badge variant="secondary">{agent.config.model}</Badge>
-          )}
+          {agent.config?.model && <Badge variant="secondary">{agent.config.model}</Badge>}
 
-          <Badge
-            variant={isHealthy ? "default" : "destructive"}
-            className="ml-2"
-          >
+          <Badge variant={isHealthy ? "default" : "destructive"} className="ml-2">
             {isHealthy ? "Healthy" : "Issues Detected"}
           </Badge>
 
@@ -956,9 +904,7 @@ function AgentDetailPage() {
           <TabsTrigger value="sessions">
             Sessions
             {sessions && (
-              <span className="ml-1.5 text-xs text-muted-foreground">
-                ({sessions.length})
-              </span>
+              <span className="ml-1.5 text-xs text-muted-foreground">({sessions.length})</span>
             )}
           </TabsTrigger>
           <TabsTrigger value="files">Files</TabsTrigger>
@@ -1004,9 +950,7 @@ function AgentDetailPage() {
           <Card>
             <CardHeader>
               <CardTitle>Cost — Last 24 Hours</CardTitle>
-              <CardDescription>
-                Hourly cost breakdown for this agent
-              </CardDescription>
+              <CardDescription>Hourly cost breakdown for this agent</CardDescription>
             </CardHeader>
             <CardContent>
               <CostChart data={agentTimeSeries ?? []} />
@@ -1021,25 +965,14 @@ function AgentDetailPage() {
                   <div
                     className={cn(
                       "h-10 w-10 rounded-lg flex items-center justify-center",
-                      agent.status === "online"
-                        ? "bg-emerald-500/10"
-                        : "bg-red-500/10",
+                      agent.status === "online" ? "bg-emerald-500/10" : "bg-red-500/10",
                     )}
                   >
-                    <Circle
-                      className={cn(
-                        "h-4 w-4 fill-current",
-                        statusColor(agent.status),
-                      )}
-                    />
+                    <Circle className={cn("h-4 w-4 fill-current", statusColor(agent.status))} />
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground uppercase tracking-wider">
-                      Status
-                    </p>
-                    <p className="text-lg font-semibold capitalize">
-                      {agent.status}
-                    </p>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider">Status</p>
+                    <p className="text-lg font-semibold capitalize">{agent.status}</p>
                   </div>
                 </div>
               </CardContent>
@@ -1054,9 +987,7 @@ function AgentDetailPage() {
                     <p className="text-xs text-muted-foreground uppercase tracking-wider">
                       Total Sessions
                     </p>
-                    <p className="text-lg font-semibold">
-                      {health.totalSessions}
-                    </p>
+                    <p className="text-lg font-semibold">{health.totalSessions}</p>
                   </div>
                 </div>
               </CardContent>
@@ -1093,9 +1024,7 @@ function AgentDetailPage() {
               <Input
                 placeholder="Search sessions..."
                 value={sessionSearch}
-                onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                  setSessionSearch(e.target.value)
-                }
+                onChange={(e: ChangeEvent<HTMLInputElement>) => setSessionSearch(e.target.value)}
                 className="pl-9 h-9"
               />
             </div>
@@ -1103,9 +1032,7 @@ function AgentDetailPage() {
             {/* Kind filter */}
             <select
               value={kindFilter}
-              onChange={(e: ChangeEvent<HTMLSelectElement>) =>
-                setKindFilter(e.target.value)
-              }
+              onChange={(e: ChangeEvent<HTMLSelectElement>) => setKindFilter(e.target.value)}
               className="rounded-md border bg-background px-3 py-2 text-sm h-9"
             >
               <option value="all">All kinds</option>
@@ -1135,9 +1062,7 @@ function AgentDetailPage() {
               ))}
             </div>
 
-            {(sessionSearch ||
-              kindFilter !== "all" ||
-              statusFilter !== "all") && (
+            {(sessionSearch || kindFilter !== "all" || statusFilter !== "all") && (
               <Button
                 variant="ghost"
                 size="sm"
@@ -1210,10 +1135,7 @@ function AgentDetailPage() {
                     ))
                   ) : filteredSessions.length === 0 ? (
                     <TableRow>
-                      <TableCell
-                        colSpan={8}
-                        className="py-12 text-center text-muted-foreground"
-                      >
+                      <TableCell colSpan={8} className="py-12 text-center text-muted-foreground">
                         <Activity className="mx-auto mb-2 h-8 w-8 opacity-50" />
                         <p className="text-sm">No sessions found</p>
                         <p className="text-xs mt-1">
@@ -1230,11 +1152,7 @@ function AgentDetailPage() {
                         session={session}
                         isExpanded={expandedSession === session._id}
                         onToggle={() =>
-                          setExpandedSession(
-                            expandedSession === session._id
-                              ? null
-                              : session._id,
-                          )
+                          setExpandedSession(expandedSession === session._id ? null : session._id)
                         }
                       />
                     ))
@@ -1285,9 +1203,7 @@ const SessionRow = memo(function SessionRow({
   onToggle: () => void;
 }) {
   const duration = useMemo(() => {
-    const ms =
-      (session.isActive ? Date.now() : session.lastActivity) -
-      session.startedAt;
+    const ms = (session.isActive ? Date.now() : session.lastActivity) - session.startedAt;
     const mins = Math.floor(ms / 60000);
     const hours = Math.floor(mins / 60);
     if (hours > 0) return `${hours}h ${mins % 60}m`;
@@ -1297,10 +1213,7 @@ const SessionRow = memo(function SessionRow({
   return (
     <>
       <TableRow
-        className={cn(
-          "cursor-pointer transition-colors",
-          isExpanded && "bg-muted/30",
-        )}
+        className={cn("cursor-pointer transition-colors", isExpanded && "bg-muted/30")}
         onClick={onToggle}
       >
         <TableCell className="font-mono text-xs">
@@ -1317,9 +1230,7 @@ const SessionRow = memo(function SessionRow({
         </TableCell>
         <TableCell className="text-sm">{session.channel || "—"}</TableCell>
         <TableCell className="text-sm">{timeAgo(session.startedAt)}</TableCell>
-        <TableCell className="text-sm">
-          {timeAgo(session.lastActivity)}
-        </TableCell>
+        <TableCell className="text-sm">{timeAgo(session.lastActivity)}</TableCell>
         <TableCell className="text-sm font-medium">
           {formatTokens(session.totalTokens ?? 0)}
         </TableCell>

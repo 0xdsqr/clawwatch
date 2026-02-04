@@ -38,9 +38,7 @@ function SettingsPage() {
   const removeNotification = useMutation(api.notifications.remove);
 
   const [showNewChannel, setShowNewChannel] = useState(false);
-  const [channelType, setChannelType] = useState<
-    "discord" | "email" | "webhook"
-  >("discord");
+  const [channelType, setChannelType] = useState<"discord" | "email" | "webhook">("discord");
   const [channelName, setChannelName] = useState("");
   const [channelWebhook, setChannelWebhook] = useState("");
   const [channelEmail, setChannelEmail] = useState("");
@@ -52,9 +50,7 @@ function SettingsPage() {
     const onlineAgents = agents.filter((a: Agent) => a.status === "online");
     if (onlineAgents.length === 0) return "offline";
     // Consider connected if any agent had a heartbeat within last 5 minutes
-    const recentHeartbeat = agents.some(
-      (a: Agent) => Date.now() - a.lastHeartbeat < 5 * 60 * 1000,
-    );
+    const recentHeartbeat = agents.some((a: Agent) => Date.now() - a.lastHeartbeat < 5 * 60 * 1000);
     return recentHeartbeat ? "connected" : "stale";
   }, [agents]);
 
@@ -98,18 +94,13 @@ function SettingsPage() {
                 Stale
               </Badge>
             )}
-            {(connectionStatus === "disconnected" ||
-              connectionStatus === "offline") && (
+            {(connectionStatus === "disconnected" || connectionStatus === "offline") && (
               <Badge variant="destructive" className="text-xs">
-                {connectionStatus === "disconnected"
-                  ? "Not Connected"
-                  : "Offline"}
+                {connectionStatus === "disconnected" ? "Not Connected" : "Offline"}
               </Badge>
             )}
           </CardTitle>
-          <CardDescription>
-            Status of your Clawdbot gateway collector
-          </CardDescription>
+          <CardDescription>Status of your Clawdbot gateway collector</CardDescription>
         </CardHeader>
         <CardContent>
           {connectionStatus === "connected" ? (
@@ -122,9 +113,8 @@ function SettingsPage() {
                   Collector is connected and receiving data
                 </p>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  {agents?.filter((a: Agent) => a.status === "online").length ??
-                    0}{" "}
-                  agent(s) online · Data flowing normally
+                  {agents?.filter((a: Agent) => a.status === "online").length ?? 0} agent(s) online
+                  · Data flowing normally
                 </p>
               </div>
             </div>
@@ -134,12 +124,10 @@ function SettingsPage() {
                 <Wifi className="h-5 w-5 text-amber-400" />
               </div>
               <div>
-                <p className="text-sm font-medium text-amber-400">
-                  Connection may be stale
-                </p>
+                <p className="text-sm font-medium text-amber-400">Connection may be stale</p>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  No heartbeat received in the last 5 minutes. The gateway might
-                  be experiencing issues.
+                  No heartbeat received in the last 5 minutes. The gateway might be experiencing
+                  issues.
                 </p>
               </div>
             </div>
@@ -156,23 +144,19 @@ function SettingsPage() {
                       : "All agents are offline"}
                   </p>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    Configure your Clawdbot gateway to start sending data to
-                    ClawWatch.
+                    Configure your Clawdbot gateway to start sending data to ClawWatch.
                   </p>
                 </div>
               </div>
               <div className="rounded-lg border bg-muted/30 p-4">
                 <p className="text-sm font-medium mb-2">Quick Setup</p>
                 <p className="text-xs text-muted-foreground mb-3">
-                  Add these environment variables to your Clawdbot
-                  configuration:
+                  Add these environment variables to your Clawdbot configuration:
                 </p>
                 <div className="rounded-md bg-background p-3 font-mono text-xs space-y-1">
                   <p>
                     <span className="text-muted-foreground">CONVEX_URL=</span>
-                    <span className="text-primary">
-                      http://100.115.177.85:3210
-                    </span>
+                    <span className="text-primary">http://100.115.177.85:3210</span>
                   </p>
                 </div>
               </div>
@@ -187,11 +171,7 @@ function SettingsPage() {
           <CardTitle>Notification Channels</CardTitle>
           <CardDescription>Where alerts get delivered</CardDescription>
           <CardAction>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowNewChannel(!showNewChannel)}
-            >
+            <Button variant="outline" size="sm" onClick={() => setShowNewChannel(!showNewChannel)}>
               <Plus className="mr-1.5 h-3.5 w-3.5" />
               Add Channel
             </Button>
@@ -202,9 +182,7 @@ function SettingsPage() {
             <div className="mb-4 space-y-3 rounded-lg border bg-muted/30 p-4">
               <div className="flex gap-3">
                 <div className="flex-1">
-                  <div className="mb-1 block text-xs text-muted-foreground">
-                    Type
-                  </div>
+                  <div className="mb-1 block text-xs text-muted-foreground">Type</div>
                   <select
                     value={channelType}
                     onChange={(e: ChangeEvent<HTMLSelectElement>) =>
@@ -218,15 +196,11 @@ function SettingsPage() {
                   </select>
                 </div>
                 <div className="flex-1">
-                  <div className="mb-1 block text-xs text-muted-foreground">
-                    Name
-                  </div>
+                  <div className="mb-1 block text-xs text-muted-foreground">Name</div>
                   <Input
                     placeholder="e.g. #alerts"
                     value={channelName}
-                    onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                      setChannelName(e.target.value)
-                    }
+                    onChange={(e: ChangeEvent<HTMLInputElement>) => setChannelName(e.target.value)}
                   />
                 </div>
               </div>
@@ -235,9 +209,7 @@ function SettingsPage() {
                   type="url"
                   placeholder="Webhook URL"
                   value={channelWebhook}
-                  onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                    setChannelWebhook(e.target.value)
-                  }
+                  onChange={(e: ChangeEvent<HTMLInputElement>) => setChannelWebhook(e.target.value)}
                 />
               )}
               {channelType === "email" && (
@@ -245,17 +217,11 @@ function SettingsPage() {
                   type="email"
                   placeholder="Email address"
                   value={channelEmail}
-                  onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                    setChannelEmail(e.target.value)
-                  }
+                  onChange={(e: ChangeEvent<HTMLInputElement>) => setChannelEmail(e.target.value)}
                 />
               )}
               <div className="flex justify-end gap-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowNewChannel(false)}
-                >
+                <Button variant="ghost" size="sm" onClick={() => setShowNewChannel(false)}>
                   Cancel
                 </Button>
                 <Button size="sm" onClick={handleCreateChannel}>
@@ -276,9 +242,7 @@ function SettingsPage() {
                     <Bell className="h-4 w-4 text-muted-foreground" />
                     <div>
                       <p className="text-sm font-medium">{channel.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {channel.type}
-                      </p>
+                      <p className="text-xs text-muted-foreground">{channel.type}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
@@ -315,9 +279,7 @@ function SettingsPage() {
       <Card>
         <CardHeader>
           <CardTitle>Budget & Alert Management</CardTitle>
-          <CardDescription>
-            Configure spending limits and alert thresholds
-          </CardDescription>
+          <CardDescription>Configure spending limits and alert thresholds</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-center gap-3 rounded-lg border p-4">

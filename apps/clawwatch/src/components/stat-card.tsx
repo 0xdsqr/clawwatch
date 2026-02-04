@@ -47,9 +47,7 @@ export const StatCard = memo(function StatCard({
                 {label}
               </p>
             </div>
-            <p className="mt-2.5 text-2xl font-semibold tracking-tight tabular-nums">
-              {value}
-            </p>
+            <p className="mt-2.5 text-2xl font-semibold tracking-tight tabular-nums">{value}</p>
 
             <div className="mt-2 flex items-center gap-2">
               {trend && (

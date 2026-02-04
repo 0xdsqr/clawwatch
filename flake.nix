@@ -5,16 +5,12 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-compat.url = "github:edolstra/flake-compat";
     flake-compat.flake = false;
-
-    treefmt-nix.url = "github:numtide/treefmt-nix";
-    treefmt-nix.inputs.nixpkgs.follows = "nixpkgs";
   };
 
   outputs =
     {
       self,
       nixpkgs,
-      treefmt-nix,
       ...
     }:
     let
@@ -33,9 +29,39 @@
       devShells = forEachSystem (
         system:
         let
-          devConfig = import ./nix/devshell.nix { inherit nixpkgs system; };
+          pkgs = import nixpkgs { inherit system; };
         in
-        devConfig.devShells.${system}
+        {
+          default = pkgs.mkShell {
+            buildInputs = with pkgs; [
+              # Core packages
+              curl
+              wget
+
+              # Development tools
+              just
+
+              # Nix development tools
+              nixfmt-rfc-style
+              nixfmt-tree
+              statix
+              deadnix
+              nil
+              oxlint
+              oxfmt
+
+              # Language runtimes
+              bun
+              nodejs_24
+            ];
+
+            shellHook = ''
+              echo "Bun version: $(bun --version)"
+              echo "Node version: $(node --version)"
+              echo "ClawWatch development shell activated"
+            '';
+          };
+        }
       );
 
       # ------------------------------------------------------------
@@ -43,7 +69,17 @@
       # ------------------------------------------------------------
       formatter = forEachSystem (
         system:
-        (treefmt-nix.lib.evalModule nixpkgs.legacyPackages.${system} ./nix/treefmt.nix).config.build.wrapper
+        let
+          pkgs = nixpkgs.legacyPackages.${system};
+        in
+        pkgs.writeShellApplication {
+          name = "clawwatch-fmt";
+          runtimeInputs = [ pkgs.oxfmt pkgs.oxlint ];
+          text = ''
+            echo "Running oxfmt"
+            oxfmt .
+          '';
+        }
       );
 
       # ------------------------------------------------------------
@@ -55,7 +91,11 @@
           pkgs = nixpkgs.legacyPackages.${system};
         in
         {
-          formatting = (treefmt-nix.lib.evalModule pkgs ./nix/treefmt.nix).config.build.check self;
+          lint = pkgs.runCommand "oxlint-check" { src = self; buildInputs = [ pkgs.oxlint ]; } ''
+            cd $src
+            oxlint .
+            mkdir -p $out
+          '';
         }
       );
     };

@@ -12,11 +12,7 @@ export const list = query({
 // Create a notification channel
 export const create = mutation({
   args: {
-    type: v.union(
-      v.literal("discord"),
-      v.literal("email"),
-      v.literal("webhook"),
-    ),
+    type: v.union(v.literal("discord"), v.literal("email"), v.literal("webhook")),
     name: v.string(),
     config: v.object({
       webhookUrl: v.optional(v.string()),

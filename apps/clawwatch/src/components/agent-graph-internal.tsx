@@ -57,9 +57,7 @@ type AgentNodeData = {
   cost?: CostData;
 };
 
-const AgentNode = memo(function AgentNode({
-  data,
-}: NodeProps<Node<AgentNodeData>>) {
+const AgentNode = memo(function AgentNode({ data }: NodeProps<Node<AgentNodeData>>) {
   const navigate = useNavigate();
   const { agent, health, cost } = data;
   const costToday = formatCost(cost?.today.cost ?? 0);
@@ -69,9 +67,7 @@ const AgentNode = memo(function AgentNode({
   return (
     <div
       className="group cursor-pointer"
-      onDoubleClick={() =>
-        navigate({ to: "/agents/$agentId", params: { agentId: agent._id } })
-      }
+      onDoubleClick={() => navigate({ to: "/agents/$agentId", params: { agentId: agent._id } })}
     >
       <div
         className={cn(
@@ -89,10 +85,7 @@ const AgentNode = memo(function AgentNode({
         <div className="px-4 py-3 border-b border-border/50">
           <div className="flex items-center gap-2">
             <Circle
-              className={cn(
-                "h-2.5 w-2.5 fill-current shrink-0",
-                statusColor(agent.status),
-              )}
+              className={cn("h-2.5 w-2.5 fill-current shrink-0", statusColor(agent.status))}
             />
             <span className="font-semibold text-sm truncate">{agent.name}</span>
           </div>
@@ -110,10 +103,7 @@ const AgentNode = memo(function AgentNode({
         <div className="px-4 py-2.5 flex flex-wrap gap-x-3 gap-y-1.5">
           {channels.length > 0 &&
             channels.map((ch) => (
-              <div
-                key={ch}
-                className="flex items-center gap-1 text-[11px] text-muted-foreground"
-              >
+              <div key={ch} className="flex items-center gap-1 text-[11px] text-muted-foreground">
                 <Smartphone className="h-3 w-3" />
                 <span>{ch}</span>
               </div>
@@ -188,8 +178,7 @@ function buildLayout(
   const channelAgents = new Map<string, string[]>();
 
   for (const agent of agents) {
-    const channels =
-      agent.config?.channel?.split(",").map((c) => c.trim()) ?? [];
+    const channels = agent.config?.channel?.split(",").map((c) => c.trim()) ?? [];
     for (const ch of channels) {
       if (!channelAgents.has(ch)) channelAgents.set(ch, []);
       channelAgents.get(ch)?.push(agent._id);
@@ -230,11 +219,7 @@ function buildLayout(
 
 // ── Main Component ──
 
-export function AgentGraphInternal({
-  agents,
-  healthMap,
-  costMap,
-}: AgentGraphProps) {
+export function AgentGraphInternal({ agents, healthMap, costMap }: AgentGraphProps) {
   const { nodes: initialNodes, edges: initialEdges } = useMemo(
     () => buildLayout(agents, healthMap, costMap),
     [agents, healthMap, costMap],

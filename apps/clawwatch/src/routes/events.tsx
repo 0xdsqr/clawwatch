@@ -15,9 +15,7 @@ function EventsPage() {
         </div>
         <div>
           <h1 className="text-lg font-semibold tracking-tight">Events</h1>
-          <p className="text-xs text-muted-foreground">
-            Real-time activity feed across all agents
-          </p>
+          <p className="text-xs text-muted-foreground">Real-time activity feed across all agents</p>
         </div>
       </div>
 

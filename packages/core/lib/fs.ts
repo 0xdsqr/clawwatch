@@ -14,11 +14,7 @@
  * @example
  * await writeJSON("config.json", { key: "value" });
  */
-export async function writeJSON(
-  path: string,
-  data: unknown,
-  pretty = true,
-): Promise<number> {
+export async function writeJSON(path: string, data: unknown, pretty = true): Promise<number> {
   const content = JSON.stringify(data, null, pretty ? 2 : undefined) + "\n";
   return Bun.write(path, content);
 }
@@ -29,10 +25,7 @@ export async function writeJSON(
  * @example
  * await writeText("output.log", "Hello, world!\n");
  */
-export async function writeText(
-  path: string,
-  content: string,
-): Promise<number> {
+export async function writeText(path: string, content: string): Promise<number> {
   return Bun.write(path, content);
 }
 

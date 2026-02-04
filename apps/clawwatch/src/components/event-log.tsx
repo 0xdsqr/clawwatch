@@ -88,13 +88,7 @@ const TIME_RANGES = [
   { label: "Past 7d", value: 7 * 24 * 60 * 60 * 1000 },
 ] as const;
 
-const ALL_LEVELS: LogLevel[] = [
-  "DEBUG",
-  "INFO",
-  "WARNING",
-  "ERROR",
-  "CRITICAL",
-];
+const ALL_LEVELS: LogLevel[] = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"];
 
 function formatTime(ts: number): string {
   return new Date(ts).toLocaleTimeString("en-US", {
@@ -166,12 +160,10 @@ export const EventLog = memo(function EventLog({
       if (sessionKey && event.sessionKey !== sessionKey) return false;
 
       // Level filter
-      if (levelFilter !== "all" && getLevel(event.type) !== levelFilter)
-        return false;
+      if (levelFilter !== "all" && getLevel(event.type) !== levelFilter) return false;
 
       // Agent filter
-      if (agentFilter !== "all" && event.agentName !== agentFilter)
-        return false;
+      if (agentFilter !== "all" && event.agentName !== agentFilter) return false;
 
       // Type filter
       if (typeFilter !== "all" && event.type !== typeFilter) return false;
@@ -244,16 +236,10 @@ export const EventLog = memo(function EventLog({
           return (
             <Badge
               variant="outline"
-              className={cn(
-                "text-[10px] font-mono uppercase px-1.5 py-0",
-                LEVEL_STYLES[level],
-              )}
+              className={cn("text-[10px] font-mono uppercase px-1.5 py-0", LEVEL_STYLES[level])}
             >
               <span
-                className={cn(
-                  "inline-block h-1.5 w-1.5 rounded-full mr-1",
-                  LEVEL_DOT[level],
-                )}
+                className={cn("inline-block h-1.5 w-1.5 rounded-full mr-1", LEVEL_DOT[level])}
               />
               {level}
             </Badge>
@@ -267,9 +253,7 @@ export const EventLog = memo(function EventLog({
         col.accessor("agentName", {
           header: "Source",
           size: 110,
-          cell: (info) => (
-            <span className="text-sm font-medium">{info.getValue()}</span>
-          ),
+          cell: (info) => <span className="text-sm font-medium">{info.getValue()}</span>,
         }),
       );
     }
@@ -282,10 +266,7 @@ export const EventLog = memo(function EventLog({
           const row = info.row.original;
           return (
             <div className="flex items-center gap-2 min-w-0">
-              <Badge
-                variant="secondary"
-                className="text-[10px] shrink-0 font-normal"
-              >
+              <Badge variant="secondary" className="text-[10px] shrink-0 font-normal">
                 {formatEventType(row.type)}
               </Badge>
               <span
@@ -318,10 +299,7 @@ export const EventLog = memo(function EventLog({
   });
 
   const hasActiveFilters =
-    globalFilter ||
-    levelFilter !== "all" ||
-    agentFilter !== "all" ||
-    typeFilter !== "all";
+    globalFilter || levelFilter !== "all" || agentFilter !== "all" || typeFilter !== "all";
 
   const clearFilters = () => {
     setGlobalFilter("");
@@ -341,9 +319,7 @@ export const EventLog = memo(function EventLog({
           <Input
             placeholder="Search logs..."
             value={globalFilter}
-            onChange={(e: ChangeEvent<HTMLInputElement>) =>
-              setGlobalFilter(e.target.value)
-            }
+            onChange={(e: ChangeEvent<HTMLInputElement>) => setGlobalFilter(e.target.value)}
             className="pl-9 h-9"
           />
         </div>
@@ -415,9 +391,7 @@ export const EventLog = memo(function EventLog({
         {showAgentColumn && (
           <select
             value={agentFilter}
-            onChange={(e: ChangeEvent<HTMLSelectElement>) =>
-              setAgentFilter(e.target.value)
-            }
+            onChange={(e: ChangeEvent<HTMLSelectElement>) => setAgentFilter(e.target.value)}
             className="rounded-md border bg-background px-3 py-1.5 text-xs h-8"
           >
             <option value="all">All Agents</option>
@@ -432,9 +406,7 @@ export const EventLog = memo(function EventLog({
         {/* Type filter */}
         <select
           value={typeFilter}
-          onChange={(e: ChangeEvent<HTMLSelectElement>) =>
-            setTypeFilter(e.target.value)
-          }
+          onChange={(e: ChangeEvent<HTMLSelectElement>) => setTypeFilter(e.target.value)}
           className="rounded-md border bg-background px-3 py-1.5 text-xs h-8"
         >
           <option value="all">All Types</option>
@@ -447,22 +419,13 @@ export const EventLog = memo(function EventLog({
 
         {/* Single line toggle */}
         <span className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer select-none">
-          <Switch
-            checked={singleLine}
-            onCheckedChange={setSingleLine}
-            size="sm"
-          />
+          <Switch checked={singleLine} onCheckedChange={setSingleLine} size="sm" />
           Single line
         </span>
 
         {/* Clear filters button */}
         {hasActiveFilters && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 text-xs"
-            onClick={clearFilters}
-          >
+          <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={clearFilters}>
             <X className="h-3 w-3 mr-1" />
             Clear
           </Button>
@@ -485,44 +448,32 @@ export const EventLog = memo(function EventLog({
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              {table
-                .getHeaderGroups()
-                .map((headerGroup: HeaderGroup<EventRecord>) => (
-                  <tr key={headerGroup.id} className="border-b bg-muted/30">
-                    {headerGroup.headers.map(
-                      (header: Header<EventRecord, unknown>) => (
-                        <th
-                          key={header.id}
-                          className={cn(
-                            "px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider",
-                            header.column.getCanSort() &&
-                              "cursor-pointer select-none hover:text-foreground",
-                          )}
-                          style={{
-                            width:
-                              header.getSize() < 999
-                                ? header.getSize()
-                                : undefined,
-                          }}
-                          onClick={header.column.getToggleSortingHandler()}
-                        >
-                          <div className="flex items-center gap-1">
-                            {flexRender(
-                              header.column.columnDef.header,
-                              header.getContext(),
-                            )}
-                            {header.column.getIsSorted() === "asc" && (
-                              <ChevronUp className="h-3 w-3" />
-                            )}
-                            {header.column.getIsSorted() === "desc" && (
-                              <ChevronDown className="h-3 w-3" />
-                            )}
-                          </div>
-                        </th>
-                      ),
-                    )}
-                  </tr>
-                ))}
+              {table.getHeaderGroups().map((headerGroup: HeaderGroup<EventRecord>) => (
+                <tr key={headerGroup.id} className="border-b bg-muted/30">
+                  {headerGroup.headers.map((header: Header<EventRecord, unknown>) => (
+                    <th
+                      key={header.id}
+                      className={cn(
+                        "px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider",
+                        header.column.getCanSort() &&
+                          "cursor-pointer select-none hover:text-foreground",
+                      )}
+                      style={{
+                        width: header.getSize() < 999 ? header.getSize() : undefined,
+                      }}
+                      onClick={header.column.getToggleSortingHandler()}
+                    >
+                      <div className="flex items-center gap-1">
+                        {flexRender(header.column.columnDef.header, header.getContext())}
+                        {header.column.getIsSorted() === "asc" && <ChevronUp className="h-3 w-3" />}
+                        {header.column.getIsSorted() === "desc" && (
+                          <ChevronDown className="h-3 w-3" />
+                        )}
+                      </div>
+                    </th>
+                  ))}
+                </tr>
+              ))}
             </thead>
             <tbody>
               {rawData === undefined ? (
@@ -547,14 +498,9 @@ export const EventLog = memo(function EventLog({
                 ))
               ) : filteredData.length === 0 ? (
                 <tr>
-                  <td
-                    colSpan={showAgentColumn ? 4 : 3}
-                    className="py-16 text-center"
-                  >
+                  <td colSpan={showAgentColumn ? 4 : 3} className="py-16 text-center">
                     <Radio className="mx-auto mb-3 h-8 w-8 text-muted-foreground/40" />
-                    <p className="text-sm text-muted-foreground">
-                      No events match your filters
-                    </p>
+                    <p className="text-sm text-muted-foreground">No events match your filters</p>
                     {hasActiveFilters && (
                       <Button
                         variant="ghost"
@@ -634,17 +580,10 @@ const EventRow = memo(function EventRow({
             <div className="grid grid-cols-2 gap-x-8 gap-y-2 md:grid-cols-4 text-xs">
               <EventDetail label="Type" value={formatEventType(event.type)} />
               <EventDetail label="Agent" value={event.agentName} />
-              <EventDetail
-                label="Time"
-                value={new Date(event._creationTime).toLocaleString()}
-              />
+              <EventDetail label="Time" value={new Date(event._creationTime).toLocaleString()} />
               <EventDetail label="Level" value={level} />
-              {event.sessionKey && (
-                <EventDetail label="Session" value={event.sessionKey} mono />
-              )}
-              {event.channel && (
-                <EventDetail label="Channel" value={event.channel} />
-              )}
+              {event.sessionKey && <EventDetail label="Session" value={event.sessionKey} mono />}
+              {event.channel && <EventDetail label="Channel" value={event.channel} />}
             </div>
 
             {event.details && Object.keys(event.details).length > 0 && (
@@ -659,9 +598,7 @@ const EventRow = memo(function EventRow({
             )}
 
             <div className="mt-2 pt-2 border-t border-border/20">
-              <p className="text-[10px] font-mono text-muted-foreground/60">
-                ID: {event._id}
-              </p>
+              <p className="text-[10px] font-mono text-muted-foreground/60">ID: {event._id}</p>
             </div>
           </td>
         </tr>
@@ -670,23 +607,11 @@ const EventRow = memo(function EventRow({
   );
 });
 
-function EventDetail({
-  label,
-  value,
-  mono,
-}: {
-  label: string;
-  value: string;
-  mono?: boolean;
-}) {
+function EventDetail({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
   return (
     <div>
-      <p className="text-muted-foreground/70 uppercase tracking-wider text-[10px]">
-        {label}
-      </p>
-      <p className={cn("text-foreground/80", mono && "font-mono break-all")}>
-        {value}
-      </p>
+      <p className="text-muted-foreground/70 uppercase tracking-wider text-[10px]">{label}</p>
+      <p className={cn("text-foreground/80", mono && "font-mono break-all")}>{value}</p>
     </div>
   );
 }

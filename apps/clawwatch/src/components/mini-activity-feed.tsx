@@ -66,9 +66,7 @@ const ActivityRow = memo(function ActivityRow({
         <Icon className="h-3.5 w-3.5" />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-[13px] leading-snug text-foreground/90">
-          {activity.summary}
-        </p>
+        <p className="truncate text-[13px] leading-snug text-foreground/90">{activity.summary}</p>
         <div className="mt-0.5 flex items-center gap-1.5">
           {activity.agentName && (
             <span className="text-[11px] font-medium text-muted-foreground">
@@ -76,9 +74,7 @@ const ActivityRow = memo(function ActivityRow({
             </span>
           )}
           {activity.channel && (
-            <span className="text-[11px] text-muted-foreground/40">
-              #{activity.channel}
-            </span>
+            <span className="text-[11px] text-muted-foreground/40">#{activity.channel}</span>
           )}
           <span className="text-[11px] tabular-nums text-muted-foreground/40">
             {timeAgo(activity._creationTime)}
@@ -89,9 +85,7 @@ const ActivityRow = memo(function ActivityRow({
   );
 });
 
-export const MiniActivityFeed = memo(function MiniActivityFeed({
-  activities,
-}: Props) {
+export const MiniActivityFeed = memo(function MiniActivityFeed({ activities }: Props) {
   if (activities.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-10 text-muted-foreground/60">

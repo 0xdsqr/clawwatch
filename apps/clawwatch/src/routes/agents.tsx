@@ -15,12 +15,7 @@ import { Label } from "@clawwatch/ui/components/label";
 import { cn } from "@clawwatch/ui/lib/utils";
 import { api } from "@convex/api";
 import type { Id } from "@convex/dataModel";
-import {
-  createFileRoute,
-  Link,
-  Outlet,
-  useMatches,
-} from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useMatches } from "@tanstack/react-router";
 import { useMutation, useQuery } from "convex/react";
 import {
   Activity,
@@ -54,9 +49,7 @@ function AgentsPage() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [viewMode, setViewMode] = useState<"grid" | "graph">("grid");
 
-  const isOnChildRoute = matches.some(
-    (match) => match.routeId === "/agents/$agentId",
-  );
+  const isOnChildRoute = matches.some((match) => match.routeId === "/agents/$agentId");
 
   const filteredAgents = useMemo(() => {
     if (!agents) return [];
@@ -65,8 +58,7 @@ function AgentsPage() {
         !searchQuery ||
         agent.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         agent.config?.model?.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesStatus =
-        statusFilter === "all" || agent.status === statusFilter;
+      const matchesStatus = statusFilter === "all" || agent.status === statusFilter;
       return matchesSearch && matchesStatus;
     });
   }, [agents, searchQuery, statusFilter]);
@@ -146,9 +138,7 @@ function AgentsPage() {
                 <Input
                   id="name"
                   value={agentName}
-                  onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                    setAgentName(e.target.value)
-                  }
+                  onChange={(e: ChangeEvent<HTMLInputElement>) => setAgentName(e.target.value)}
                   placeholder="e.g. mimizuku"
                 />
               </div>
@@ -157,24 +147,16 @@ function AgentsPage() {
                 <Input
                   id="gateway"
                   value={gatewayUrl}
-                  onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                    setGatewayUrl(e.target.value)
-                  }
+                  onChange={(e: ChangeEvent<HTMLInputElement>) => setGatewayUrl(e.target.value)}
                   placeholder="ws://127.0.0.1:18789"
                 />
               </div>
             </div>
             <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => setIsAddDialogOpen(false)}
-              >
+              <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
                 Cancel
               </Button>
-              <Button
-                onClick={handleAddAgent}
-                disabled={!agentName.trim() || !gatewayUrl.trim()}
-              >
+              <Button onClick={handleAddAgent} disabled={!agentName.trim() || !gatewayUrl.trim()}>
                 Add Agent
               </Button>
             </DialogFooter>
@@ -183,18 +165,13 @@ function AgentsPage() {
       </div>
 
       {/* Filters */}
-      <div
-        className="flex items-center gap-3 animate-fade-in"
-        style={{ animationDelay: "50ms" }}
-      >
+      <div className="flex items-center gap-3 animate-fade-in" style={{ animationDelay: "50ms" }}>
         <div className="relative flex-1 max-w-xs">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
           <Input
             placeholder="Search agents..."
             value={searchQuery}
-            onChange={(e: ChangeEvent<HTMLInputElement>) =>
-              setSearchQuery(e.target.value)
-            }
+            onChange={(e: ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
             className="pl-8 h-8 text-sm"
           />
         </div>
@@ -211,9 +188,7 @@ function AgentsPage() {
                   : "text-muted-foreground hover:text-foreground",
               )}
             >
-              {status === "all"
-                ? "All"
-                : status.charAt(0).toUpperCase() + status.slice(1)}
+              {status === "all" ? "All" : status.charAt(0).toUpperCase() + status.slice(1)}
               <span className="ml-1 text-muted-foreground/60 tabular-nums">
                 {statusCounts[status]}
               </span>
@@ -264,9 +239,7 @@ function AgentsPage() {
             <Card className="col-span-full border-border/50">
               <CardContent className="py-10 text-center">
                 <Search className="mx-auto mb-2 h-5 w-5 text-muted-foreground/40" />
-                <p className="text-xs text-muted-foreground">
-                  No agents match your filters
-                </p>
+                <p className="text-xs text-muted-foreground">No agents match your filters</p>
               </CardContent>
             </Card>
           )}
@@ -278,14 +251,10 @@ function AgentsPage() {
                 </div>
                 <h3 className="text-sm font-semibold">No agents connected</h3>
                 <p className="mt-1 text-xs text-muted-foreground max-w-sm mx-auto">
-                  Connect your Clawdbot gateway to start monitoring agent
-                  activity, costs, and performance metrics.
+                  Connect your Clawdbot gateway to start monitoring agent activity, costs, and
+                  performance metrics.
                 </p>
-                <Button
-                  size="sm"
-                  className="mt-3"
-                  onClick={() => setIsAddDialogOpen(true)}
-                >
+                <Button size="sm" className="mt-3" onClick={() => setIsAddDialogOpen(true)}>
                   <Plus className="h-3.5 w-3.5 mr-1.5" />
                   Add Your First Agent
                 </Button>
@@ -409,9 +378,7 @@ function AgentGraphView({ agents }: { agents: AgentData[] }) {
       <Card className="border-border/50">
         <CardContent className="py-14 text-center">
           <Network className="mx-auto mb-2 h-5 w-5 text-muted-foreground/40" />
-          <p className="text-xs text-muted-foreground">
-            No agents to display in graph view
-          </p>
+          <p className="text-xs text-muted-foreground">No agents to display in graph view</p>
         </CardContent>
       </Card>
     );
@@ -451,12 +418,7 @@ const AgentCard = memo(function AgentCard({ agent }: { agent: AgentData }) {
         <CardContent className="p-4 space-y-3">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-2 min-w-0">
-              <Circle
-                className={cn(
-                  "h-2 w-2 shrink-0 fill-current",
-                  statusColor(agent.status),
-                )}
-              />
+              <Circle className={cn("h-2 w-2 shrink-0 fill-current", statusColor(agent.status))} />
               <span className="text-sm font-medium truncate">{agent.name}</span>
             </div>
             <Badge
@@ -491,18 +453,14 @@ const AgentCard = memo(function AgentCard({ agent }: { agent: AgentData }) {
               <Activity className="h-3 w-3 text-muted-foreground/60" />
               <div>
                 <p className="text-[10px] text-muted-foreground">Sessions</p>
-                <p className="text-xs font-medium tabular-nums">
-                  {health?.activeSessions ?? "-"}
-                </p>
+                <p className="text-xs font-medium tabular-nums">{health?.activeSessions ?? "-"}</p>
               </div>
             </div>
             <div className="flex items-center gap-1.5">
               <Clock className="h-3 w-3 text-muted-foreground/60" />
               <div>
                 <p className="text-[10px] text-muted-foreground">Heartbeat</p>
-                <p className="text-xs font-medium tabular-nums">
-                  {timeAgo(agent.lastHeartbeat)}
-                </p>
+                <p className="text-xs font-medium tabular-nums">{timeAgo(agent.lastHeartbeat)}</p>
               </div>
             </div>
           </div>

@@ -52,8 +52,7 @@ export const seedDemo = mutation({
       const inputTokens = Math.floor(5000 + Math.random() * 20000);
       const outputTokens = Math.floor(1000 + Math.random() * 5000);
       const cost =
-        (inputTokens / 1000) * m.inputCostPer1k +
-        (outputTokens / 1000) * m.outputCostPer1k;
+        (inputTokens / 1000) * m.inputCostPer1k + (outputTokens / 1000) * m.outputCostPer1k;
 
       await ctx.db.insert("costRecords", {
         agentId,

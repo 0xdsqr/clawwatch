@@ -114,12 +114,7 @@ export function MetricWidget({
         <div className="mb-3 flex items-center gap-6">
           <div>
             <p className="text-xs text-muted-foreground">Current</p>
-            <p
-              className={cn(
-                "tabular-nums text-lg font-bold",
-                isAlarming ? "text-red-400" : "",
-              )}
-            >
+            <p className={cn("tabular-nums text-lg font-bold", isAlarming ? "text-red-400" : "")}>
               {typeof current === "number" ? current.toLocaleString() : current}
               {unit}
             </p>
@@ -170,14 +165,8 @@ export function MetricWidget({
           ) : (
             <ResponsiveContainer width="100%" height="100%">
               {multiLine ? (
-                <LineChart
-                  data={formatted}
-                  margin={{ top: 4, right: 4, left: 0, bottom: 0 }}
-                >
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    className="stroke-border"
-                  />
+                <LineChart data={formatted} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
                   <XAxis
                     dataKey="time"
                     tick={{ fill: "currentColor", fontSize: 10 }}
@@ -190,17 +179,15 @@ export function MetricWidget({
                     tick={{ fill: "currentColor", fontSize: 10 }}
                     tickLine={false}
                     axisLine={false}
-                    tickFormatter={(v: number) =>
-                      `${v.toLocaleString()}${unit}`
-                    }
+                    tickFormatter={(v: number) => `${v.toLocaleString()}${unit}`}
                     className="text-muted-foreground"
                   />
                   <Tooltip
                     contentStyle={tooltipStyle}
-                    formatter={(
-                      value: number | undefined,
-                      name: string | undefined,
-                    ) => [`${(value ?? 0).toLocaleString()}${unit}`, name]}
+                    formatter={(value: number | undefined, name: string | undefined) => [
+                      `${(value ?? 0).toLocaleString()}${unit}`,
+                      name,
+                    ]}
                   />
                   <Line
                     type="monotone"
@@ -238,14 +225,8 @@ export function MetricWidget({
                   )}
                 </LineChart>
               ) : chartType === "line" ? (
-                <LineChart
-                  data={formatted}
-                  margin={{ top: 4, right: 4, left: 0, bottom: 0 }}
-                >
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    className="stroke-border"
-                  />
+                <LineChart data={formatted} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
                   <XAxis
                     dataKey="time"
                     tick={{ fill: "currentColor", fontSize: 10 }}
@@ -258,9 +239,7 @@ export function MetricWidget({
                     tick={{ fill: "currentColor", fontSize: 10 }}
                     tickLine={false}
                     axisLine={false}
-                    tickFormatter={(v: number) =>
-                      `${v.toLocaleString()}${unit}`
-                    }
+                    tickFormatter={(v: number) => `${v.toLocaleString()}${unit}`}
                     className="text-muted-foreground"
                   />
                   <Tooltip
@@ -293,10 +272,7 @@ export function MetricWidget({
                   )}
                 </LineChart>
               ) : (
-                <AreaChart
-                  data={formatted}
-                  margin={{ top: 4, right: 4, left: 0, bottom: 0 }}
-                >
+                <AreaChart data={formatted} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
                   <defs>
                     <linearGradient
                       id={`grad-${title.replace(/\s/g, "")}`}
@@ -305,22 +281,11 @@ export function MetricWidget({
                       x2="0"
                       y2="1"
                     >
-                      <stop
-                        offset="5%"
-                        stopColor={fillColor ?? color}
-                        stopOpacity={0.5}
-                      />
-                      <stop
-                        offset="95%"
-                        stopColor={fillColor ?? color}
-                        stopOpacity={0.05}
-                      />
+                      <stop offset="5%" stopColor={fillColor ?? color} stopOpacity={0.5} />
+                      <stop offset="95%" stopColor={fillColor ?? color} stopOpacity={0.05} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    className="stroke-border"
-                  />
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
                   <XAxis
                     dataKey="time"
                     tick={{ fill: "currentColor", fontSize: 10 }}
@@ -333,9 +298,7 @@ export function MetricWidget({
                     tick={{ fill: "currentColor", fontSize: 10 }}
                     tickLine={false}
                     axisLine={false}
-                    tickFormatter={(v: number) =>
-                      `${v.toLocaleString()}${unit}`
-                    }
+                    tickFormatter={(v: number) => `${v.toLocaleString()}${unit}`}
                     className="text-muted-foreground"
                   />
                   <Tooltip

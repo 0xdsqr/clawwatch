@@ -94,26 +94,16 @@ function MetricsPage() {
   const [range, setRange] = useState<TimeRange>("24h");
   const hours = TIME_RANGES.find((r) => r.value === range)?.hours ?? 24;
   const bucketMs =
-    hours <= 1
-      ? 60000
-      : hours <= 6
-        ? 5 * 60000
-        : hours <= 24
-          ? 15 * 60000
-          : 60 * 60000;
+    hours <= 1 ? 60000 : hours <= 6 ? 5 * 60000 : hours <= 24 ? 15 * 60000 : 60 * 60000;
 
   const healthData = useQuery(api.metrics.healthTimeSeries, { hours });
   const costData = useQuery(api.metrics.costTimeSeries, { hours });
   const activityData = useQuery(api.metrics.activityTimeSeries, { hours });
 
   const isLoading =
-    healthData === undefined ||
-    costData === undefined ||
-    activityData === undefined;
+    healthData === undefined || costData === undefined || activityData === undefined;
   const hasData =
-    (healthData?.length ?? 0) > 0 ||
-    (costData?.length ?? 0) > 0 ||
-    (activityData?.length ?? 0) > 0;
+    (healthData?.length ?? 0) > 0 || (costData?.length ?? 0) > 0 || (activityData?.length ?? 0) > 0;
 
   const latency = useMemo(() => {
     if (!healthData?.length) return { p50: [], p95: [], p99: [] };
@@ -197,16 +187,13 @@ function MetricsPage() {
       {/* Status banner */}
       {isLoading && (
         <div className="flex items-center gap-2 rounded-lg border bg-muted/50 px-4 py-2.5">
-          <span className="text-sm text-muted-foreground">
-            Loading metrics...
-          </span>
+          <span className="text-sm text-muted-foreground">Loading metrics...</span>
         </div>
       )}
       {!isLoading && !hasData && (
         <div className="flex items-center gap-2 rounded-lg border border-amber-500/20 bg-amber-500/5 px-4 py-2.5">
           <span className="text-xs text-amber-400/80">
-            No metrics data yet — the collector will populate this as data flows
-            in
+            No metrics data yet — the collector will populate this as data flows in
           </span>
         </div>
       )}
@@ -214,8 +201,7 @@ function MetricsPage() {
         <div className="flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/5 px-4 py-2.5">
           <span className="text-xs text-emerald-400/80">
             Live metrics from gateway — {healthData?.length ?? 0} health checks,{" "}
-            {costData?.length ?? 0} cost records, {activityData?.length ?? 0}{" "}
-            activity windows
+            {costData?.length ?? 0} cost records, {activityData?.length ?? 0} activity windows
           </span>
         </div>
       )}
@@ -297,8 +283,7 @@ function MetricsPage() {
               {
                 name: "P99 Latency",
                 metric: "Response time > 2000ms",
-                status:
-                  (latency.p99.at(-1)?.value ?? 0) > 2000 ? "ALARM" : "OK",
+                status: (latency.p99.at(-1)?.value ?? 0) > 2000 ? "ALARM" : "OK",
               },
               {
                 name: "Error Spike",
@@ -308,14 +293,12 @@ function MetricsPage() {
               {
                 name: "Token Budget",
                 metric: "Tokens > 40K per window",
-                status:
-                  (tokenThroughput.at(-1)?.value ?? 0) > 40000 ? "ALARM" : "OK",
+                status: (tokenThroughput.at(-1)?.value ?? 0) > 40000 ? "ALARM" : "OK",
               },
               {
                 name: "Heartbeat",
                 metric: "Interval > 2000ms",
-                status:
-                  (heartbeatLatency.at(-1)?.value ?? 0) > 2000 ? "ALARM" : "OK",
+                status: (heartbeatLatency.at(-1)?.value ?? 0) > 2000 ? "ALARM" : "OK",
               },
               {
                 name: "Agent Offline",
@@ -350,9 +333,7 @@ function MetricsPage() {
                     {alarm.status}
                   </span>
                 </div>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {alarm.metric}
-                </p>
+                <p className="mt-1 text-xs text-muted-foreground">{alarm.metric}</p>
               </div>
             ))}
           </div>
