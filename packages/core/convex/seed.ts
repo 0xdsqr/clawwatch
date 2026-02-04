@@ -106,6 +106,7 @@ export const seedDemo = mutation({
         type: activity.type,
         summary: activity.summary,
         channel: "discord",
+        timestamp: now - i * 60000,
       });
     }
 

@@ -37,6 +37,7 @@ const ACTIVITY_COLORS: Record<string, string> = {
 interface ActivityItem {
   _id: string;
   _creationTime: number;
+  timestamp?: number;
   type: string;
   summary: string;
   agentName?: string;
@@ -77,7 +78,7 @@ const ActivityRow = memo(function ActivityRow({
             <span className="text-[11px] text-muted-foreground/40">#{activity.channel}</span>
           )}
           <span className="text-[11px] tabular-nums text-muted-foreground/40">
-            {timeAgo(activity._creationTime)}
+            {timeAgo(activity.timestamp ?? activity._creationTime)}
           </span>
         </div>
       </div>

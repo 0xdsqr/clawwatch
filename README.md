@@ -28,12 +28,15 @@ ClawWatch is a local-first monitoring system for agentic AI agents. Connect your
 - 🔔 **Smart alerting** - Rules for budget thresholds, offline detection, and anomalies
 - 📡 **Live event stream** - Filterable log of agent activity
 - 📊 **Token analytics** - Input/output/cache breakdowns with model comparisons
-- 🏠 **Fully self-hosted** - Runs on your machine with a self-hosted Convex backend
+- 🏠 **Self-hosted or cloud** - Run locally with a self-hosted Convex backend or in Convex Cloud
 
 **Quick Start**
 
 ```bash
 bun install
+
+cp infra/.env.example .env.local
+# Set at least VITE_CONVEX_URL and CONVEX_URL (local or cloud)
 
 cd packages/core && npx convex dev
 
@@ -42,6 +45,29 @@ cd apps/clawwatch && bun run dev
 
 Set `GATEWAY_URL` and `GATEWAY_TOKEN` to connect the WebSocket collector to your agent gateway.
 
+**Deployment Modes**
+
+ClawWatch supports both Convex Cloud and self-hosted Convex.  
+For most users, we recommend Convex Cloud with your own deploy key.  
+Self-hosted is for teams who have the hardware and want full on-prem control.
+
+**Cloud (Convex Cloud)**
+
+1. Create a Convex Cloud deployment and grab your deployment URL + deploy key.
+2. Set environment variables (example for `.env.local`):
+
+```
+VITE_CONVEX_URL=https://YOUR_DEPLOYMENT.convex.cloud
+CONVEX_URL=https://YOUR_DEPLOYMENT.convex.cloud
+```
+
+3. Deploy the Convex schema:
+
+```bash
+cd packages/core
+npx convex deploy --typecheck disable
+```
+
 **Self-Hosting (Docker Compose)**
 
 ```bash
@@ -49,7 +75,7 @@ git clone https://github.com/0xdsqr/clawwatch.git
 cd clawwatch/infra
 cp .env.example .env
 docker volume create clawwatch_convex-data
-docker compose up -d
+docker compose -f docker-compose.selfhosted.yml up -d
 ```
 
 Edit `.env` with your gateway URL and token:
@@ -67,13 +93,13 @@ Use your machine’s IP (not `127.0.0.1`) if you access the dashboard from anoth
 Single-command boot (after `.env` is set):
 
 ```bash
-cd infra && docker compose up -d
+cd infra && docker compose -f docker-compose.selfhosted.yml up -d
 ```
 
 Deploy the Convex schema:
 
 ```bash
-docker compose exec convex-backend ./generate_admin_key.sh
+docker compose -f docker-compose.selfhosted.yml exec convex-backend ./generate_admin_key.sh
 cd ../packages/core
 export CONVEX_SELF_HOSTED_URL=http://YOUR_HOST_IP:3210
 export CONVEX_SELF_HOSTED_ADMIN_KEY=your_admin_key_here

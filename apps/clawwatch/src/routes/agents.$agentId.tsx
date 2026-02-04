@@ -52,6 +52,7 @@ import {
 import type { ChangeEvent } from "react";
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { CostChart } from "@/components/cost-chart";
+import { AgentXray } from "@/components/agent-xray";
 import { StatCard } from "@/components/stat-card";
 import { formatCost, formatTokens, statusColor, timeAgo } from "@/lib/utils";
 import { listFiles, readFileContents, writeFileContents } from "@/server/files";
@@ -779,6 +780,10 @@ function AgentDetailPage() {
     agentId: agentId as Id<"agents">,
   });
 
+  const xray = useQuery(api.agents.xraySummary, {
+    agentId: agentId as Id<"agents">,
+  });
+
   const sessions = useQuery(api.sessions.byAgent, {
     agentId: agentId as Id<"agents">,
     limit: 100,
@@ -907,6 +912,7 @@ function AgentDetailPage() {
               <span className="ml-1.5 text-xs text-muted-foreground">({sessions.length})</span>
             )}
           </TabsTrigger>
+          <TabsTrigger value="xray">X-Ray</TabsTrigger>
           <TabsTrigger value="files">Files</TabsTrigger>
         </TabsList>
 
@@ -1170,6 +1176,25 @@ function AgentDetailPage() {
             agentName={agent.name}
             workspacePath={agent.workspacePath}
           />
+        </TabsContent>
+
+        {/* ─── X-RAY TAB ─── */}
+        <TabsContent value="xray" className="space-y-6">
+          {xray === undefined ? (
+            <Card className="border-border/50">
+              <CardContent className="py-12 text-center text-sm text-muted-foreground">
+                Loading x-ray data...
+              </CardContent>
+            </Card>
+          ) : xray ? (
+            <AgentXray data={xray} />
+          ) : (
+            <Card className="border-border/50">
+              <CardContent className="py-12 text-center text-sm text-muted-foreground">
+                No integration data yet. Trigger a tool call or channel event to populate the map.
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
       </Tabs>
     </div>

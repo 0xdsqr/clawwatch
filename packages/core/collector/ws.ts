@@ -19,7 +19,7 @@ import { dispatchDiscordNotifications } from "../lib/notifications.ts";
 // Config - all values must be provided via environment variables
 const GATEWAY_URL = Bun.env.GATEWAY_URL;
 const GATEWAY_TOKEN = Bun.env.GATEWAY_TOKEN;
-const CONVEX_URL = Bun.env.CONVEX_URL ?? "http://127.0.0.1:3210";
+const CONVEX_URL = Bun.env.CONVEX_URL;
 const SESSION_POLL_INTERVAL_MS = parseInt(Bun.env.SESSION_POLL_INTERVAL ?? "60000"); // 60 seconds
 const SESSIONS_DIR = Bun.env.SESSIONS_DIR ?? "/home/moltbot/.clawdbot/agents";
 
@@ -36,6 +36,11 @@ if (!GATEWAY_URL) {
 
 if (!GATEWAY_TOKEN) {
   console.error("❌ GATEWAY_TOKEN environment variable is required");
+  process.exit(1);
+}
+
+if (!CONVEX_URL) {
+  console.error("❌ CONVEX_URL environment variable is required");
   process.exit(1);
 }
 
@@ -198,6 +203,7 @@ async function scanHistoricalTranscripts(): Promise<void> {
                     summary: `Called ${block.name}${block.arguments?.command ? `: ${String(block.arguments.command).slice(0, 60)}` : ""}`,
                     sessionKey: undefined,
                     channel: undefined,
+                    timestamp: ts,
                   });
                 } else if (block.type === "text" && block.text) {
                   const preview = block.text.slice(0, 80);
@@ -207,6 +213,7 @@ async function scanHistoricalTranscripts(): Promise<void> {
                     summary: `${preview}${block.text.length > 80 ? "..." : ""}`,
                     sessionKey: undefined,
                     channel: undefined,
+                    timestamp: ts,
                   });
                 }
               }
@@ -227,48 +234,6 @@ async function scanHistoricalTranscripts(): Promise<void> {
               entries: chunk,
             });
             totalIngested += ingested;
-          }
-
-          // Update stats cache with aggregated deltas
-          const cacheDeltas = new Map<
-            string,
-            {
-              cost: number;
-              inputTokens: number;
-              outputTokens: number;
-              requests: number;
-            }
-          >();
-          for (const entry of costEntries) {
-            const dateStr = new Date(entry.timestamp).toISOString().slice(0, 10);
-            const hourKey = Math.floor(entry.timestamp / 3600000) * 3600000;
-
-            // Aggregate by time bucket AND by model
-            const modelKey = `model:${dateStr}:${entry.model}`;
-            for (const key of [`today:${dateStr}`, `hour:${hourKey}`, modelKey]) {
-              const existing = cacheDeltas.get(key) ?? {
-                cost: 0,
-                inputTokens: 0,
-                outputTokens: 0,
-                requests: 0,
-              };
-              existing.cost += entry.totalCost;
-              existing.inputTokens += entry.inputTokens;
-              existing.outputTokens += entry.outputTokens;
-              existing.requests += 1;
-              cacheDeltas.set(key, existing);
-            }
-          }
-
-          // Send aggregated cache updates in small batches
-          const cacheUpdates = Array.from(cacheDeltas.entries()).map(([key, data]) => ({
-            key,
-            ...data,
-          }));
-          for (let i = 0; i < cacheUpdates.length; i += 10) {
-            await convex.mutation(api.collector.updateStatsCache, {
-              updates: cacheUpdates.slice(i, i + 10),
-            });
           }
 
           console.log(
@@ -390,36 +355,6 @@ async function handleAgentEvent(payload: Record<string, unknown>): Promise<void>
     await convex.mutation(api.collector.ingestCosts, {
       entries: [costEntry],
     });
-
-    // Update stats cache for real-time data
-    const ts = costEntry.timestamp;
-    const dateStr = new Date(ts).toISOString().slice(0, 10);
-    const hourKey = Math.floor(ts / 3600000) * 3600000;
-    await convex.mutation(api.collector.updateStatsCache, {
-      updates: [
-        {
-          key: `today:${dateStr}`,
-          cost: costEntry.totalCost,
-          inputTokens: costEntry.inputTokens,
-          outputTokens: costEntry.outputTokens,
-          requests: 1,
-        },
-        {
-          key: `hour:${hourKey}`,
-          cost: costEntry.totalCost,
-          inputTokens: costEntry.inputTokens,
-          outputTokens: costEntry.outputTokens,
-          requests: 1,
-        },
-        {
-          key: `model:${dateStr}:${costEntry.model}`,
-          cost: costEntry.totalCost,
-          inputTokens: costEntry.inputTokens,
-          outputTokens: costEntry.outputTokens,
-          requests: 1,
-        },
-      ],
-    });
   }
 
   // Ingest activity
@@ -436,6 +371,7 @@ async function handleAgentEvent(payload: Record<string, unknown>): Promise<void>
         summary,
         sessionKey: payload.sessionKey as string | undefined,
         channel: payload.channel as string | undefined,
+        timestamp: Number(payload.timestamp || Date.now()),
       },
     ],
   });
@@ -466,6 +402,7 @@ async function handleHeartbeatEvent(payload: Record<string, unknown>): Promise<v
         summary: "Agent heartbeat",
         sessionKey: payload.sessionKey as string | undefined,
         channel: payload.channel as string | undefined,
+        timestamp: Number(payload.timestamp || Date.now()),
       },
     ],
   });
@@ -484,6 +421,7 @@ async function handlePresenceEvent(payload: Record<string, unknown>): Promise<vo
         summary: `Agent ${status}`,
         sessionKey: payload.sessionKey as string | undefined,
         channel: payload.channel as string | undefined,
+        timestamp: Number(payload.timestamp || Date.now()),
       },
     ],
   });
@@ -528,6 +466,7 @@ async function handleChatEvent(payload: Record<string, unknown>): Promise<void> 
         summary,
         sessionKey: payload.sessionKey as string | undefined,
         channel: payload.channel as string | undefined,
+        timestamp: Number(payload.timestamp || message?.timestamp || Date.now()),
       },
     ],
   });
@@ -551,35 +490,6 @@ async function handleChatEvent(payload: Record<string, unknown>): Promise<void> 
           cacheWriteTokens: usage.cacheWrite != null ? Number(usage.cacheWrite) : undefined,
           totalCost: Number(cost.total ?? 0),
           timestamp: ts,
-        },
-      ],
-    });
-
-    // Keep stats cache in sync for dashboard reads.
-    const dateStr = new Date(ts).toISOString().slice(0, 10);
-    const hourKey = Math.floor(ts / 3600000) * 3600000;
-    await convex.mutation(api.collector.updateStatsCache, {
-      updates: [
-        {
-          key: `today:${dateStr}`,
-          cost: Number(cost.total ?? 0),
-          inputTokens: Number(usage.input ?? usage.inputTokens ?? 0),
-          outputTokens: Number(usage.output ?? usage.outputTokens ?? 0),
-          requests: 1,
-        },
-        {
-          key: `hour:${hourKey}`,
-          cost: Number(cost.total ?? 0),
-          inputTokens: Number(usage.input ?? usage.inputTokens ?? 0),
-          outputTokens: Number(usage.output ?? usage.outputTokens ?? 0),
-          requests: 1,
-        },
-        {
-          key: `model:${dateStr}:${model}`,
-          cost: Number(cost.total ?? 0),
-          inputTokens: Number(usage.input ?? usage.inputTokens ?? 0),
-          outputTokens: Number(usage.output ?? usage.outputTokens ?? 0),
-          requests: 1,
         },
       ],
     });

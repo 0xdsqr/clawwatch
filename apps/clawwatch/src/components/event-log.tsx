@@ -37,6 +37,7 @@ interface EventRecord {
   details?: Record<string, string | number | boolean | null>;
   sessionKey?: string;
   channel?: string;
+  timestamp?: number;
 }
 
 type LogLevel = "DEBUG" | "INFO" | "WARNING" | "ERROR" | "CRITICAL";
@@ -118,11 +119,6 @@ export const EventLog = memo(function EventLog({
   limit = 500,
   showAgentColumn = true,
 }: EventLogProps) {
-  const rawData = useQuery(
-    api.activities.events,
-    agentId ? { agentId: agentId as Id<"agents">, limit } : { limit },
-  );
-
   // State
   const [isLive, setIsLive] = useState(true);
   const [singleLine, setSingleLine] = useState(true);
@@ -137,6 +133,14 @@ export const EventLog = memo(function EventLog({
   const [frozenData, setFrozenData] = useState<EventRecord[] | null>(null);
   const tableContainerRef = useRef<HTMLDivElement>(null);
 
+  const startTime = useMemo(() => Date.now() - timeRange, [timeRange]);
+  const rawData = useQuery(
+    api.activities.events,
+    agentId
+      ? { agentId: agentId as Id<"agents">, limit, startTime }
+      : { limit, startTime },
+  );
+
   // Freeze/unfreeze data when live toggles
   useEffect(() => {
     if (!isLive && rawData) {
@@ -149,12 +153,12 @@ export const EventLog = memo(function EventLog({
   // Apply all client-side filters
   const filteredData = useMemo(() => {
     const source = (isLive ? rawData : frozenData) ?? [];
-    const now = Date.now();
-    const cutoff = now - timeRange;
+    const cutoff = Date.now() - timeRange;
 
     return source.filter((event: EventRecord) => {
       // Time range
-      if (event._creationTime < cutoff) return false;
+      const eventTime = event.timestamp ?? event._creationTime;
+      if (eventTime < cutoff) return false;
 
       // Session filter
       if (sessionKey && event.sessionKey !== sessionKey) return false;
@@ -175,7 +179,7 @@ export const EventLog = memo(function EventLog({
           event.summary.toLowerCase().includes(q) ||
           event.agentName.toLowerCase().includes(q) ||
           event.type.toLowerCase().includes(q) ||
-          formatTime(event._creationTime).includes(q)
+          formatTime(eventTime).includes(q)
         );
       }
       return true;
@@ -219,7 +223,8 @@ export const EventLog = memo(function EventLog({
   // Define columns
   const columns = useMemo((): ColumnDef<EventRecord, any>[] => {
     const cols: ColumnDef<EventRecord, any>[] = [
-      col.accessor("_creationTime", {
+      col.accessor((row) => row.timestamp ?? row._creationTime, {
+        id: "timestamp",
         header: "Time",
         size: 100,
         cell: (info) => (

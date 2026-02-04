@@ -123,9 +123,10 @@ export const evaluate = mutation({
               .order("desc")
               .take(200);
 
-            const recentErrors = recentActivities.filter(
-              (a) => a.type === "error" && a._creationTime > now - windowMs,
-            );
+            const recentErrors = recentActivities.filter((a) => {
+              const activityTime = a.timestamp ?? a._creationTime;
+              return a.type === "error" && activityTime > now - windowMs;
+            });
 
             if (recentErrors.length >= threshold) {
               pendingAlerts.push({
@@ -357,6 +358,7 @@ export const evaluate = mutation({
             type: "alert_fired",
             summary: `🚨 ${pending.severity.toUpperCase()}: ${pending.title}`,
             details: { message: pending.message },
+            timestamp: now,
           });
         }
 

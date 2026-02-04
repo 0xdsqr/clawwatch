@@ -23,7 +23,7 @@ import { dispatchDiscordNotifications } from "./lib/notifications.ts";
 const PORT = parseInt(Bun.env.PORT ?? "5173");
 const GATEWAY_URL = Bun.env.GATEWAY_URL;
 const GATEWAY_TOKEN = Bun.env.GATEWAY_TOKEN;
-const CONVEX_URL = Bun.env.CONVEX_URL ?? "http://127.0.0.1:3210";
+const CONVEX_URL = Bun.env.CONVEX_URL;
 const SESSION_POLL_INTERVAL_MS = parseInt(Bun.env.SESSION_POLL_INTERVAL ?? "60000");
 const SESSIONS_DIR = Bun.env.SESSIONS_DIR ?? "/home/moltbot/.clawdbot/agents";
 
@@ -34,6 +34,11 @@ if (!GATEWAY_URL) {
 
 if (!GATEWAY_TOKEN) {
   console.error("❌ GATEWAY_TOKEN environment variable is required");
+  process.exit(1);
+}
+
+if (!CONVEX_URL) {
+  console.error("❌ CONVEX_URL environment variable is required");
   process.exit(1);
 }
 
@@ -118,48 +123,6 @@ async function invokeGatewayTool(
   const data = await res.json();
   if (!data.ok) throw new Error(`Gateway tool error: ${JSON.stringify(data)}`);
   return data.result;
-}
-
-async function updateStatsCacheFromCosts(
-  entries: Array<{
-    timestamp: number;
-    totalCost: number;
-    inputTokens: number;
-    outputTokens: number;
-    model: string;
-  }>,
-): Promise<void> {
-  const cacheDeltas = new Map<
-    string,
-    { cost: number; inputTokens: number; outputTokens: number; requests: number }
-  >();
-
-  for (const entry of entries) {
-    const dateStr = new Date(entry.timestamp).toISOString().slice(0, 10);
-    const hourKey = Math.floor(entry.timestamp / 3600000) * 3600000;
-    const keys = [`today:${dateStr}`, `hour:${hourKey}`, `model:${dateStr}:${entry.model}`];
-
-    for (const key of keys) {
-      const existing = cacheDeltas.get(key) ?? {
-        cost: 0,
-        inputTokens: 0,
-        outputTokens: 0,
-        requests: 0,
-      };
-      existing.cost += entry.totalCost;
-      existing.inputTokens += entry.inputTokens;
-      existing.outputTokens += entry.outputTokens;
-      existing.requests += 1;
-      cacheDeltas.set(key, existing);
-    }
-  }
-
-  const updates = Array.from(cacheDeltas.entries()).map(([key, data]) => ({ key, ...data }));
-  for (let i = 0; i < updates.length; i += 25) {
-    await convex.mutation(api.collector.updateStatsCache, {
-      updates: updates.slice(i, i + 25),
-    });
-  }
 }
 
 // ── Session Polling ──────────────────────────────────────────────────────────
@@ -315,6 +278,7 @@ async function scanTranscripts(): Promise<void> {
                   summary: `Called ${block.name}${block.arguments?.command ? `: ${String(block.arguments.command).slice(0, 60)}` : ""}`,
                   sessionKey: undefined,
                   channel: undefined,
+                  timestamp: ts,
                 });
               } else if (block.type === "text" && block.text) {
                 const preview = block.text.slice(0, 80);
@@ -324,6 +288,7 @@ async function scanTranscripts(): Promise<void> {
                   summary: `${preview}${block.text.length > 80 ? "..." : ""}`,
                   sessionKey: undefined,
                   channel: undefined,
+                  timestamp: ts,
                 });
               }
             }
@@ -337,7 +302,6 @@ async function scanTranscripts(): Promise<void> {
         const { ingested } = await convex.mutation(api.collector.ingestCosts, {
           entries: costEntries,
         });
-        await updateStatsCacheFromCosts(costEntries);
         console.log(`[collector] Ingested ${ingested} cost entries from ${agentDir}/${file}`);
       }
 
@@ -448,7 +412,6 @@ async function handleAgentEvent(payload: Record<string, unknown>): Promise<void>
     await convex.mutation(api.collector.ingestCosts, {
       entries: [costEntry],
     });
-    await updateStatsCacheFromCosts([costEntry]);
   }
 
   await convex.mutation(api.collector.ingestActivities, {
@@ -464,6 +427,7 @@ async function handleAgentEvent(payload: Record<string, unknown>): Promise<void>
         summary,
         sessionKey: payload.sessionKey as string | undefined,
         channel: payload.channel as string | undefined,
+        timestamp: Number(payload.timestamp || Date.now()),
       },
     ],
   });
@@ -495,6 +459,7 @@ async function handleHeartbeatEvent(payload: Record<string, unknown>): Promise<v
         summary: "Agent heartbeat",
         sessionKey: payload.sessionKey as string | undefined,
         channel: payload.channel as string | undefined,
+        timestamp: Number(payload.timestamp || Date.now()),
       },
     ],
   });
@@ -513,6 +478,7 @@ async function handlePresenceEvent(payload: Record<string, unknown>): Promise<vo
         summary: `Agent ${status}`,
         sessionKey: payload.sessionKey as string | undefined,
         channel: payload.channel as string | undefined,
+        timestamp: Number(payload.timestamp || Date.now()),
       },
     ],
   });
@@ -540,6 +506,7 @@ async function handleChatEvent(payload: Record<string, unknown>): Promise<void> 
         summary,
         sessionKey: payload.sessionKey as string | undefined,
         channel: payload.channel as string | undefined,
+        timestamp: Number(payload.timestamp || message?.timestamp || Date.now()),
       },
     ],
   });

@@ -39,7 +39,7 @@ export const Route = createFileRoute("/agents")({
 });
 
 function AgentsPage() {
-  const agents = useQuery(api.agents.list, {});
+  const agents = useQuery(api.agents.listWithStats, {});
   const matches = useMatches();
   const createAgent = useMutation(api.agents.upsert);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -393,20 +393,12 @@ interface AgentData {
   status: string;
   lastHeartbeat: number;
   config?: { model?: string; channel?: string };
+  activeSessions?: number;
+  costToday?: number;
 }
 
 const AgentCard = memo(function AgentCard({ agent }: { agent: AgentData }) {
-  const health = useQuery(api.agents.healthSummary, {
-    agentId: agent._id as any,
-  });
-  const costSummary = useQuery(api.costs.summary, {
-    agentId: agent._id as any,
-  });
-
-  const costToday = useMemo(
-    () => formatCost(costSummary?.today.cost ?? 0),
-    [costSummary?.today.cost],
-  );
+  const costToday = useMemo(() => formatCost(agent.costToday ?? 0), [agent.costToday]);
 
   return (
     <Link
@@ -453,7 +445,9 @@ const AgentCard = memo(function AgentCard({ agent }: { agent: AgentData }) {
               <Activity className="h-3 w-3 text-muted-foreground/60" />
               <div>
                 <p className="text-[10px] text-muted-foreground">Sessions</p>
-                <p className="text-xs font-medium tabular-nums">{health?.activeSessions ?? "-"}</p>
+                <p className="text-xs font-medium tabular-nums">
+                  {agent.activeSessions ?? "-"}
+                </p>
               </div>
             </div>
             <div className="flex items-center gap-1.5">
