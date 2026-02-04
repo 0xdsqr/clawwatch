@@ -119,6 +119,48 @@ async function invokeGatewayTool(
   return data.result;
 }
 
+async function updateStatsCacheFromCosts(
+  entries: Array<{
+    timestamp: number;
+    totalCost: number;
+    inputTokens: number;
+    outputTokens: number;
+    model: string;
+  }>,
+): Promise<void> {
+  const cacheDeltas = new Map<
+    string,
+    { cost: number; inputTokens: number; outputTokens: number; requests: number }
+  >();
+
+  for (const entry of entries) {
+    const dateStr = new Date(entry.timestamp).toISOString().slice(0, 10);
+    const hourKey = Math.floor(entry.timestamp / 3600000) * 3600000;
+    const keys = [`today:${dateStr}`, `hour:${hourKey}`, `model:${dateStr}:${entry.model}`];
+
+    for (const key of keys) {
+      const existing = cacheDeltas.get(key) ?? {
+        cost: 0,
+        inputTokens: 0,
+        outputTokens: 0,
+        requests: 0,
+      };
+      existing.cost += entry.totalCost;
+      existing.inputTokens += entry.inputTokens;
+      existing.outputTokens += entry.outputTokens;
+      existing.requests += 1;
+      cacheDeltas.set(key, existing);
+    }
+  }
+
+  const updates = Array.from(cacheDeltas.entries()).map(([key, data]) => ({ key, ...data }));
+  for (let i = 0; i < updates.length; i += 25) {
+    await convex.mutation(api.collector.updateStatsCache, {
+      updates: updates.slice(i, i + 25),
+    });
+  }
+}
+
 // ── Session Polling ──────────────────────────────────────────────────────────
 
 async function pollSessions(): Promise<void> {
@@ -294,6 +336,7 @@ async function scanTranscripts(): Promise<void> {
         const { ingested } = await convex.mutation(api.collector.ingestCosts, {
           entries: costEntries,
         });
+        await updateStatsCacheFromCosts(costEntries);
         console.log(`[collector] Ingested ${ingested} cost entries from ${agentDir}/${file}`);
       }
 
@@ -382,22 +425,23 @@ async function handleAgentEvent(payload: Record<string, unknown>): Promise<void>
   const usage = (message?.usage as Record<string, unknown>) ?? undefined;
   const usageCost = (usage?.cost as Record<string, unknown>) ?? undefined;
   if (usage && usageCost) {
+    const costEntry = {
+      agentName,
+      sessionKey: payload.sessionKey as string | undefined,
+      provider: String(message?.provider || "unknown"),
+      model: String(message?.model || "unknown"),
+      inputTokens: Number(usage.input || 0),
+      outputTokens: Number(usage.output || 0),
+      cacheReadTokens: usage.cacheRead != null ? Number(usage.cacheRead) : undefined,
+      cacheWriteTokens: usage.cacheWrite != null ? Number(usage.cacheWrite) : undefined,
+      totalCost: Number(usageCost.total || 0),
+      timestamp: Number(payload.timestamp || Date.now()),
+    };
+
     await convex.mutation(api.collector.ingestCosts, {
-      entries: [
-        {
-          agentName,
-          sessionKey: payload.sessionKey as string | undefined,
-          provider: String(message?.provider || "unknown"),
-          model: String(message?.model || "unknown"),
-          inputTokens: Number(usage.input || 0),
-          outputTokens: Number(usage.output || 0),
-          cacheReadTokens: usage.cacheRead != null ? Number(usage.cacheRead) : undefined,
-          cacheWriteTokens: usage.cacheWrite != null ? Number(usage.cacheWrite) : undefined,
-          totalCost: Number(usageCost.total || 0),
-          timestamp: Number(payload.timestamp || Date.now()),
-        },
-      ],
+      entries: [costEntry],
     });
+    await updateStatsCacheFromCosts([costEntry]);
   }
 
   await convex.mutation(api.collector.ingestActivities, {
