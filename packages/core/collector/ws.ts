@@ -14,6 +14,7 @@ import { Glob } from "bun";
 import { ConvexHttpClient } from "convex/browser";
 import { join } from "path";
 import { api } from "../convex/_generated/api.js";
+import { dispatchDiscordNotifications } from "../lib/notifications.ts";
 
 // Config - all values must be provided via environment variables
 const GATEWAY_URL = Bun.env.GATEWAY_URL;
@@ -49,7 +50,6 @@ let lastHistoricalScan = Date.now() - 86400000 * 3; // Start from 3 days ago
 
 // Connection state
 let ws: WebSocket | null = null;
-let isConnected = false;
 let sessionPollTimer: Timer | null = null;
 
 interface GatewayEvent {
@@ -93,7 +93,8 @@ async function pollSessions(): Promise<void> {
     const result = await invokeGatewayTool("sessions_list", {
       messageLimit: 0,
     });
-    const sessions = result.details?.sessions ?? [];
+    const details = result.details as { sessions?: Array<Record<string, unknown>> } | undefined;
+    const sessions = details?.sessions ?? [];
     const responseTimeMs = Date.now() - startTime;
 
     // Map sessions to our format
@@ -105,7 +106,7 @@ async function pollSessions(): Promise<void> {
       model: s.model ? String(s.model) : undefined,
       totalTokens: Number(s.totalTokens ?? 0),
       updatedAt: Number(s.updatedAt ?? Date.now()),
-      agentId: String(s.key).split(":")[1], // "agent:mimizuku:..." → "mimizuku"
+      agentId: String(s.key).split(":")[1] ?? "unknown", // "agent:mimizuku:..." → "mimizuku"
     }));
 
     // Ingest into Convex
@@ -129,8 +130,8 @@ async function scanHistoricalTranscripts(): Promise<void> {
     for await (const match of glob.scan(SESSIONS_DIR)) {
       // match is e.g. "mimizuku/sessions/foo.jsonl"
       const parts = match.split("/");
-      const agentDir = parts[0];
-      const file = parts[parts.length - 1];
+      const agentDir = parts[0] ?? "unknown";
+      const file = parts[parts.length - 1] ?? match;
       const filePath = join(SESSIONS_DIR, match);
 
       {
@@ -336,7 +337,6 @@ async function handleAgentEvent(payload: Record<string, unknown>): Promise<void>
   const agent = payload.agent as Record<string, unknown> | undefined;
   const agentName = String(agent?.name || payload.agentName || "unknown");
   let activityType = String(payload.type || "message_sent");
-  const sessionKey = payload.sessionKey as string | undefined;
   const stream = payload.stream as string | undefined;
   const data = payload.data as Record<string, unknown> | undefined;
   let summary = "Agent activity";
@@ -444,35 +444,14 @@ async function handleAgentEvent(payload: Record<string, unknown>): Promise<void>
 async function handleHealthEvent(payload: Record<string, unknown>): Promise<void> {
   const agent = payload.agent as Record<string, unknown> | undefined;
   const agentName = String(agent?.name || payload.agentName || "unknown");
-
-  // Process each agent from the health snapshot
-  if (agents && Array.isArray(agents)) {
-    for (const agent of agents) {
-      const agentName = String(agent.id ?? agent.name ?? "unknown");
-      await convex.mutation(api.collector.recordHealthCheck, {
-        agentName,
-        responseTimeMs: durationMs,
-        activeSessionCount: sessions
-          ? sessions.filter((s: any) => String(s.key ?? "").includes(agentName)).length
-          : 0,
-        totalTokensLastHour: 0,
-        costLastHour: 0,
-        errorCount: 0,
-      });
-    }
-  } else {
-    // Fallback: record a general health check using defaultAgentId
-    const defaultAgent = String(payload.defaultAgentId ?? "mimizuku");
-    const sessionCount = Array.isArray(sessions) ? sessions.length : 0;
-    await convex.mutation(api.collector.recordHealthCheck, {
-      agentName: defaultAgent,
-      responseTimeMs: durationMs,
-      activeSessionCount: sessionCount,
-      totalTokensLastHour: 0,
-      costLastHour: 0,
-      errorCount: 0,
-    });
-  }
+  await convex.mutation(api.collector.recordHealthCheck, {
+    agentName,
+    responseTimeMs: Number(payload.responseTimeMs || payload.latency || 0),
+    activeSessionCount: Number(payload.activeSessionCount || 0),
+    totalTokensLastHour: Number(payload.totalTokensLastHour || 0),
+    costLastHour: Number(payload.costLastHour || 0),
+    errorCount: Number(payload.errorCount || 0),
+  });
 }
 
 async function handleHeartbeatEvent(payload: Record<string, unknown>): Promise<void> {
@@ -513,28 +492,39 @@ async function handlePresenceEvent(payload: Record<string, unknown>): Promise<vo
 async function handleChatEvent(payload: Record<string, unknown>): Promise<void> {
   const agent = payload.agent as Record<string, unknown> | undefined;
   const agentName = String(agent?.name || payload.agentName || "unknown");
+  const message = payload.message as Record<string, unknown> | undefined;
 
   let summary = "Chat message";
-  if (Array.isArray(contentBlocks)) {
-    const textParts = contentBlocks
-      .filter((b) => b.type === "text")
-      .map((b) => b.text)
-      .join(" ");
-    if (textParts) {
-      summary = textParts.slice(0, 80) + (textParts.length > 80 ? "..." : "");
+  if (message?.content) {
+    const contentBlocks = message.content as
+      | Array<{ type?: string; text?: string }>
+      | string
+      | undefined;
+    if (Array.isArray(contentBlocks)) {
+      const textParts = contentBlocks
+        .filter((b) => b.type === "text")
+        .map((b) => b.text ?? "")
+        .join(" ")
+        .trim();
+      if (textParts) {
+        summary = textParts.slice(0, 80) + (textParts.length > 80 ? "..." : "");
+      }
+    } else {
+      const content = String(contentBlocks);
+      summary = content.slice(0, 80) + (content.length > 80 ? "..." : "");
     }
   }
 
-  const activityType = role === "assistant" ? "message_sent" : "message_received";
+  const direction = String(payload.direction ?? "");
+  const role = String(message?.role ?? "");
+  const activityType: "message_sent" | "message_received" =
+    direction === "outbound" || role === "assistant" ? "message_sent" : "message_received";
 
   await convex.mutation(api.collector.ingestActivities, {
     activities: [
       {
         agentName,
-        type:
-          payload.direction === "outbound"
-            ? ("message_sent" as const)
-            : ("message_received" as const),
+        type: activityType,
         summary,
         sessionKey: payload.sessionKey as string | undefined,
         channel: payload.channel as string | undefined,
@@ -543,22 +533,53 @@ async function handleChatEvent(payload: Record<string, unknown>): Promise<void> 
   });
 
   // Extract cost from complete messages if present
-  const usage = message.usage as Record<string, unknown> | undefined;
+  const usage = message?.usage as Record<string, unknown> | undefined;
   const cost = (usage?.cost as Record<string, unknown>) ?? undefined;
   if (usage && cost) {
+    const ts = Number(message?.timestamp || payload.timestamp || Date.now());
+    const model = String(message?.model || "unknown");
     await convex.mutation(api.collector.ingestCosts, {
       entries: [
         {
           agentName,
-          sessionKey,
-          provider: String(message.provider || "unknown"),
-          model: String(message.model || "unknown"),
+          sessionKey: payload.sessionKey as string | undefined,
+          provider: String(message?.provider || "unknown"),
+          model,
           inputTokens: Number(usage.input ?? usage.inputTokens ?? 0),
           outputTokens: Number(usage.output ?? usage.outputTokens ?? 0),
           cacheReadTokens: usage.cacheRead != null ? Number(usage.cacheRead) : undefined,
           cacheWriteTokens: usage.cacheWrite != null ? Number(usage.cacheWrite) : undefined,
           totalCost: Number(cost.total ?? 0),
-          timestamp: Number(message.timestamp || Date.now()),
+          timestamp: ts,
+        },
+      ],
+    });
+
+    // Keep stats cache in sync for dashboard reads.
+    const dateStr = new Date(ts).toISOString().slice(0, 10);
+    const hourKey = Math.floor(ts / 3600000) * 3600000;
+    await convex.mutation(api.collector.updateStatsCache, {
+      updates: [
+        {
+          key: `today:${dateStr}`,
+          cost: Number(cost.total ?? 0),
+          inputTokens: Number(usage.input ?? usage.inputTokens ?? 0),
+          outputTokens: Number(usage.output ?? usage.outputTokens ?? 0),
+          requests: 1,
+        },
+        {
+          key: `hour:${hourKey}`,
+          cost: Number(cost.total ?? 0),
+          inputTokens: Number(usage.input ?? usage.inputTokens ?? 0),
+          outputTokens: Number(usage.output ?? usage.outputTokens ?? 0),
+          requests: 1,
+        },
+        {
+          key: `model:${dateStr}:${model}`,
+          cost: Number(cost.total ?? 0),
+          inputTokens: Number(usage.input ?? usage.inputTokens ?? 0),
+          outputTokens: Number(usage.output ?? usage.outputTokens ?? 0),
+          requests: 1,
         },
       ],
     });
@@ -614,7 +635,6 @@ async function connect(): Promise<void> {
           // Connection response
           if (frame.ok) {
             console.log("[ws] Authenticated successfully, receiving events...");
-            isConnected = true;
             reconnectDelay = INITIAL_RECONNECT_DELAY_MS; // Reset reconnect delay
 
             // Start session polling timer
@@ -641,7 +661,6 @@ async function connect(): Promise<void> {
       console.log(
         `[ws] Connection closed (connection ${currentConnectionId}): code=${event.code}, reason=${event.reason}`,
       );
-      isConnected = false;
 
       // Stop session polling
       if (sessionPollTimer) {
@@ -676,6 +695,12 @@ async function evaluateAlerts(): Promise<void> {
     const result = await convex.mutation(api.evaluateAlerts.evaluate, {});
     if (result.fired > 0) {
       console.log(`[ws] ⚠️  Fired ${result.fired} alerts (evaluated ${result.evaluated} rules)`);
+    }
+    const delivery = await dispatchDiscordNotifications(convex, "ws");
+    if (delivery.delivered > 0 || delivery.retried > 0) {
+      console.log(
+        `[ws] Notifications: checked=${delivery.checked}, delivered=${delivery.delivered}, retried=${delivery.retried}`,
+      );
     }
   } catch (err) {
     console.error("[ws] Error evaluating alerts:", err);

@@ -3,17 +3,23 @@ FROM oven/bun:1-slim
 
 WORKDIR /app
 
+# Copy workspace files for bun install
 COPY package.json bun.lock* ./
+COPY apps/clawwatch/package.json apps/clawwatch/
 COPY packages/core/package.json packages/core/
-RUN bun install --frozen-lockfile --production
+COPY packages/ui/package.json packages/ui/
+COPY tooling/typescript/package.json tooling/typescript/
 
-COPY packages/core/collector/ ./collector/
-COPY packages/core/convex/ ./convex/
+# Install all dependencies (not production-only, since convex is needed)
+RUN bun install --frozen-lockfile
+
+# Copy the full packages/core directory (collector needs the workspace structure)
+COPY packages/core/ ./packages/core/
 
 # Create sessions directory and non-root user
 RUN mkdir -p /data/sessions && \
-    addgroup --system --gid 1001 clawwatch && \
-    adduser --system --uid 1001 --ingroup clawwatch clawwatch && \
+    groupadd --system --gid 1001 clawwatch && \
+    useradd --system --uid 1001 --gid clawwatch clawwatch && \
     chown -R clawwatch:clawwatch /data/sessions
 
 USER clawwatch
@@ -23,5 +29,7 @@ ENV GATEWAY_TOKEN=""
 ENV CONVEX_URL="http://127.0.0.1:3210"
 ENV SESSIONS_DIR="/data/sessions"
 ENV SESSION_POLL_INTERVAL="60000"
+
+WORKDIR /app/packages/core
 
 CMD ["bun", "run", "collector/ws.ts"]

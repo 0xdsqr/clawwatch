@@ -40,7 +40,7 @@ import {
   Zap,
 } from "lucide-react";
 import type { ChangeEvent } from "react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { formatCost, severityColor, timeAgo } from "@/lib/utils";
 import type { Alert, AlertRule } from "@/types";
 
@@ -103,7 +103,6 @@ function AlertingPage() {
   const alerts = useQuery(api.alerting.listAlerts, { limit: 100 });
   const agents = useQuery(api.agents.list, {});
   const costSummary = useQuery(api.costs.summary, {});
-  const notificationChannels = useQuery(api.notifications.list);
 
   const acknowledge = useMutation(api.alerting.acknowledge);
   const resolve = useMutation(api.alerting.resolve);
@@ -208,7 +207,6 @@ function AlertingPage() {
           </DialogTrigger>
           <CreateAlertRuleDialog
             agents={agents ?? []}
-            channels={notificationChannels ?? []}
             onClose={() => setIsCreateOpen(false)}
           />
         </Dialog>
@@ -455,7 +453,6 @@ function CreateAlertRuleDialog({
   onClose,
 }: {
   agents: { _id: string; name: string }[];
-  channels: { _id: string; name: string; type: string }[];
   onClose: () => void;
 }) {
   const createRule = useMutation(api.alerting.createRule);
@@ -467,15 +464,8 @@ function CreateAlertRuleDialog({
   const [windowMinutes, setWindowMinutes] = useState("15");
   const [cooldownMinutes, setCooldownMinutes] = useState("30");
   const [severity, setSeverity] = useState<"info" | "warning" | "critical">("warning");
-  const [selectedChannels, setSelectedChannels] = useState<string[]>(["discord"]);
   const [hardStop, setHardStop] = useState(false);
   const [percentageThreshold, setPercentageThreshold] = useState("50");
-
-  const toggleChannel = useCallback((ch: string) => {
-    setSelectedChannels((prev) =>
-      prev.includes(ch) ? prev.filter((c) => c !== ch) : [...prev, ch],
-    );
-  }, []);
 
   const handleSubmit = async () => {
     if (!name.trim()) return;
@@ -503,7 +493,7 @@ function CreateAlertRuleDialog({
       agentId: agentScope !== "all" ? (agentScope as Id<"agents">) : undefined,
       config: config as any,
       severity,
-      channels: selectedChannels as any,
+      channels: ["discord"] as any,
       cooldownMinutes: parseInt(cooldownMinutes, 10),
     });
 
@@ -654,26 +644,8 @@ function CreateAlertRuleDialog({
           </div>
         </div>
 
-        {/* Notification channels */}
-        <div className="grid gap-2">
-          <Label>Notification Channels</Label>
-          <div className="flex flex-wrap gap-2">
-            {(["discord", "email", "webhook"] as const).map((ch) => (
-              <button
-                type="button"
-                key={ch}
-                onClick={() => toggleChannel(ch)}
-                className={cn(
-                  "rounded-md px-3 py-1.5 text-xs font-medium border transition-colors",
-                  selectedChannels.includes(ch)
-                    ? "border-primary bg-primary/10 text-primary"
-                    : "text-muted-foreground hover:bg-muted/50",
-                )}
-              >
-                {ch.charAt(0).toUpperCase() + ch.slice(1)}
-              </button>
-            ))}
-          </div>
+        <div className="rounded-md border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+          Notifications are delivered to active Discord channels configured in Settings.
         </div>
 
         {/* Cooldown */}

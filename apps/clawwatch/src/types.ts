@@ -110,6 +110,10 @@ export interface Alert {
   acknowledgedAt?: number;
   resolvedAt?: number;
   channels: string[];
+  notifiedAt?: number;
+  notificationAttempts?: number;
+  nextNotificationAttemptAt?: number;
+  lastNotificationError?: string;
 }
 
 export interface Activity {
@@ -171,6 +175,7 @@ export interface NotificationChannel {
     webhookUrl?: string;
     email?: string;
     channelId?: string;
+    severities?: ("info" | "warning" | "critical")[];
   };
   isActive: boolean;
 }

@@ -1,6 +1,7 @@
-import { readdir, readFile, stat, writeFile } from "node:fs/promises";
-import { join, resolve } from "node:path";
+import { readdir, stat } from "node:fs/promises";
+import { isAbsolute, join, relative, resolve, sep } from "node:path";
 import { createServerFn } from "@tanstack/react-start";
+import { readText, writeText } from "@/lib/fs";
 
 const IGNORED_DIRS = new Set([
   "node_modules",
@@ -18,7 +19,11 @@ const IGNORED_DIRS = new Set([
 function assertSafePath(fullPath: string, basePath: string): void {
   const resolvedFull = resolve(fullPath);
   const resolvedBase = resolve(basePath);
-  if (!resolvedFull.startsWith(resolvedBase)) {
+  const rel = relative(resolvedBase, resolvedFull);
+  const escapesBase =
+    rel === ".." || rel.startsWith(`..${sep}`) || isAbsolute(rel);
+
+  if (escapesBase) {
     throw new Error("Path traversal not allowed");
   }
 }
@@ -60,7 +65,7 @@ export const readFileContents = createServerFn({ method: "GET" })
       throw new Error("File too large to display (>1MB)");
     }
 
-    const content = await readFile(fullPath, "utf-8");
+    const content = await readText(fullPath);
     return {
       content,
       size: stats.size,
@@ -75,6 +80,6 @@ export const writeFileContents = createServerFn({ method: "POST" })
     const fullPath = join(data.workspacePath, data.filePath);
     assertSafePath(fullPath, data.workspacePath);
 
-    await writeFile(fullPath, data.content, "utf-8");
+    await writeText(fullPath, data.content);
     return { success: true };
   });

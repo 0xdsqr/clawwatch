@@ -138,6 +138,7 @@ export const fire = mutation({
     // Record the alert
     const alertId = await ctx.db.insert("alerts", {
       ...args,
+      notificationAttempts: 0,
     });
 
     // Update rule's last triggered time
@@ -165,6 +166,57 @@ export const listAlerts = query({
       .query("alerts")
       .order("desc")
       .take(args.limit ?? 50);
+  },
+});
+
+// List alerts pending notification delivery.
+export const listPendingNotifications = query({
+  args: { limit: v.optional(v.number()) },
+  handler: async (ctx, args) => {
+    const now = Date.now();
+    const alerts = await ctx.db
+      .query("alerts")
+      .order("desc")
+      .take(args.limit ?? 100);
+
+    return alerts.filter((alert) => {
+      if (alert.notifiedAt) return false;
+      if (!alert.channels.includes("discord")) return false;
+      if ((alert.notificationAttempts ?? 0) >= 3) return false;
+      if (alert.nextNotificationAttemptAt && alert.nextNotificationAttemptAt > now) return false;
+      return true;
+    });
+  },
+});
+
+// Mark an alert as successfully notified.
+export const markNotificationSent = mutation({
+  args: { id: v.id("alerts") },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.id, {
+      notifiedAt: Date.now(),
+      lastNotificationError: undefined,
+      nextNotificationAttemptAt: undefined,
+    });
+  },
+});
+
+// Mark a notification attempt as failed and schedule retry.
+export const markNotificationAttemptFailed = mutation({
+  args: {
+    id: v.id("alerts"),
+    error: v.string(),
+    nextAttemptAt: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const alert = await ctx.db.get(args.id);
+    if (!alert) return;
+
+    await ctx.db.patch(args.id, {
+      notificationAttempts: (alert.notificationAttempts ?? 0) + 1,
+      lastNotificationError: args.error,
+      nextNotificationAttemptAt: args.nextAttemptAt,
+    });
   },
 });
 

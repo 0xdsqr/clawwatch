@@ -116,6 +116,10 @@ export default defineSchema({
     acknowledgedAt: v.optional(v.number()),
     resolvedAt: v.optional(v.number()),
     channels: v.array(v.string()),
+    notifiedAt: v.optional(v.number()),
+    notificationAttempts: v.optional(v.number()),
+    nextNotificationAttemptAt: v.optional(v.number()),
+    lastNotificationError: v.optional(v.string()),
   }),
 
   // Activity feed — what the agent did
@@ -188,6 +192,9 @@ export default defineSchema({
       webhookUrl: v.optional(v.string()),
       email: v.optional(v.string()),
       channelId: v.optional(v.string()),
+      severities: v.optional(
+        v.array(v.union(v.literal("info"), v.literal("warning"), v.literal("critical"))),
+      ),
     }),
     isActive: v.boolean(),
   }),
