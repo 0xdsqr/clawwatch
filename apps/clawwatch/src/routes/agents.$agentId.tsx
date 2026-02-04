@@ -33,18 +33,12 @@ import {
   ArrowLeft,
   Check,
   ChevronDown,
-  ChevronRight,
   ChevronUp,
   Circle,
   Clock,
   DollarSign,
   Edit3,
-  File,
-  FileCode,
-  FileJson,
   FileText,
-  Folder,
-  FolderOpen,
   Hash,
   Loader2,
   Pencil,
@@ -59,7 +53,11 @@ import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { CostChart } from "@/components/cost-chart";
 import { StatCard } from "@/components/stat-card";
 import { formatCost, formatTokens, statusColor, timeAgo } from "@/lib/utils";
-import { listFiles, readFileContents, writeFileContents } from "@/server/files";
+import {
+  listMarkdownFiles,
+  readFileContents,
+  writeFileContents,
+} from "@/server/files";
 import type { Session } from "@/types";
 
 export const Route = createFileRoute("/agents/$agentId")({
@@ -71,108 +69,31 @@ type SortDir = "asc" | "desc";
 
 // ─── File icon helper ───
 
-function fileIcon(name: string, isDirectory: boolean) {
-  if (isDirectory) return <Folder className="h-4 w-4 text-blue-400" />;
-  const ext = name.split(".").pop()?.toLowerCase();
-  switch (ext) {
-    case "md":
-      return <FileText className="h-4 w-4 text-emerald-400" />;
-    case "json":
-      return <FileJson className="h-4 w-4 text-amber-400" />;
-    case "ts":
-    case "tsx":
-    case "js":
-    case "jsx":
-      return <FileCode className="h-4 w-4 text-blue-400" />;
-    case "yaml":
-    case "yml":
-    case "toml":
-      return <Settings className="h-4 w-4 text-purple-400" />;
-    default:
-      return <File className="h-4 w-4 text-muted-foreground" />;
-  }
+function fileIcon(name: string) {
+  const base = name.split("/").pop() ?? name;
+  const upper = base.toUpperCase();
+  if (upper === "SOUL.MD") return <Zap className="h-4 w-4 text-purple-400" />;
+  if (upper === "MEMORY.MD")
+    return <Activity className="h-4 w-4 text-amber-400" />;
+  if (upper === "AGENTS.MD")
+    return <Settings className="h-4 w-4 text-blue-400" />;
+  if (upper === "USER.MD")
+    return <Circle className="h-4 w-4 text-emerald-400" />;
+  if (name.startsWith("memory/"))
+    return <Clock className="h-4 w-4 text-muted-foreground" />;
+  return <FileText className="h-4 w-4 text-emerald-400" />;
 }
 
-// ─── File tree types ───
+// ─── MD file types ───
 
-interface FileEntry {
+interface MdFileEntry {
   name: string;
   path: string;
-  isDirectory: boolean;
+  size: number;
+  modified: string;
 }
 
-interface TreeNode extends FileEntry {
-  children?: TreeNode[];
-  loaded?: boolean;
-  expanded?: boolean;
-}
-
-// ─── File Tree Item ───
-
-function FileTreeItem({
-  node,
-  depth,
-  selectedPath,
-  onSelect,
-  onToggle,
-}: {
-  node: TreeNode;
-  depth: number;
-  selectedPath: string | null;
-  onSelect: (path: string) => void;
-  onToggle: (path: string) => void;
-}) {
-  const isSelected = selectedPath === node.path;
-
-  return (
-    <>
-      <button
-        type="button"
-        onClick={() => {
-          if (node.isDirectory) {
-            onToggle(node.path);
-          } else {
-            onSelect(node.path);
-          }
-        }}
-        className={cn(
-          "w-full flex items-center gap-1.5 px-2 py-1 text-sm rounded-md transition-colors text-left",
-          isSelected
-            ? "bg-primary/10 text-primary font-medium"
-            : "hover:bg-muted/50 text-foreground",
-        )}
-        style={{ paddingLeft: `${depth * 16 + 8}px` }}
-      >
-        {node.isDirectory ? (
-          node.expanded ? (
-            <ChevronDown className="h-3 w-3 shrink-0 text-muted-foreground" />
-          ) : (
-            <ChevronRight className="h-3 w-3 shrink-0 text-muted-foreground" />
-          )
-        ) : (
-          <span className="w-3 shrink-0" />
-        )}
-        {fileIcon(node.name, node.isDirectory)}
-        <span className="truncate">{node.name}</span>
-      </button>
-      {node.isDirectory &&
-        node.expanded &&
-        node.children &&
-        node.children.map((child) => (
-          <FileTreeItem
-            key={child.path}
-            node={child}
-            depth={depth + 1}
-            selectedPath={selectedPath}
-            onSelect={onSelect}
-            onToggle={onToggle}
-          />
-        ))}
-    </>
-  );
-}
-
-// ─── Files Tab ───
+// ─── Files Tab (MD only) ───
 
 function FilesTab({
   agentId,
@@ -184,25 +105,20 @@ function FilesTab({
   workspacePath: string | undefined;
 }) {
   const updateWorkspacePath = useMutation(api.agents.updateWorkspacePath);
-  const setDefaultPaths = useMutation(api.agents.setDefaultPaths);
 
   const [pathInput, setPathInput] = useState(
     () => workspacePath ?? `/home/moltbot/${agentName}`,
   );
   const [saving, setSaving] = useState(false);
 
-  // File tree state
-  const [tree, setTree] = useState<TreeNode[]>([]);
-  const [treeLoading, setTreeLoading] = useState(false);
-  const [treeError, setTreeError] = useState<string | null>(null);
+  // MD file list
+  const [mdFiles, setMdFiles] = useState<MdFileEntry[]>([]);
+  const [listLoading, setListLoading] = useState(false);
+  const [listError, setListError] = useState<string | null>(null);
 
   // File viewer state
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [fileContent, setFileContent] = useState<string | null>(null);
-  const [fileMeta, setFileMeta] = useState<{
-    size: number;
-    modified: string;
-  } | null>(null);
   const [fileLoading, setFileLoading] = useState(false);
   const [fileError, setFileError] = useState<string | null>(null);
 
@@ -212,129 +128,27 @@ function FilesTab({
   const [fileSaving, setFileSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
 
-  // Set defaults on mount if no workspace path
-  useEffect(() => {
-    if (!workspacePath) {
-      setDefaultPaths({});
-    }
-  }, [workspacePath, setDefaultPaths]);
-
-  // Load root directory when workspace path changes
-  useEffect(() => {
+  // Load MD files when workspace path is set
+  const loadFiles = useCallback(async () => {
     if (!workspacePath) return;
-    loadDirectory();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    setListLoading(true);
+    setListError(null);
+    try {
+      const files = await listMarkdownFiles({
+        data: { workspacePath },
+      });
+      setMdFiles(files);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to load files";
+      setListError(msg);
+    } finally {
+      setListLoading(false);
+    }
   }, [workspacePath]);
 
-  const loadDirectory = useCallback(
-    async (subPath?: string) => {
-      if (!workspacePath) return;
-      if (!subPath) setTreeLoading(true);
-      setTreeError(null);
-      try {
-        const entries = await listFiles({
-          data: { workspacePath, subPath },
-        });
-        if (!subPath) {
-          // Root — set top-level tree
-          setTree(
-            entries.map((e: FileEntry) => ({
-              ...e,
-              children: e.isDirectory ? [] : undefined,
-              loaded: false,
-              expanded: false,
-            })),
-          );
-        } else {
-          // Sub-directory — update tree in place
-          setTree((prev) => updateTreeNode(prev, subPath, entries));
-        }
-      } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : "Failed to load files";
-        if (!subPath) setTreeError(msg);
-      } finally {
-        if (!subPath) setTreeLoading(false);
-      }
-    },
-    [workspacePath],
-  );
-
-  const updateTreeNode = (
-    nodes: TreeNode[],
-    targetPath: string,
-    children: FileEntry[],
-  ): TreeNode[] => {
-    return nodes.map((node) => {
-      if (node.path === targetPath) {
-        return {
-          ...node,
-          expanded: true,
-          loaded: true,
-          children: children.map((e) => ({
-            ...e,
-            children: e.isDirectory ? [] : undefined,
-            loaded: false,
-            expanded: false,
-          })),
-        };
-      }
-      if (node.children && targetPath.startsWith(`${node.path}/`)) {
-        return {
-          ...node,
-          children: updateTreeNode(node.children, targetPath, children),
-        };
-      }
-      return node;
-    });
-  };
-
-  const toggleDir = useCallback(
-    (path: string) => {
-      const findNode = (nodes: TreeNode[]): TreeNode | undefined => {
-        for (const n of nodes) {
-          if (n.path === path) return n;
-          if (n.children) {
-            const found = findNode(n.children);
-            if (found) return found;
-          }
-        }
-        return undefined;
-      };
-
-      const node = findNode(tree);
-      if (!node) return;
-
-      if (node.expanded) {
-        // Collapse
-        setTree((prev) => collapseNode(prev, path));
-      } else if (node.loaded) {
-        // Expand (already loaded)
-        setTree((prev) => expandNode(prev, path));
-      } else {
-        // Load children
-        loadDirectory(path);
-      }
-    },
-    [tree, loadDirectory],
-  );
-
-  const collapseNode = (nodes: TreeNode[], path: string): TreeNode[] =>
-    nodes.map((n) =>
-      n.path === path
-        ? { ...n, expanded: false }
-        : n.children
-          ? { ...n, children: collapseNode(n.children, path) }
-          : n,
-    );
-
-  const expandNode = (nodes: TreeNode[], path: string): TreeNode[] =>
-    nodes.map((n) =>
-      n.path === path
-        ? { ...n, expanded: true }
-        : n.children
-          ? { ...n, children: expandNode(n.children, path) }
-          : n,
-    );
+  useEffect(() => {
+    if (workspacePath) loadFiles();
+  }, [workspacePath, loadFiles]);
 
   const selectFile = useCallback(
     async (filePath: string) => {
@@ -349,12 +163,10 @@ function FilesTab({
           data: { workspacePath, filePath },
         });
         setFileContent(result.content);
-        setFileMeta({ size: result.size, modified: result.modified });
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : "Failed to read file";
         setFileError(msg);
         setFileContent(null);
-        setFileMeta(null);
       } finally {
         setFileLoading(false);
       }
@@ -406,12 +218,12 @@ function FilesTab({
         <CardContent className="py-12">
           <div className="max-w-md mx-auto text-center space-y-4">
             <div className="mx-auto mb-4 h-14 w-14 rounded-xl bg-muted flex items-center justify-center">
-              <FolderOpen className="h-7 w-7 text-muted-foreground" />
+              <FileText className="h-7 w-7 text-muted-foreground" />
             </div>
             <h3 className="text-lg font-semibold">Set Workspace Path</h3>
             <p className="text-sm text-muted-foreground">
               Configure the file system path for this agent&apos;s workspace to
-              browse and edit files.
+              view and edit its configuration files.
             </p>
             <div className="flex items-center gap-2">
               <Input
@@ -436,50 +248,90 @@ function FilesTab({
     );
   }
 
-  // ─── File browser ───
+  // Split files into root and memory groups
+  const rootFiles = mdFiles.filter((f) => !f.path.startsWith("memory/"));
+  const memoryFiles = mdFiles.filter((f) => f.path.startsWith("memory/"));
+
+  // ─── MD file browser ───
   return (
-    <div className="grid grid-cols-1 md:grid-cols-[280px_1fr] gap-4 min-h-[500px]">
-      {/* Left panel — File Tree */}
+    <div className="grid grid-cols-1 md:grid-cols-[260px_1fr] gap-4 min-h-[500px]">
+      {/* Left panel — MD file list */}
       <Card className="overflow-hidden">
         <CardHeader className="py-3 px-3 border-b">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-sm font-medium">Files</CardTitle>
+            <CardTitle className="text-sm font-medium">Agent Files</CardTitle>
             <Button
               variant="ghost"
               size="sm"
               className="h-6 w-6 p-0"
-              onClick={() => loadDirectory()}
+              onClick={loadFiles}
               title="Refresh"
             >
               <Loader2
-                className={cn("h-3.5 w-3.5", treeLoading && "animate-spin")}
+                className={cn("h-3.5 w-3.5", listLoading && "animate-spin")}
               />
             </Button>
           </div>
         </CardHeader>
         <CardContent className="p-1 overflow-y-auto max-h-[600px]">
-          {treeLoading && tree.length === 0 ? (
+          {listLoading && mdFiles.length === 0 ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
             </div>
-          ) : treeError ? (
-            <div className="p-3 text-sm text-destructive">{treeError}</div>
-          ) : tree.length === 0 ? (
+          ) : listError ? (
+            <div className="p-3 text-sm text-destructive">{listError}</div>
+          ) : mdFiles.length === 0 ? (
             <div className="p-3 text-sm text-muted-foreground text-center">
-              No files found
+              No markdown files found
             </div>
           ) : (
-            <div className="space-y-0.5 py-1">
-              {tree.map((node) => (
-                <FileTreeItem
-                  key={node.path}
-                  node={node}
-                  depth={0}
-                  selectedPath={selectedFile}
-                  onSelect={selectFile}
-                  onToggle={toggleDir}
-                />
+            <div className="py-1">
+              {/* Root MD files */}
+              {rootFiles.map((file) => (
+                <button
+                  type="button"
+                  key={file.path}
+                  onClick={() => selectFile(file.path)}
+                  className={cn(
+                    "w-full flex items-center gap-2 px-3 py-1.5 text-sm rounded-md transition-colors text-left",
+                    selectedFile === file.path
+                      ? "bg-primary/10 text-primary font-medium"
+                      : "hover:bg-muted/50 text-foreground",
+                  )}
+                >
+                  {fileIcon(file.name)}
+                  <span className="truncate">{file.name}</span>
+                </button>
               ))}
+
+              {/* Memory files section */}
+              {memoryFiles.length > 0 && (
+                <>
+                  <div className="px-3 pt-3 pb-1">
+                    <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">
+                      memory/
+                    </span>
+                  </div>
+                  {memoryFiles.map((file) => (
+                    <button
+                      type="button"
+                      key={file.path}
+                      onClick={() => selectFile(file.path)}
+                      className={cn(
+                        "w-full flex items-center gap-2 px-3 pl-5 py-1.5 text-sm rounded-md transition-colors text-left",
+                        selectedFile === file.path
+                          ? "bg-primary/10 text-primary font-medium"
+                          : "hover:bg-muted/50 text-foreground",
+                      )}
+                    >
+                      {fileIcon(file.path)}
+                      <span className="truncate">
+                        {file.name.replace("memory/", "")}
+                      </span>
+                    </button>
+                  ))}
+                </>
+              )}
             </div>
           )}
         </CardContent>
@@ -493,7 +345,7 @@ function FilesTab({
               <FileText className="h-10 w-10 mx-auto mb-3 opacity-40" />
               <p className="text-sm">Select a file to view</p>
               <p className="text-xs mt-1 opacity-60">
-                Browse the tree on the left
+                SOUL.md, AGENTS.md, MEMORY.md, and more
               </p>
             </div>
           </CardContent>
@@ -503,19 +355,10 @@ function FilesTab({
             <CardHeader className="py-3 px-4 border-b">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 min-w-0">
-                  {fileIcon(selectedFile.split("/").pop() ?? "", false)}
+                  {fileIcon(selectedFile)}
                   <span className="text-sm font-mono truncate">
                     {selectedFile}
                   </span>
-                  {fileMeta && (
-                    <span className="text-xs text-muted-foreground shrink-0">
-                      {fileMeta.size < 1024
-                        ? `${fileMeta.size}B`
-                        : `${(fileMeta.size / 1024).toFixed(1)}KB`}
-                      {" · "}
-                      {new Date(fileMeta.modified).toLocaleString()}
-                    </span>
-                  )}
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0">
                   {saveSuccess && (
@@ -580,10 +423,7 @@ function FilesTab({
                   spellCheck={false}
                 />
               ) : fileContent !== null ? (
-                <MarkdownRenderer
-                  content={fileContent}
-                  isMarkdown={selectedFile.endsWith(".md")}
-                />
+                <MarkdownRenderer content={fileContent} isMarkdown />
               ) : null}
             </CardContent>
           </>

@@ -1,6 +1,7 @@
 import { Badge } from "@clawwatch/ui/components/badge";
 import { Button } from "@clawwatch/ui/components/button";
 import { Card, CardContent } from "@clawwatch/ui/components/card";
+import { Checkbox } from "@clawwatch/ui/components/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -29,6 +30,7 @@ import {
   Clock,
   DollarSign,
   LayoutGrid,
+  Loader2,
   Network,
   Plus,
   Search,
@@ -37,6 +39,7 @@ import type { ChangeEvent } from "react";
 import { memo, useMemo, useState } from "react";
 import { AgentGraph } from "@/components/agent-graph";
 import { formatCost, statusColor, timeAgo } from "@/lib/utils";
+import { scaffoldAgentWorkspace } from "@/server/files";
 import type { Agent } from "@/types";
 
 export const Route = createFileRoute("/agents")({
@@ -50,6 +53,8 @@ function AgentsPage() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [agentName, setAgentName] = useState("");
   const [gatewayUrl, setGatewayUrl] = useState("");
+  const [scaffoldWorkspace, setScaffoldWorkspace] = useState(true);
+  const [creating, setCreating] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [viewMode, setViewMode] = useState<"grid" | "graph">("grid");
@@ -72,14 +77,34 @@ function AgentsPage() {
   }, [agents, searchQuery, statusFilter]);
 
   const handleAddAgent = async () => {
-    await createAgent({
-      name: agentName.trim(),
-      gatewayUrl: gatewayUrl.trim(),
-      status: "offline",
-    });
-    setIsAddDialogOpen(false);
-    setAgentName("");
-    setGatewayUrl("");
+    const name = agentName.trim();
+    const url = gatewayUrl.trim();
+    setCreating(true);
+    try {
+      const workspacePath = `/home/moltbot/${name}`;
+
+      // Scaffold workspace on disk if requested
+      if (scaffoldWorkspace) {
+        await scaffoldAgentWorkspace({
+          data: { workspacePath, agentName: name },
+        });
+      }
+
+      // Create agent record in Convex
+      await createAgent({
+        name,
+        gatewayUrl: url,
+        status: "offline",
+        workspacePath,
+      });
+
+      setIsAddDialogOpen(false);
+      setAgentName("");
+      setGatewayUrl("");
+      setScaffoldWorkspace(true);
+    } finally {
+      setCreating(false);
+    }
   };
 
   if (isOnChildRoute) {
@@ -135,9 +160,10 @@ function AgentsPage() {
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Add New Agent</DialogTitle>
+              <DialogTitle>Create New Agent</DialogTitle>
               <DialogDescription>
-                Connect a new AI agent to ClawWatch for monitoring.
+                Create a new AI agent with a workspace on disk and register it
+                for monitoring.
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
@@ -151,6 +177,11 @@ function AgentsPage() {
                   }
                   placeholder="e.g. mimizuku"
                 />
+                {agentName.trim() && (
+                  <p className="text-xs text-muted-foreground font-mono">
+                    Workspace: /home/moltbot/{agentName.trim()}
+                  </p>
+                )}
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="gateway">Gateway URL</Label>
@@ -163,6 +194,19 @@ function AgentsPage() {
                   placeholder="ws://127.0.0.1:18789"
                 />
               </div>
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="scaffold"
+                  checked={scaffoldWorkspace}
+                  onCheckedChange={(checked: boolean) =>
+                    setScaffoldWorkspace(checked)
+                  }
+                />
+                <Label htmlFor="scaffold" className="text-sm font-normal">
+                  Create workspace with default files (SOUL.md, AGENTS.md,
+                  USER.md, etc.)
+                </Label>
+              </div>
             </div>
             <DialogFooter>
               <Button
@@ -173,9 +217,16 @@ function AgentsPage() {
               </Button>
               <Button
                 onClick={handleAddAgent}
-                disabled={!agentName.trim() || !gatewayUrl.trim()}
+                disabled={!agentName.trim() || !gatewayUrl.trim() || creating}
               >
-                Add Agent
+                {creating ? (
+                  <>
+                    <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                    Creating...
+                  </>
+                ) : (
+                  "Create Agent"
+                )}
               </Button>
             </DialogFooter>
           </DialogContent>
