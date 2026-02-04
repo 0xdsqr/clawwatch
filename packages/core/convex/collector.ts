@@ -49,12 +49,13 @@ export const ingestSessions = mutation({
       if (!agent) continue;
 
       // Update agent status
-      // Only update config.model from the "main" session (heartbeat/default)
-      // to avoid other sessions (discord, cron) overwriting the configured model.
+      // The ":main" session is the heartbeat (runs on a cheaper model like Sonnet).
+      // Interactive sessions (discord, etc.) use the real configured model (Opus).
+      // Only update config.model from NON-main sessions to show the actual working model.
       const isMainSession = session.key.endsWith(":main");
       const newModel = isMainSession
-        ? (session.model ?? agent.config?.model)
-        : (agent.config?.model ?? session.model);
+        ? (agent.config?.model ?? session.model)
+        : (session.model ?? agent.config?.model);
 
       await ctx.db.patch(agent._id, {
         status: "online",
