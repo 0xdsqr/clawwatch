@@ -47,6 +47,7 @@ services:
       - "5173:3000"
     environment:
       - VITE_CONVEX_URL=${VITE_CONVEX_URL:-http://127.0.0.1:3210}
+      - ENABLE_COLLECTOR=false
     depends_on:
       convex-backend:
         condition: service_healthy

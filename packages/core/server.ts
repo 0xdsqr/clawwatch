@@ -26,13 +26,14 @@ const GATEWAY_TOKEN = Bun.env.GATEWAY_TOKEN;
 const CONVEX_URL = Bun.env.CONVEX_URL ?? "http://127.0.0.1:3210";
 const SESSION_POLL_INTERVAL_MS = parseInt(Bun.env.SESSION_POLL_INTERVAL ?? "60000");
 const SESSIONS_DIR = Bun.env.SESSIONS_DIR ?? "/home/moltbot/.clawdbot/agents";
+const ENABLE_COLLECTOR = (Bun.env.ENABLE_COLLECTOR ?? "true").toLowerCase() !== "false";
 
-if (!GATEWAY_URL) {
+if (ENABLE_COLLECTOR && !GATEWAY_URL) {
   console.error("❌ GATEWAY_URL environment variable is required");
   process.exit(1);
 }
 
-if (!GATEWAY_TOKEN) {
+if (ENABLE_COLLECTOR && !GATEWAY_TOKEN) {
   console.error("❌ GATEWAY_TOKEN environment variable is required");
   process.exit(1);
 }
@@ -60,7 +61,7 @@ if (!hasDistBuild) {
 
 // ── Collector State ──────────────────────────────────────────────────────────
 
-const wsUrl = GATEWAY_URL.replace(/^https?:\/\//, "ws://");
+const wsUrl = GATEWAY_URL?.replace(/^https?:\/\//, "ws://");
 const ingestedCosts = new Set<string>();
 let lastHistoricalScan = Date.now() - 86400000 * 3;
 
@@ -102,6 +103,10 @@ async function invokeGatewayTool(
   tool: string,
   args: Record<string, unknown> = {},
 ): Promise<Record<string, unknown>> {
+  if (!GATEWAY_URL || !GATEWAY_TOKEN) {
+    throw new Error("Collector is disabled or gateway credentials are missing");
+  }
+
   const res = await fetch(`${GATEWAY_URL}/tools/invoke`, {
     method: "POST",
     headers: {
@@ -548,6 +553,10 @@ async function handleChatEvent(payload: Record<string, unknown>): Promise<void> 
 // ── WebSocket Connection ─────────────────────────────────────────────────────
 
 async function connectGateway(): Promise<void> {
+  if (!wsUrl || !GATEWAY_TOKEN) {
+    return;
+  }
+
   const currentConnectionId = connectionId++;
 
   console.log(`[ws] Connecting to ${wsUrl} (connection ${currentConnectionId})...`);
@@ -652,9 +661,10 @@ const server = Bun.serve({
       return Response.json({
         status: "ok",
         uptime: Math.floor((Date.now() - startedAt) / 1000),
+        collectorEnabled: ENABLE_COLLECTOR,
         gateway: {
-          connected: isConnected,
-          url: GATEWAY_URL,
+          connected: ENABLE_COLLECTOR ? isConnected : false,
+          url: GATEWAY_URL ?? null,
         },
         convex: CONVEX_URL,
         sessionsDir: SESSIONS_DIR,
@@ -691,7 +701,8 @@ const server = Bun.serve({
 
 console.log("🔱 ClawWatch Server starting");
 console.log(`  HTTP:    http://localhost:${server.port}`);
-console.log(`  Gateway: ${wsUrl}`);
+console.log(`  Collector: ${ENABLE_COLLECTOR ? "enabled" : "disabled"}`);
+console.log(`  Gateway: ${wsUrl ?? "n/a"}`);
 console.log(`  Convex:  ${CONVEX_URL}`);
 console.log(
   `  Frontend: ${hasDistBuild ? "dist/ (production)" : htmlImport ? "HTML import (dev)" : "none"}`,
@@ -700,17 +711,19 @@ console.log(`  Session poll interval: ${SESSION_POLL_INTERVAL_MS}ms`);
 console.log(`  Sessions dir: ${SESSIONS_DIR}`);
 console.log("");
 
-// Historical backfill on startup
-await scanTranscripts();
+if (ENABLE_COLLECTOR) {
+  // Historical backfill on startup
+  await scanTranscripts();
 
-// Start WebSocket connection to gateway
-await connectGateway();
+  // Start WebSocket connection to gateway
+  await connectGateway();
 
-// Periodic alert evaluation
-setInterval(evaluateAlerts, 60000);
+  // Periodic alert evaluation
+  setInterval(evaluateAlerts, 60000);
 
-// Periodic transcript scanning (supplements real-time WebSocket events)
-setInterval(scanTranscripts, SESSION_POLL_INTERVAL_MS);
+  // Periodic transcript scanning (supplements real-time WebSocket events)
+  setInterval(scanTranscripts, SESSION_POLL_INTERVAL_MS);
+}
 
 // Graceful shutdown
 process.on("SIGINT", () => {
