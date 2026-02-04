@@ -1,5 +1,5 @@
 import { readdir, readFile, stat, writeFile } from "node:fs/promises";
-import { join, resolve } from "node:path";
+import { isAbsolute, join, relative, resolve, sep } from "node:path";
 import { createServerFn } from "@tanstack/react-start";
 
 const IGNORED_DIRS = new Set([
@@ -18,7 +18,11 @@ const IGNORED_DIRS = new Set([
 function assertSafePath(fullPath: string, basePath: string): void {
   const resolvedFull = resolve(fullPath);
   const resolvedBase = resolve(basePath);
-  if (!resolvedFull.startsWith(resolvedBase)) {
+  const rel = relative(resolvedBase, resolvedFull);
+  const escapesBase =
+    rel === ".." || rel.startsWith(`..${sep}`) || isAbsolute(rel);
+
+  if (escapesBase) {
     throw new Error("Path traversal not allowed");
   }
 }
