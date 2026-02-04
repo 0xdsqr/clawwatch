@@ -31,7 +31,7 @@ export const Route = createFileRoute("/settings")({
 });
 
 function SettingsPage() {
-  const convexUrl = (import.meta.env.VITE_CONVEX_URL as string | undefined) ?? "http://127.0.0.1:3210";
+  const convexUrl = import.meta.env.VITE_CONVEX_URL as string | undefined;
   const notificationChannels = useQuery(api.notifications.list);
   const agents = useQuery(api.agents.list, {});
   const discordChannels = useMemo(
@@ -172,7 +172,7 @@ function SettingsPage() {
                 <div className="rounded-md bg-background p-3 font-mono text-xs space-y-1">
                   <p>
                     <span className="text-muted-foreground">CONVEX_URL=</span>
-                    <span className="text-primary">{convexUrl}</span>
+                    <span className="text-primary">{convexUrl ?? "Not configured"}</span>
                   </p>
                 </div>
               </div>

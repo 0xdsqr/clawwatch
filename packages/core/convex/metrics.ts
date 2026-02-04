@@ -94,14 +94,14 @@ export const activityTimeSeries = query({
     if (args.agentId) {
       activities = await ctx.db
         .query("activities")
-        .withIndex("by_agent", (q) => q.eq("agentId", args.agentId!))
+        .withIndex("by_agent_time", (q) => q.eq("agentId", args.agentId!).gte("timestamp", startTime))
         .collect();
     } else {
-      activities = await ctx.db.query("activities").collect();
+      activities = await ctx.db
+        .query("activities")
+        .withIndex("by_time", (q) => q.gte("timestamp", startTime))
+        .collect();
     }
-
-    // Filter to time range (activities don't have a timestamp index on _creationTime easily)
-    activities = activities.filter((a) => a._creationTime >= startTime);
 
     // Bucket into 15-min windows
     const bucketMs = 15 * 60 * 1000;
@@ -111,7 +111,8 @@ export const activityTimeSeries = query({
     >();
 
     for (const a of activities) {
-      const key = Math.floor(a._creationTime / bucketMs) * bucketMs;
+      const ts = a.timestamp ?? a._creationTime;
+      const key = Math.floor(ts / bucketMs) * bucketMs;
       const bucket = buckets.get(key) ?? {
         total: 0,
         errors: 0,

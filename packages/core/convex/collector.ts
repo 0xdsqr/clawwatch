@@ -28,7 +28,7 @@ export const ingestSessions = mutation({
       // Find or create agent
       let agent = await ctx.db
         .query("agents")
-        .filter((q) => q.eq(q.field("name"), agentName))
+        .withIndex("by_name", (q) => q.eq("name", agentName))
         .first();
 
       if (!agent) {
@@ -125,6 +125,10 @@ export const ingestCosts = mutation({
   },
   handler: async (ctx, args) => {
     let ingested = 0;
+    const cacheDeltas = new Map<
+      string,
+      { cost: number; inputTokens: number; outputTokens: number; requests: number }
+    >();
     const budgets = await ctx.db.query("budgets").collect();
     const budgetState = new Map(
       budgets.map((budget) => [
@@ -137,10 +141,14 @@ export const ingestCosts = mutation({
       // Find agent
       const agent = await ctx.db
         .query("agents")
-        .filter((q) => q.eq(q.field("name"), entry.agentName))
+        .withIndex("by_name", (q) => q.eq("name", entry.agentName))
         .first();
 
       if (!agent) continue;
+
+      const timestamp = entry.timestamp;
+      const dateStr = new Date(timestamp).toISOString().slice(0, 10);
+      const hourKey = Math.floor(timestamp / 3600000) * 3600000;
 
       await ctx.db.insert("costRecords", {
         agentId: agent._id,
@@ -153,8 +161,28 @@ export const ingestCosts = mutation({
         cacheWriteTokens: entry.cacheWriteTokens,
         cost: entry.totalCost,
         period: "hourly",
-        timestamp: entry.timestamp,
+        timestamp,
       });
+
+      const addDelta = (key: string) => {
+        const existing = cacheDeltas.get(key) ?? {
+          cost: 0,
+          inputTokens: 0,
+          outputTokens: 0,
+          requests: 0,
+        };
+        existing.cost += entry.totalCost;
+        existing.inputTokens += entry.inputTokens;
+        existing.outputTokens += entry.outputTokens;
+        existing.requests += 1;
+        cacheDeltas.set(key, existing);
+      };
+
+      addDelta(`today:${dateStr}`);
+      addDelta(`hour:${hourKey}`);
+      addDelta(`model:${dateStr}:${entry.model}`);
+      addDelta(`agent:${agent._id}:today:${dateStr}`);
+      addDelta(`agent:${agent._id}:hour:${hourKey}`);
 
       const matchingBudgets = budgets.filter(
         (budget) =>
@@ -177,6 +205,13 @@ export const ingestCosts = mutation({
       }
 
       ingested++;
+    }
+
+    if (cacheDeltas.size > 0) {
+      await applyStatsCacheUpdates(
+        ctx,
+        Array.from(cacheDeltas.entries()).map(([key, data]) => ({ key, ...data })),
+      );
     }
 
     return { ingested };
@@ -227,6 +262,7 @@ export const ingestActivities = mutation({
         summary: v.string(),
         sessionKey: v.optional(v.string()),
         channel: v.optional(v.string()),
+        timestamp: v.optional(v.number()),
       }),
     ),
   },
@@ -236,7 +272,7 @@ export const ingestActivities = mutation({
     for (const activity of args.activities) {
       const agent = await ctx.db
         .query("agents")
-        .filter((q) => q.eq(q.field("name"), activity.agentName))
+        .withIndex("by_name", (q) => q.eq("name", activity.agentName))
         .first();
 
       if (!agent) continue;
@@ -247,6 +283,7 @@ export const ingestActivities = mutation({
         summary: activity.summary,
         sessionKey: activity.sessionKey,
         channel: activity.channel,
+        timestamp: activity.timestamp ?? Date.now(),
       });
 
       ingested++;
@@ -271,33 +308,46 @@ export const updateStatsCache = mutation({
     ),
   },
   handler: async (ctx, args) => {
-    for (const update of args.updates) {
-      const existing = await ctx.db
-        .query("statsCache")
-        .withIndex("by_key", (q) => q.eq("key", update.key))
-        .first();
-
-      if (existing) {
-        await ctx.db.patch(existing._id, {
-          cost: existing.cost + update.cost,
-          inputTokens: existing.inputTokens + update.inputTokens,
-          outputTokens: existing.outputTokens + update.outputTokens,
-          requests: existing.requests + update.requests,
-          updatedAt: Date.now(),
-        });
-      } else {
-        await ctx.db.insert("statsCache", {
-          key: update.key,
-          cost: update.cost,
-          inputTokens: update.inputTokens,
-          outputTokens: update.outputTokens,
-          requests: update.requests,
-          updatedAt: Date.now(),
-        });
-      }
-    }
+    await applyStatsCacheUpdates(ctx, args.updates);
   },
 });
+
+async function applyStatsCacheUpdates(
+  ctx: any,
+  updates: Array<{
+    key: string;
+    cost: number;
+    inputTokens: number;
+    outputTokens: number;
+    requests: number;
+  }>,
+): Promise<void> {
+  for (const update of updates) {
+    const existing = await ctx.db
+      .query("statsCache")
+      .withIndex("by_key", (q) => q.eq("key", update.key))
+      .first();
+
+    if (existing) {
+      await ctx.db.patch(existing._id, {
+        cost: existing.cost + update.cost,
+        inputTokens: existing.inputTokens + update.inputTokens,
+        outputTokens: existing.outputTokens + update.outputTokens,
+        requests: existing.requests + update.requests,
+        updatedAt: Date.now(),
+      });
+    } else {
+      await ctx.db.insert("statsCache", {
+        key: update.key,
+        cost: update.cost,
+        inputTokens: update.inputTokens,
+        outputTokens: update.outputTokens,
+        requests: update.requests,
+        updatedAt: Date.now(),
+      });
+    }
+  }
+}
 
 // Record a health check
 export const recordHealthCheck = mutation({
@@ -312,7 +362,7 @@ export const recordHealthCheck = mutation({
   handler: async (ctx, args) => {
     const agent = await ctx.db
       .query("agents")
-      .filter((q) => q.eq(q.field("name"), args.agentName))
+      .withIndex("by_name", (q) => q.eq("name", args.agentName))
       .first();
 
     if (!agent) return;

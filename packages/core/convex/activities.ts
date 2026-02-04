@@ -23,7 +23,10 @@ export const record = mutation({
     channel: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    return await ctx.db.insert("activities", args);
+    return await ctx.db.insert("activities", {
+      ...args,
+      timestamp: Date.now(),
+    });
   },
 });
 
@@ -74,15 +77,37 @@ export const events = query({
     limit: v.optional(v.number()),
     agentId: v.optional(v.id("agents")),
     type: v.optional(v.string()),
+    startTime: v.optional(v.number()),
+    endTime: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    let q = ctx.db.query("activities").order("desc");
+    const startTime = args.startTime ?? 0;
+    let q;
 
     if (args.agentId) {
       q = ctx.db
         .query("activities")
-        .withIndex("by_agent", (q2) => q2.eq("agentId", args.agentId!))
+        .withIndex("by_agent_time", (q2) => {
+          let query = q2.eq("agentId", args.agentId!).gte("timestamp", startTime);
+          if (args.endTime !== undefined) {
+            query = query.lte("timestamp", args.endTime);
+          }
+          return query;
+        })
         .order("desc");
+    } else if (args.startTime !== undefined || args.endTime !== undefined) {
+      q = ctx.db
+        .query("activities")
+        .withIndex("by_time", (q2) => {
+          let query = q2.gte("timestamp", startTime);
+          if (args.endTime !== undefined) {
+            query = query.lte("timestamp", args.endTime);
+          }
+          return query;
+        })
+        .order("desc");
+    } else {
+      q = ctx.db.query("activities").order("desc");
     }
 
     const activities = await q.take(args.limit ?? 500);

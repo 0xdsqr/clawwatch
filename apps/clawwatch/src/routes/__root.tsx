@@ -8,15 +8,34 @@ import { ThemeProvider } from "@/components/theme-provider";
 
 import appCss from "../styles.css?url";
 
-// Browser: route through Vite proxy (/_convex → Convex :3210)
-// to avoid exit node / firewall blocking port 3210.
+// Browser: route through Vite proxy (/_convex → Convex)
+// when the Convex URL is local (localhost/127/100/192).
 // Uses /_convex prefix because TanStack Start/Nitro intercepts /api.
-// SSR: direct connection to Convex backend.
-function getConvexUrl(): string {
-  if (typeof window !== "undefined") {
-    return `${window.location.origin}/_convex`;
+// SSR: direct connection to Convex backend via VITE_CONVEX_URL.
+function isLocalConvexUrl(value: string | undefined): boolean {
+  if (!value) return false;
+  try {
+    const { hostname } = new URL(value);
+    return (
+      hostname === "localhost" ||
+      hostname.startsWith("127.") ||
+      hostname.startsWith("100.") ||
+      hostname.startsWith("192.")
+    );
+  } catch {
+    return false;
   }
-  return import.meta.env.VITE_CONVEX_URL ?? "http://127.0.0.1:3210";
+}
+
+function getConvexUrl(): string {
+  const envUrl = import.meta.env.VITE_CONVEX_URL as string | undefined;
+  if (!envUrl) {
+    throw new Error("VITE_CONVEX_URL is required");
+  }
+  if (typeof window !== "undefined") {
+    return isLocalConvexUrl(envUrl) ? `${window.location.origin}/_convex` : envUrl;
+  }
+  return envUrl;
 }
 
 const convex = new ConvexReactClient(getConvexUrl());

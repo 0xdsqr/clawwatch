@@ -19,6 +19,8 @@ export interface Agent {
     channel?: string;
   };
   workspacePath?: string;
+  activeSessions?: number;
+  costToday?: number;
 }
 
 export interface Session {
@@ -133,6 +135,7 @@ export interface Activity {
   details?: Record<string, string | number | boolean | null>;
   sessionKey?: string;
   channel?: string;
+  timestamp: number;
 }
 
 export interface HealthCheck {

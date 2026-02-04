@@ -55,16 +55,32 @@ function convexProxy(convexBackend: string): Plugin {
   };
 }
 
+function isLocalConvexUrl(value: string | undefined): boolean {
+  if (!value) return false;
+  try {
+    const { hostname } = new URL(value);
+    return (
+      hostname === "localhost" ||
+      hostname.startsWith("127.") ||
+      hostname.startsWith("100.") ||
+      hostname.startsWith("192.")
+    );
+  } catch {
+    return false;
+  }
+}
+
 export default defineConfig(({ mode }) => {
   const envDir = path.resolve(import.meta.dirname, "../..");
   const env = loadEnv(mode, envDir, "");
-  const convexBackend = env.VITE_CONVEX_URL || env.CONVEX_URL || "http://127.0.0.1:3210";
+  const convexBackend = env.VITE_CONVEX_URL || env.CONVEX_URL;
+  const shouldProxyConvex = isLocalConvexUrl(env.VITE_CONVEX_URL);
 
   return {
     envDir,
     plugins: [
       // convexProxy MUST be first so its middleware runs before everything else
-      convexProxy(convexBackend),
+      ...(shouldProxyConvex && convexBackend ? [convexProxy(convexBackend)] : []),
       viteTsConfigPaths({
         projects: ["./tsconfig.json"],
       }),

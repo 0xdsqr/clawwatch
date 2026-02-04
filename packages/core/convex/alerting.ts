@@ -151,6 +151,7 @@ export const fire = mutation({
         type: "alert_fired",
         summary: `🚨 ${args.severity.toUpperCase()}: ${args.title}`,
         details: { alertId, message: args.message },
+        timestamp: Date.now(),
       });
     }
 

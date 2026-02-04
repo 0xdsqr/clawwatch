@@ -63,6 +63,73 @@ export const summary = query({
     const zero = { cost: 0, inputTokens: 0, outputTokens: 0, requests: 0 };
 
     if (args.agentId) {
+      const currentHourKey = Math.floor(now / 3600000) * 3600000;
+      const prevHourKey = currentHourKey - 3600000;
+      const todayStr = new Date().toISOString().slice(0, 10);
+      const prefix = `agent:${args.agentId}`;
+
+      const todayCache = await ctx.db
+        .query("statsCache")
+        .withIndex("by_key", (q) => q.eq("key", `${prefix}:today:${todayStr}`))
+        .first();
+      const thisHourCache = await ctx.db
+        .query("statsCache")
+        .withIndex("by_key", (q) => q.eq("key", `${prefix}:hour:${currentHourKey}`))
+        .first();
+      const prevHourCache = await ctx.db
+        .query("statsCache")
+        .withIndex("by_key", (q) => q.eq("key", `${prefix}:hour:${prevHourKey}`))
+        .first();
+
+      const weekDays: (typeof todayCache)[] = [];
+      const monthDays: (typeof todayCache)[] = [];
+      for (let i = 0; i < 31; i++) {
+        const d = new Date(now - i * 86400000).toISOString().slice(0, 10);
+        const dayCache =
+          i === 0
+            ? todayCache
+            : await ctx.db
+                .query("statsCache")
+                .withIndex("by_key", (q) => q.eq("key", `${prefix}:today:${d}`))
+                .first();
+        if (dayCache) {
+          if (i < 7) weekDays.push(dayCache);
+          monthDays.push(dayCache);
+        }
+      }
+
+      const sumCaches = (caches: (typeof todayCache)[]) => {
+        const result = { ...zero };
+        for (const c of caches) {
+          if (!c) continue;
+          result.cost += c.cost;
+          result.inputTokens += c.inputTokens;
+          result.outputTokens += c.outputTokens;
+          result.requests += c.requests;
+        }
+        result.cost = Math.round(result.cost * 10000) / 10000;
+        return result;
+      };
+
+      const hasCache =
+        !!todayCache || !!thisHourCache || !!prevHourCache || weekDays.length > 0;
+
+      if (hasCache) {
+        return {
+          today: todayCache
+            ? {
+                cost: Math.round(todayCache.cost * 10000) / 10000,
+                inputTokens: todayCache.inputTokens,
+                outputTokens: todayCache.outputTokens,
+                requests: todayCache.requests,
+              }
+            : zero,
+          lastHour: sumCaches([thisHourCache, prevHourCache]),
+          week: sumCaches(weekDays),
+          month: sumCaches(monthDays),
+        };
+      }
+
       const hourStart = now - 60 * 60 * 1000;
       const todayStart = new Date();
       todayStart.setHours(0, 0, 0, 0);
@@ -71,7 +138,9 @@ export const summary = query({
 
       const records = await ctx.db
         .query("costRecords")
-        .withIndex("by_agent_time", (q) => q.eq("agentId", args.agentId!).gte("timestamp", monthStart))
+        .withIndex("by_agent_time", (q) =>
+          q.eq("agentId", args.agentId!).gte("timestamp", monthStart),
+        )
         .collect();
 
       const summarize = (start: number) => {
@@ -328,6 +397,33 @@ export const timeSeries = query({
     const now = Date.now();
     const currentHourKey = Math.floor(now / 3600000) * 3600000;
     if (args.agentId) {
+      const prefix = `agent:${args.agentId}`;
+      const probe = await ctx.db
+        .query("statsCache")
+        .withIndex("by_key", (q) => q.eq("key", `${prefix}:hour:${currentHourKey}`))
+        .first();
+
+      if (probe) {
+        const results = [];
+        for (let i = 0; i < args.hours; i++) {
+          const hourKey = currentHourKey - i * 3600000;
+          const cached = await ctx.db
+            .query("statsCache")
+            .withIndex("by_key", (q) => q.eq("key", `${prefix}:hour:${hourKey}`))
+            .first();
+
+          if (cached) {
+            results.push({
+              timestamp: hourKey,
+              cost: Math.round(cached.cost * 10000) / 10000,
+              tokens: cached.inputTokens + cached.outputTokens,
+              requests: cached.requests,
+            });
+          }
+        }
+        return results.sort((a, b) => a.timestamp - b.timestamp);
+      }
+
       const startTime = currentHourKey - (args.hours - 1) * 3600000;
       const records = await ctx.db
         .query("costRecords")

@@ -141,7 +141,11 @@ export default defineSchema({
     ),
     sessionKey: v.optional(v.string()),
     channel: v.optional(v.string()),
-  }).index("by_agent", ["agentId"]),
+    timestamp: v.number(),
+  })
+    .index("by_agent", ["agentId"])
+    .index("by_agent_time", ["agentId", "timestamp"])
+    .index("by_time", ["timestamp"]),
 
   // Health checks — periodic status snapshots
   healthChecks: defineTable({
@@ -174,7 +178,9 @@ export default defineSchema({
   }).index("by_agent", ["agentId"]),
 
   // Pre-aggregated stats cache — updated incrementally by collector
-  // Single document per period key (e.g. "today:2026-02-03", "hour:1770152400000")
+  // Keys:
+  // - "today:YYYY-MM-DD" | "hour:<epoch>" | "model:YYYY-MM-DD:model"
+  // - "agent:<agentId>:today:YYYY-MM-DD" | "agent:<agentId>:hour:<epoch>"
   statsCache: defineTable({
     key: v.string(), // "today:YYYY-MM-DD" | "hour:<epoch>" | "week" | "month"
     cost: v.number(),
