@@ -33,15 +33,24 @@ export const Route = createFileRoute("/settings")({
 function SettingsPage() {
   const notificationChannels = useQuery(api.notifications.list);
   const agents = useQuery(api.agents.list, {});
+  const discordChannels = useMemo(
+    () =>
+      (notificationChannels ?? []).filter(
+        (channel: NotificationChannel) => channel.type === "discord",
+      ),
+    [notificationChannels],
+  );
 
   const createNotification = useMutation(api.notifications.create);
   const removeNotification = useMutation(api.notifications.remove);
 
   const [showNewChannel, setShowNewChannel] = useState(false);
-  const [channelType, setChannelType] = useState<"discord" | "email" | "webhook">("discord");
   const [channelName, setChannelName] = useState("");
   const [channelWebhook, setChannelWebhook] = useState("");
-  const [channelEmail, setChannelEmail] = useState("");
+  const [channelSeverities, setChannelSeverities] = useState<Array<"warning" | "critical">>([
+    "warning",
+    "critical",
+  ]);
 
   // Determine connection health from agent data
   const connectionStatus = useMemo(() => {
@@ -55,19 +64,25 @@ function SettingsPage() {
   }, [agents]);
 
   const handleCreateChannel = async () => {
-    if (!channelName) return;
+    if (!channelName.trim() || !channelWebhook.trim()) return;
     await createNotification({
-      type: channelType,
+      type: "discord",
       name: channelName,
       config: {
-        webhookUrl: channelWebhook || undefined,
-        email: channelEmail || undefined,
+        webhookUrl: channelWebhook,
+        severities: channelSeverities,
       },
     });
     setChannelName("");
     setChannelWebhook("");
-    setChannelEmail("");
+    setChannelSeverities(["warning", "critical"]);
     setShowNewChannel(false);
+  };
+
+  const toggleSeverity = (severity: "warning" | "critical") => {
+    setChannelSeverities((prev) =>
+      prev.includes(severity) ? prev.filter((s) => s !== severity) : [...prev, severity],
+    );
   };
 
   return (
@@ -168,8 +183,8 @@ function SettingsPage() {
       {/* Notification Channels */}
       <Card>
         <CardHeader>
-          <CardTitle>Notification Channels</CardTitle>
-          <CardDescription>Where alerts get delivered</CardDescription>
+          <CardTitle>Discord Notification Channels</CardTitle>
+          <CardDescription>Where alert events get delivered</CardDescription>
           <CardAction>
             <Button variant="outline" size="sm" onClick={() => setShowNewChannel(!showNewChannel)}>
               <Plus className="mr-1.5 h-3.5 w-3.5" />
@@ -180,60 +195,64 @@ function SettingsPage() {
         <CardContent>
           {showNewChannel && (
             <div className="mb-4 space-y-3 rounded-lg border bg-muted/30 p-4">
-              <div className="flex gap-3">
-                <div className="flex-1">
-                  <div className="mb-1 block text-xs text-muted-foreground">Type</div>
-                  <select
-                    value={channelType}
-                    onChange={(e: ChangeEvent<HTMLSelectElement>) =>
-                      setChannelType(e.target.value as typeof channelType)
-                    }
-                    className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-                  >
-                    <option value="discord">Discord Webhook</option>
-                    <option value="email">Email</option>
-                    <option value="webhook">Custom Webhook</option>
-                  </select>
-                </div>
-                <div className="flex-1">
-                  <div className="mb-1 block text-xs text-muted-foreground">Name</div>
-                  <Input
-                    placeholder="e.g. #alerts"
-                    value={channelName}
-                    onChange={(e: ChangeEvent<HTMLInputElement>) => setChannelName(e.target.value)}
-                  />
-                </div>
+              <div className="flex-1">
+                <div className="mb-1 block text-xs text-muted-foreground">Channel Name</div>
+                <Input
+                  placeholder="e.g. #alerts"
+                  value={channelName}
+                  onChange={(e: ChangeEvent<HTMLInputElement>) => setChannelName(e.target.value)}
+                />
               </div>
-              {(channelType === "discord" || channelType === "webhook") && (
+              <div>
+                <div className="mb-1 block text-xs text-muted-foreground">Discord Webhook URL</div>
                 <Input
                   type="url"
-                  placeholder="Webhook URL"
+                  placeholder="https://discord.com/api/webhooks/..."
                   value={channelWebhook}
                   onChange={(e: ChangeEvent<HTMLInputElement>) => setChannelWebhook(e.target.value)}
                 />
-              )}
-              {channelType === "email" && (
-                <Input
-                  type="email"
-                  placeholder="Email address"
-                  value={channelEmail}
-                  onChange={(e: ChangeEvent<HTMLInputElement>) => setChannelEmail(e.target.value)}
-                />
-              )}
+              </div>
+              <div>
+                <div className="mb-1 block text-xs text-muted-foreground">Deliver on severity</div>
+                <div className="flex gap-2">
+                  {(["warning", "critical"] as const).map((severity) => (
+                    <button
+                      type="button"
+                      key={severity}
+                      onClick={() => toggleSeverity(severity)}
+                      className={cn(
+                        "rounded-md border px-3 py-1.5 text-xs font-medium transition-colors",
+                        channelSeverities.includes(severity)
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "text-muted-foreground hover:bg-muted/50",
+                      )}
+                    >
+                      {severity}
+                    </button>
+                  ))}
+                </div>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Default is warning + critical.
+                </p>
+              </div>
               <div className="flex justify-end gap-2">
                 <Button variant="ghost" size="sm" onClick={() => setShowNewChannel(false)}>
                   Cancel
                 </Button>
-                <Button size="sm" onClick={handleCreateChannel}>
+                <Button
+                  size="sm"
+                  onClick={handleCreateChannel}
+                  disabled={!channelName.trim() || !channelWebhook.trim()}
+                >
                   Create
                 </Button>
               </div>
             </div>
           )}
 
-          {notificationChannels && notificationChannels.length > 0 ? (
+          {discordChannels.length > 0 ? (
             <div className="space-y-2">
-              {notificationChannels.map((channel: NotificationChannel) => (
+              {discordChannels.map((channel: NotificationChannel) => (
                 <div
                   key={channel._id}
                   className="flex items-center justify-between rounded-lg border p-3"
@@ -242,7 +261,9 @@ function SettingsPage() {
                     <Bell className="h-4 w-4 text-muted-foreground" />
                     <div>
                       <p className="text-sm font-medium">{channel.name}</p>
-                      <p className="text-xs text-muted-foreground">{channel.type}</p>
+                      <p className="text-xs text-muted-foreground">
+                        Discord · {(channel.config.severities ?? ["warning", "critical"]).join(", ")}
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">

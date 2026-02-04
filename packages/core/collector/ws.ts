@@ -14,6 +14,7 @@ import { Glob } from "bun";
 import { ConvexHttpClient } from "convex/browser";
 import { join } from "path";
 import { api } from "../convex/_generated/api.js";
+import { dispatchDiscordNotifications } from "../lib/notifications.ts";
 
 // Config - all values must be provided via environment variables
 const GATEWAY_URL = Bun.env.GATEWAY_URL;
@@ -676,6 +677,12 @@ async function evaluateAlerts(): Promise<void> {
     const result = await convex.mutation(api.evaluateAlerts.evaluate, {});
     if (result.fired > 0) {
       console.log(`[ws] ⚠️  Fired ${result.fired} alerts (evaluated ${result.evaluated} rules)`);
+    }
+    const delivery = await dispatchDiscordNotifications(convex, "ws");
+    if (delivery.delivered > 0 || delivery.retried > 0) {
+      console.log(
+        `[ws] Notifications: checked=${delivery.checked}, delivered=${delivery.delivered}, retried=${delivery.retried}`,
+      );
     }
   } catch (err) {
     console.error("[ws] Error evaluating alerts:", err);

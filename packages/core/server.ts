@@ -16,6 +16,7 @@ import { Glob } from "bun";
 import { ConvexHttpClient } from "convex/browser";
 import { join, resolve } from "path";
 import { api } from "./convex/_generated/api.js";
+import { dispatchDiscordNotifications } from "./lib/notifications.ts";
 
 // ── Config ───────────────────────────────────────────────────────────────────
 
@@ -320,6 +321,12 @@ async function evaluateAlerts(): Promise<void> {
     if (result.fired > 0) {
       console.log(
         `[collector] ⚠️  Fired ${result.fired} alerts (evaluated ${result.evaluated} rules)`,
+      );
+    }
+    const delivery = await dispatchDiscordNotifications(convex, "collector");
+    if (delivery.delivered > 0 || delivery.retried > 0) {
+      console.log(
+        `[collector] Notifications: checked=${delivery.checked}, delivered=${delivery.delivered}, retried=${delivery.retried}`,
       );
     }
   } catch (err) {
