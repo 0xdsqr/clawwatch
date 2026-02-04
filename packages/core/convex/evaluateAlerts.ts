@@ -1,9 +1,10 @@
+import type { Id } from "./_generated/dataModel";
 import { mutation } from "./_generated/server";
 
 type AlertSeverity = "info" | "warning" | "critical";
 
 interface PendingAlert {
-  agentId?: string;
+  agentId?: Id<"agents">;
   severity: AlertSeverity;
   title: string;
   message: string;

@@ -8,6 +8,7 @@ crons.daily(
   "cleanup old records",
   { hourUTC: 3, minuteUTC: 0 },
   internal.cleanup.cleanupOldRecords,
+  {},
 );
 
 export default crons;

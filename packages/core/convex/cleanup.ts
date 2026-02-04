@@ -1,4 +1,5 @@
 import { v } from "convex/values";
+import type { MutationCtx } from "./_generated/server";
 import { internalMutation, mutation } from "./_generated/server";
 
 /**
@@ -28,7 +29,7 @@ const RETENTION_MS = {
 
 // Internal mutation called by the cron scheduler
 export const cleanupOldRecords: ReturnType<typeof internalMutation> = internalMutation({
-  handler: async (ctx: MutationCtx) => {
+  handler: async (ctx) => {
     const now = Date.now();
     const deleted: Record<string, number> = {};
 

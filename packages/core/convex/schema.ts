@@ -141,7 +141,7 @@ export default defineSchema({
     ),
     sessionKey: v.optional(v.string()),
     channel: v.optional(v.string()),
-    timestamp: v.number(),
+    timestamp: v.optional(v.number()),
   })
     .index("by_agent", ["agentId"])
     .index("by_agent_time", ["agentId", "timestamp"])

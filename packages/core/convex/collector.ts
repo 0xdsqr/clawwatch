@@ -1,3 +1,4 @@
+import type { GenericDatabaseWriter } from "convex/server";
 import { v } from "convex/values";
 import { mutation } from "./_generated/server";
 
@@ -313,7 +314,7 @@ export const updateStatsCache = mutation({
 });
 
 async function applyStatsCacheUpdates(
-  ctx: any,
+  ctx: { db: GenericDatabaseWriter<any> },
   updates: Array<{
     key: string;
     cost: number;
@@ -323,9 +324,9 @@ async function applyStatsCacheUpdates(
   }>,
 ): Promise<void> {
   for (const update of updates) {
-    const existing = await ctx.db
+    const existing = await (ctx.db as any)
       .query("statsCache")
-      .withIndex("by_key", (q) => q.eq("key", update.key))
+      .withIndex("by_key", (q: any) => q.eq("key", update.key))
       .first();
 
     if (existing) {

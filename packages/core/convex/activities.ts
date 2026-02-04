@@ -87,24 +87,20 @@ export const events = query({
     if (args.agentId) {
       q = ctx.db
         .query("activities")
-        .withIndex("by_agent_time", (q2) => {
-          let query = q2.eq("agentId", args.agentId!).gte("timestamp", startTime);
-          if (args.endTime !== undefined) {
-            query = query.lte("timestamp", args.endTime);
-          }
-          return query;
-        })
+        .withIndex("by_agent_time", (q2) =>
+          args.endTime !== undefined
+            ? q2.eq("agentId", args.agentId!).gte("timestamp", startTime).lte("timestamp", args.endTime)
+            : q2.eq("agentId", args.agentId!).gte("timestamp", startTime),
+        )
         .order("desc");
     } else if (args.startTime !== undefined || args.endTime !== undefined) {
       q = ctx.db
         .query("activities")
-        .withIndex("by_time", (q2) => {
-          let query = q2.gte("timestamp", startTime);
-          if (args.endTime !== undefined) {
-            query = query.lte("timestamp", args.endTime);
-          }
-          return query;
-        })
+        .withIndex("by_time", (q2) =>
+          args.endTime !== undefined
+            ? q2.gte("timestamp", startTime).lte("timestamp", args.endTime)
+            : q2.gte("timestamp", startTime),
+        )
         .order("desc");
     } else {
       q = ctx.db.query("activities").order("desc");
