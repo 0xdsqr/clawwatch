@@ -1,0 +1,84 @@
+name: test
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  biome:
+    name: biome
+    runs-on: [self-hosted, hoo, nixos]
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: DeterminateSystems/flakehub-cache-action@v2
+      - name: biome check
+        run: nix fmt -- -f biome --ci
+
+  nixfmt:
+    name: nixfmt
+    runs-on: [self-hosted, hoo, nixos]
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: DeterminateSystems/flakehub-cache-action@v2
+      - name: nixfmt check
+        run: nix fmt -- -f nixfmt --ci
+
+  test:
+    name: test
+    runs-on: [self-hosted, hoo, nixos]
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: cleanup nix store
+        run: nix-collect-garbage -d
+      - uses: actions/checkout@v4
+      - uses: DeterminateSystems/flakehub-cache-action@v2
+      - uses: DeterminateSystems/flake-checker-action@main
+        with:
+          fail-mode: true
+      - name: run tests
+        timeout-minutes: 120
+        run: nix build .#checks.x86_64-linux.tests -L
+
+  build:
+    name: build
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
+    needs: test
+    runs-on: [self-hosted, hoo, nixos]
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: DeterminateSystems/flakehub-cache-action@v2
+      - name: build
+        run: nix build .#checks.x86_64-linux.build -L
+
+  required:
+    name: all checks passed
+    runs-on: [self-hosted, hoo, nixos]
+    if: always()
+    needs:
+      - biome
+      - nixfmt
+      - test
+      - build
+    steps:
+      - name: verify all jobs passed
+        run: |
+          results='${{ toJSON(needs.*.result) }}'
+          if echo "$results" | grep -qE '(failure|cancelled)'; then
+            echo "required jobs failed: $results"
+            exit 1
+          fi
+          echo "all required jobs passed: $results"

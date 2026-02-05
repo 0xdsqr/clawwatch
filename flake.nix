@@ -96,6 +96,16 @@
             oxlint .
             mkdir -p $out
           '';
+
+          tests = pkgs.runCommand "tests" { src = self; } ''
+            echo "No test suite configured yet"
+            mkdir -p $out
+          '';
+
+          build = pkgs.runCommand "build" { src = self; } ''
+            echo "No build derivation configured yet"
+            mkdir -p $out
+          '';
         }
       );
     };
