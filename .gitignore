@@ -22,6 +22,9 @@ dist/
 # Convex
 .convex/
 **/convex/_generated/
+!packages/core/convex/_generated/api.ts
+!packages/core/convex/_generated/dataModel.ts
+!packages/core/convex/_generated/server.ts
 
 # TypeScript build info
 *.tsbuildinfo
