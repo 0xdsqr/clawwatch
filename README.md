@@ -29,75 +29,90 @@ ClawWatch is a local-first monitoring system for agentic AI agents. Connect your
 - 🔔 **Smart alerting** - Rules for budget thresholds, offline detection, and anomalies
 - 📡 **Live event stream** - Filterable log of agent activity
 - 📊 **Token analytics** - Input/output/cache breakdowns with model comparisons
-- 🏠 **Self-hosted or cloud** - Run locally with a self-hosted Convex backend or in Convex Cloud
+- 🏠 **Self-hosted or cloud** - Run locally with Docker or deploy to Convex Cloud
 
-# Quick Start
+---
 
-name: test
+## Quick Start (Docker)
+
+Pull the images and run:
 
 ```bash
-bun install
+docker pull clawwatch/clawwatch-webapp:latest
+docker pull clawwatch/clawwatch-collector:latest
 
-cp infra/.env.example .env.local
-# Set at least VITE_CONVEX_URL and CONVEX_URL (local or cloud)
+# Run the webapp (dashboard)
+docker run -d -p 5173:3000 \
+  -e VITE_CONVEX_URL=https://YOUR_DEPLOYMENT.convex.cloud \
+  clawwatch/clawwatch-webapp:latest
 
-cd packages/core && npx convex dev
-
-cd apps/clawwatch && bun run dev
+# Run the collector (connects to your agent gateway)
+docker run -d \
+  -e GATEWAY_URL=http://YOUR_GATEWAY_IP:18789 \
+  -e GATEWAY_TOKEN=your_token_here \
+  -e CONVEX_URL=https://YOUR_DEPLOYMENT.convex.cloud \
+  clawwatch/clawwatch-collector:latest
 ```
 
-Set `GATEWAY_URL` and `GATEWAY_TOKEN` to connect the WebSocket collector to your agent gateway.
+That's it! Open `http://localhost:5173` to view the dashboard.
 
-CI note: the `test` workflow runs nix-based checks on every push/PR.
+**Environment Variables:**
 
-**Deployment Modes**
+| Variable | Description |
+|----------|-------------|
+| `VITE_CONVEX_URL` | Your Convex deployment URL (webapp) |
+| `CONVEX_URL` | Your Convex deployment URL (collector) |
+| `GATEWAY_URL` | Agent gateway WebSocket URL |
+| `GATEWAY_TOKEN` | Gateway authentication token |
 
-ClawWatch supports both Convex Cloud and self-hosted Convex.  
-For most users, we recommend Convex Cloud with your own deploy key.  
-Self-hosted is for teams who have the hardware and want full on-prem control.
+---
 
-**Cloud (Convex Cloud)**
+## Using Docker Compose
 
-1. Create a Convex Cloud deployment and grab your deployment URL + deploy key.
-2. Set environment variables (example for `.env.local`):
+For easier management, use the provided compose file:
 
-```
+```bash
+# Create env file
+cat > .env.cloud << EOF
 VITE_CONVEX_URL=https://YOUR_DEPLOYMENT.convex.cloud
 CONVEX_URL=https://YOUR_DEPLOYMENT.convex.cloud
-```
+GATEWAY_URL=http://YOUR_GATEWAY_IP:18789
+GATEWAY_TOKEN=your_token_here
+EOF
 
-3. Deploy the Convex schema:
-
-```bash
-cd packages/core
-npx convex deploy --typecheck disable
-```
-
-**Cloud (Docker + Convex Cloud)**
-
-```bash
-cp infra/.env.example .env.cloud
-# set VITE_CONVEX_URL, CONVEX_URL, GATEWAY_URL, GATEWAY_TOKEN
+# Run
 docker compose -f infra/docker-compose.cloud.yml --env-file .env.cloud up -d
 ```
 
-Notes:
-- `VITE_CONVEX_URL` is injected at runtime via `/config.js` in the webapp container.
-- Use your Docker Hub namespace by setting `DOCKERHUB_NAMESPACE` in `.env.cloud`.
+---
 
-**Self-Hosting (Docker Compose)**
+## Self-Hosted Guide
+
+Want to run everything locally including the Convex backend? This gives you full control but requires more setup.
+
+### Prerequisites
+
+- Docker & Docker Compose
+- Node.js 18+ or Bun
+- ~4GB RAM for the Convex backend
+
+### 1. Clone and Setup
 
 ```bash
 git clone https://github.com/0xdsqr/clawwatch.git
-cd clawwatch/infra
-cp .env.example .env
-docker volume create clawwatch_convex-data
-docker compose -f docker-compose.selfhosted.yml up -d
+cd clawwatch
+bun install
 ```
 
-Edit `.env` with your gateway URL and token:
+### 2. Configure Environment
 
+```bash
+cp infra/.env.example infra/.env
 ```
+
+Edit `infra/.env`:
+
+```bash
 GATEWAY_URL=http://YOUR_HOST_IP:18789
 GATEWAY_TOKEN=your_gateway_token_here
 CONVEX_CLOUD_ORIGIN=http://YOUR_HOST_IP:3210
@@ -105,39 +120,66 @@ CONVEX_SITE_ORIGIN=http://YOUR_HOST_IP:3211
 VITE_CONVEX_URL=http://YOUR_HOST_IP:3210
 ```
 
-Use your machine’s IP (not `127.0.0.1`) if you access the dashboard from another device.
+> **Note:** Use your machine's IP (not `127.0.0.1`) if accessing from other devices.
 
-Single-command boot (after `.env` is set):
+### 3. Start Self-Hosted Convex
 
 ```bash
-cd infra && docker compose -f docker-compose.selfhosted.yml up -d
+cd infra
+docker volume create clawwatch_convex-data
+docker compose -f docker-compose.selfhosted.yml up -d
 ```
 
-Deploy the Convex schema:
+### 4. Deploy Schema
 
 ```bash
+# Get admin key
 docker compose -f docker-compose.selfhosted.yml exec convex-backend ./generate_admin_key.sh
+
+# Deploy schema
 cd ../packages/core
 export CONVEX_SELF_HOSTED_URL=http://YOUR_HOST_IP:3210
 export CONVEX_SELF_HOSTED_ADMIN_KEY=your_admin_key_here
 npx convex dev --once
 ```
 
-Open:
+### 5. Access
 
-- ClawWatch UI: `http://YOUR_HOST_IP:5173`
-- Convex Dashboard: `http://YOUR_HOST_IP:6791`
+- **Dashboard:** `http://YOUR_HOST_IP:5173`
+- **Convex Dashboard:** `http://YOUR_HOST_IP:6791`
 
-**Architecture**
+---
 
-Gateway → Collector → Convex → Dashboard.  
-The collector ingests events and costs over WebSocket, writes into Convex, and the UI subscribes to real-time updates.
+## Convex Cloud Setup
+
+If you prefer Convex Cloud (recommended for most users):
+
+1. Create a deployment at [convex.dev](https://convex.dev)
+2. Get your deployment URL (e.g., `https://xyz-123.convex.cloud`)
+3. Deploy the schema:
+
+```bash
+cd packages/core
+npx convex deploy --typecheck disable
+```
+
+4. Use the deployment URL in your environment variables
+
+---
+
+## Architecture
+
+```
+Gateway → Collector → Convex → Dashboard
+```
+
+The collector connects to your agent gateway via WebSocket, ingests events and cost data, writes to Convex, and the dashboard subscribes to real-time updates.
 
 ![ClawWatch Architecture](.github/assets/architecture.png)
 
-**Development**
+---
 
-With Bun:
+## Development
 
 ```bash
 bun install
@@ -152,21 +194,19 @@ nix develop
 bun install
 ```
 
-Formatting:
+CI: The `test` workflow runs nix-based checks on every push/PR.
 
-```bash
-nix fmt .
-# or
-bun run format
-```
+---
 
-**Stack**
+## Stack
 
 - **Frontend**: React 19, TanStack Router, Tailwind CSS 4, Recharts, React Flow
 - **Backend**: Convex (real-time database + API)
 - **Runtime**: Bun
 - **Collector**: WebSocket + polling for live data ingestion
 
-**License**
+---
+
+## License
 
 MIT — do whatever you want with it.
