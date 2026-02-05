@@ -47,6 +47,8 @@ cd apps/clawwatch && bun run dev
 
 Set `GATEWAY_URL` and `GATEWAY_TOKEN` to connect the WebSocket collector to your agent gateway.
 
+CI note: the `test` workflow runs nix-based checks on every push/PR.
+
 **Deployment Modes**
 
 ClawWatch supports both Convex Cloud and self-hosted Convex.  
