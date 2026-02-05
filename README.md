@@ -38,20 +38,20 @@ ClawWatch is a local-first monitoring system for agentic AI agents. Connect your
 Pull the images and run:
 
 ```bash
-docker pull clawwatch/clawwatch-webapp:latest
-docker pull clawwatch/clawwatch-collector:latest
+docker pull daveved/clawwatch-webapp:latest
+docker pull daveved/clawwatch-collector:latest
 
 # Run the webapp (dashboard)
 docker run -d -p 5173:3000 \
   -e VITE_CONVEX_URL=https://YOUR_DEPLOYMENT.convex.cloud \
-  clawwatch/clawwatch-webapp:latest
+  daveved/clawwatch-webapp:latest
 
 # Run the collector (connects to your agent gateway)
 docker run -d \
   -e GATEWAY_URL=http://YOUR_GATEWAY_IP:18789 \
   -e GATEWAY_TOKEN=your_token_here \
   -e CONVEX_URL=https://YOUR_DEPLOYMENT.convex.cloud \
-  clawwatch/clawwatch-collector:latest
+  daveved/clawwatch-collector:latest
 ```
 
 That's it! Open `http://localhost:5173` to view the dashboard.
