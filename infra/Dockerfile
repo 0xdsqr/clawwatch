@@ -14,6 +14,7 @@ COPY . .
 
 ARG VITE_CONVEX_URL=""
 ENV VITE_CONVEX_URL=$VITE_CONVEX_URL
+ENV NITRO_PRESET=bun
 
 # Build frontend (codegen should be run locally before Docker build)
 RUN bun run --filter='clawwatch-app' build

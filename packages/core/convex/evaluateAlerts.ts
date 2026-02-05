@@ -235,10 +235,13 @@ export const evaluate = mutation({
           for (const agent of scopedAgents) {
             const sessions = await ctx.db
               .query("sessions")
-              .withIndex("by_agent", (q) => q.eq("agentId", agent._id))
-              .collect();
+              .withIndex("by_agent_active", (q) =>
+                q.eq("agentId", agent._id).eq("isActive", true),
+              )
+              .order("desc")
+              .take(50);
 
-            for (const session of sessions.filter((s) => s.isActive)) {
+            for (const session of sessions) {
               // Detect high message count in short time as potential loop
               if (session.messageCount > 100 && session.totalTokens > 500000) {
                 pendingAlerts.push({
@@ -266,19 +269,25 @@ export const evaluate = mutation({
           const _windowMs = (rule.config.windowMinutes ?? 30) * 60000;
 
           for (const agent of scopedAgents) {
-            const channelSessions = await ctx.db
+            const activeDiscordSessions = await ctx.db
               .query("sessions")
-              .withIndex("by_agent", (q) => q.eq("agentId", agent._id))
-              .collect();
+              .withIndex("by_agent_channel_active", (q) =>
+                q.eq("agentId", agent._id).eq("channel", "discord").eq("isActive", true),
+              )
+              .order("desc")
+              .take(1);
 
-            const discordSessions = channelSessions.filter(
-              (s) => s.channel === "discord" && s.isActive,
-            );
+            if (activeDiscordSessions.length > 0) continue;
 
-            if (
-              discordSessions.length === 0 &&
-              channelSessions.some((s) => s.channel === "discord")
-            ) {
+            const inactiveDiscordSessions = await ctx.db
+              .query("sessions")
+              .withIndex("by_agent_channel_active", (q) =>
+                q.eq("agentId", agent._id).eq("channel", "discord").eq("isActive", false),
+              )
+              .order("desc")
+              .take(1);
+
+            if (inactiveDiscordSessions.length > 0) {
               pendingAlerts.push({
                 agentId: agent._id,
                 severity: rule.severity ?? "warning",

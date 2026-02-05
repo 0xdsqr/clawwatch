@@ -1,6 +1,99 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 
+async function buildHealthSummary(ctx: any, agent: any) {
+  const oneHourAgo = Date.now() - 60 * 60 * 1000;
+
+  // Get recent sessions — limit scan to 100, count active in-place
+  const sessions = await ctx.db
+    .query("sessions")
+    .withIndex("by_agent", (q: any) => q.eq("agentId", agent._id))
+    .order("desc")
+    .take(100);
+
+  let activeSessions = 0;
+  for (const s of sessions) {
+    if (s.isActive) activeSessions++;
+  }
+
+  const currentHourKey = Math.floor(Date.now() / 3600000) * 3600000;
+  const prevHourKey = currentHourKey - 3600000;
+  const agentPrefix = `agent:${agent._id}`;
+
+  const thisHourCache = await ctx.db
+    .query("statsCache")
+    .withIndex("by_key", (q: any) => q.eq("key", `${agentPrefix}:hour:${currentHourKey}`))
+    .first();
+  const prevHourCache = await ctx.db
+    .query("statsCache")
+    .withIndex("by_key", (q: any) => q.eq("key", `${agentPrefix}:hour:${prevHourKey}`))
+    .first();
+
+  let costLastHour = 0;
+  let tokensLastHour = 0;
+
+  if (thisHourCache || prevHourCache) {
+    costLastHour =
+      (thisHourCache?.cost ?? 0) + (prevHourCache?.cost ?? 0);
+    tokensLastHour =
+      (thisHourCache?.inputTokens ?? 0) +
+      (thisHourCache?.outputTokens ?? 0) +
+      (prevHourCache?.inputTokens ?? 0) +
+      (prevHourCache?.outputTokens ?? 0);
+  } else {
+    // Fallback to recent cost records if cache is empty (cold start).
+    const recentCosts = await ctx.db
+      .query("costRecords")
+      .withIndex("by_agent_time", (q: any) =>
+        q.eq("agentId", agent._id).gte("timestamp", oneHourAgo),
+      )
+      .take(500);
+
+    costLastHour = recentCosts.reduce((sum: number, r: any) => sum + r.cost, 0);
+    tokensLastHour = recentCosts.reduce(
+      (sum: number, r: any) => sum + r.inputTokens + r.outputTokens,
+      0,
+    );
+  }
+
+  // Count recent errors — take 50 recent activities and filter by time + type
+  const recentActivities = await ctx.db
+    .query("activities")
+    .withIndex("by_agent", (q: any) => q.eq("agentId", agent._id))
+    .order("desc")
+    .take(50);
+
+  let errorCount = 0;
+  for (const a of recentActivities) {
+    const activityTime = a.timestamp ?? a._creationTime;
+    if (a.type === "error" && activityTime > oneHourAgo) errorCount++;
+  }
+
+  return {
+    agent,
+    activeSessions,
+    totalSessions: sessions.length,
+    costLastHour: Math.round(costLastHour * 10000) / 10000,
+    tokensLastHour,
+    errorCount,
+    isHealthy: agent.status === "online" && errorCount < 5,
+  };
+}
+
+async function buildCostSummary(ctx: any, agentId: string, todayStr: string) {
+  const todayCache = await ctx.db
+    .query("statsCache")
+    .withIndex("by_key", (q: any) => q.eq("key", `agent:${agentId}:today:${todayStr}`))
+    .first();
+
+  return {
+    today: {
+      cost: Math.round((todayCache?.cost ?? 0) * 10000) / 10000,
+      requests: todayCache?.requests ?? 0,
+    },
+  };
+}
+
 // List all agents with their current status
 export const list = query({
   args: {
@@ -169,82 +262,33 @@ export const healthSummary = query({
     const agent = await ctx.db.get(args.agentId);
     if (!agent) return null;
 
-    const oneHourAgo = Date.now() - 60 * 60 * 1000;
+    return buildHealthSummary(ctx, agent);
+  },
+});
 
-    // Get recent sessions — limit scan to 100, count active in-place
-    const sessions = await ctx.db
-      .query("sessions")
-      .withIndex("by_agent", (q) => q.eq("agentId", args.agentId))
-      .order("desc")
-      .take(100);
+// Batch health + cost summaries for graph view
+export const graphSummaries = query({
+  args: { agentIds: v.array(v.id("agents")) },
+  handler: async (ctx, args) => {
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const results = [];
+    const agentIds = args.agentIds.slice(0, 20);
 
-    let activeSessions = 0;
-    for (const s of sessions) {
-      if (s.isActive) activeSessions++;
+    for (const agentId of agentIds) {
+      const agent = await ctx.db.get(agentId);
+      if (!agent) continue;
+
+      const health = await buildHealthSummary(ctx, agent);
+      const cost = await buildCostSummary(ctx, agentId, todayStr);
+
+      results.push({
+        agentId,
+        health,
+        cost,
+      });
     }
 
-    const currentHourKey = Math.floor(Date.now() / 3600000) * 3600000;
-    const prevHourKey = currentHourKey - 3600000;
-    const agentPrefix = `agent:${args.agentId}`;
-
-    const thisHourCache = await ctx.db
-      .query("statsCache")
-      .withIndex("by_key", (q) => q.eq("key", `${agentPrefix}:hour:${currentHourKey}`))
-      .first();
-    const prevHourCache = await ctx.db
-      .query("statsCache")
-      .withIndex("by_key", (q) => q.eq("key", `${agentPrefix}:hour:${prevHourKey}`))
-      .first();
-
-    let costLastHour = 0;
-    let tokensLastHour = 0;
-
-    if (thisHourCache || prevHourCache) {
-      costLastHour =
-        (thisHourCache?.cost ?? 0) + (prevHourCache?.cost ?? 0);
-      tokensLastHour =
-        (thisHourCache?.inputTokens ?? 0) +
-        (thisHourCache?.outputTokens ?? 0) +
-        (prevHourCache?.inputTokens ?? 0) +
-        (prevHourCache?.outputTokens ?? 0);
-    } else {
-      // Fallback to recent cost records if cache is empty (cold start).
-      const recentCosts = await ctx.db
-        .query("costRecords")
-        .withIndex("by_agent_time", (q) =>
-          q.eq("agentId", args.agentId).gte("timestamp", oneHourAgo),
-        )
-        .take(500);
-
-      costLastHour = recentCosts.reduce((sum, r) => sum + r.cost, 0);
-      tokensLastHour = recentCosts.reduce(
-        (sum, r) => sum + r.inputTokens + r.outputTokens,
-        0,
-      );
-    }
-
-    // Count recent errors — take 50 recent activities and filter by time + type
-    const recentActivities = await ctx.db
-      .query("activities")
-      .withIndex("by_agent", (q) => q.eq("agentId", args.agentId))
-      .order("desc")
-      .take(50);
-
-    let errorCount = 0;
-    for (const a of recentActivities) {
-      const activityTime = a.timestamp ?? a._creationTime;
-      if (a.type === "error" && activityTime > oneHourAgo) errorCount++;
-    }
-
-    return {
-      agent,
-      activeSessions,
-      totalSessions: sessions.length,
-      costLastHour: Math.round(costLastHour * 10000) / 10000,
-      tokensLastHour,
-      errorCount,
-      isHealthy: agent.status === "online" && errorCount < 5,
-    };
+    return results;
   },
 });
 

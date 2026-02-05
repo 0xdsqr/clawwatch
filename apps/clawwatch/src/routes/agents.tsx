@@ -271,107 +271,31 @@ const MAX_GRAPH_AGENTS = 10;
 
 function AgentGraphView({ agents }: { agents: AgentData[] }) {
   const sliced = agents.slice(0, MAX_GRAPH_AGENTS);
-
-  const h0 = useQuery(
-    api.agents.healthSummary,
-    sliced[0] ? { agentId: sliced[0]._id as Id<"agents"> } : "skip",
-  );
-  const h1 = useQuery(
-    api.agents.healthSummary,
-    sliced[1] ? { agentId: sliced[1]._id as Id<"agents"> } : "skip",
-  );
-  const h2 = useQuery(
-    api.agents.healthSummary,
-    sliced[2] ? { agentId: sliced[2]._id as Id<"agents"> } : "skip",
-  );
-  const h3 = useQuery(
-    api.agents.healthSummary,
-    sliced[3] ? { agentId: sliced[3]._id as Id<"agents"> } : "skip",
-  );
-  const h4 = useQuery(
-    api.agents.healthSummary,
-    sliced[4] ? { agentId: sliced[4]._id as Id<"agents"> } : "skip",
-  );
-  const h5 = useQuery(
-    api.agents.healthSummary,
-    sliced[5] ? { agentId: sliced[5]._id as Id<"agents"> } : "skip",
-  );
-  const h6 = useQuery(
-    api.agents.healthSummary,
-    sliced[6] ? { agentId: sliced[6]._id as Id<"agents"> } : "skip",
-  );
-  const h7 = useQuery(
-    api.agents.healthSummary,
-    sliced[7] ? { agentId: sliced[7]._id as Id<"agents"> } : "skip",
-  );
-  const h8 = useQuery(
-    api.agents.healthSummary,
-    sliced[8] ? { agentId: sliced[8]._id as Id<"agents"> } : "skip",
-  );
-  const h9 = useQuery(
-    api.agents.healthSummary,
-    sliced[9] ? { agentId: sliced[9]._id as Id<"agents"> } : "skip",
+  const agentIds = useMemo(
+    () => sliced.map((agent) => agent._id as Id<"agents">),
+    [sliced],
   );
 
-  const c0 = useQuery(
-    api.costs.summary,
-    sliced[0] ? { agentId: sliced[0]._id as Id<"agents"> } : "skip",
+  const graphSummaries = useQuery(
+    api.agents.graphSummaries,
+    agentIds.length ? { agentIds } : "skip",
   );
-  const c1 = useQuery(
-    api.costs.summary,
-    sliced[1] ? { agentId: sliced[1]._id as Id<"agents"> } : "skip",
-  );
-  const c2 = useQuery(
-    api.costs.summary,
-    sliced[2] ? { agentId: sliced[2]._id as Id<"agents"> } : "skip",
-  );
-  const c3 = useQuery(
-    api.costs.summary,
-    sliced[3] ? { agentId: sliced[3]._id as Id<"agents"> } : "skip",
-  );
-  const c4 = useQuery(
-    api.costs.summary,
-    sliced[4] ? { agentId: sliced[4]._id as Id<"agents"> } : "skip",
-  );
-  const c5 = useQuery(
-    api.costs.summary,
-    sliced[5] ? { agentId: sliced[5]._id as Id<"agents"> } : "skip",
-  );
-  const c6 = useQuery(
-    api.costs.summary,
-    sliced[6] ? { agentId: sliced[6]._id as Id<"agents"> } : "skip",
-  );
-  const c7 = useQuery(
-    api.costs.summary,
-    sliced[7] ? { agentId: sliced[7]._id as Id<"agents"> } : "skip",
-  );
-  const c8 = useQuery(
-    api.costs.summary,
-    sliced[8] ? { agentId: sliced[8]._id as Id<"agents"> } : "skip",
-  );
-  const c9 = useQuery(
-    api.costs.summary,
-    sliced[9] ? { agentId: sliced[9]._id as Id<"agents"> } : "skip",
-  );
-
-  const healthArr = [h0, h1, h2, h3, h4, h5, h6, h7, h8, h9];
-  const costArr = [c0, c1, c2, c3, c4, c5, c6, c7, c8, c9];
 
   const healthMap = useMemo(() => {
     const m = new Map<string, any>();
-    sliced.forEach((a, i) => {
-      if (healthArr[i]) m.set(a._id, healthArr[i]);
+    (graphSummaries ?? []).forEach((entry) => {
+      if (entry.health) m.set(entry.agentId, entry.health);
     });
     return m;
-  }, [sliced, ...healthArr]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [graphSummaries]);
 
   const costMap = useMemo(() => {
     const m = new Map<string, any>();
-    sliced.forEach((a, i) => {
-      if (costArr[i]) m.set(a._id, costArr[i]);
+    (graphSummaries ?? []).forEach((entry) => {
+      if (entry.cost) m.set(entry.agentId, entry.cost);
     });
     return m;
-  }, [sliced, ...costArr]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [graphSummaries]);
 
   if (agents.length === 0) {
     return (
