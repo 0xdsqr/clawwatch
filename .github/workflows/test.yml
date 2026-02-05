@@ -12,7 +12,7 @@ concurrency:
 jobs:
   biome:
     name: biome
-    runs-on: [self-hosted, hoo, nixos]
+    runs-on: ubuntu-latest
     permissions:
       contents: read
     steps:
@@ -23,7 +23,7 @@ jobs:
 
   nixfmt:
     name: nixfmt
-    runs-on: [self-hosted, hoo, nixos]
+    runs-on: ubuntu-latest
     permissions:
       contents: read
     steps:
@@ -34,7 +34,7 @@ jobs:
 
   test:
     name: test
-    runs-on: [self-hosted, hoo, nixos]
+    runs-on: ubuntu-latest
     permissions:
       contents: read
       id-token: write
@@ -54,7 +54,7 @@ jobs:
     name: build
     if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
     needs: test
-    runs-on: [self-hosted, hoo, nixos]
+    runs-on: ubuntu-latest
     permissions:
       contents: read
       id-token: write
@@ -66,7 +66,7 @@ jobs:
 
   required:
     name: all checks passed
-    runs-on: [self-hosted, hoo, nixos]
+    runs-on: ubuntu-latest
     if: always()
     needs:
       - biome
