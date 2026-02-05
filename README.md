@@ -23,18 +23,18 @@ _Real-time visibility into costs, tokens, sessions, and system health from a sin
 
 ## ⇁ TOC
 
-* [🚀 Quick Start](#-quick-start)
-* [🐳 Docker Compose](#-docker-compose)
-* [🏠 Self-Hosted Guide](#-self-hosted-guide)
-* [☁️ Convex Cloud Setup](#️-convex-cloud-setup)
-* [🏗️ Architecture](#️-architecture)
-* [🛠️ Development](#️-development)
-* [📚 Stack](#-stack)
-* [📄 License](#-license)
+* [Quick Start](#quick-start)
+* [Docker Compose](#docker-compose)
+* [Self-Hosted Guide](#self-hosted-guide)
+* [Convex Cloud Setup](#convex-cloud-setup)
+* [Architecture](#architecture)
+* [Development](#development)
+* [Stack](#stack)
+* [License](#license)
 
 ---
 
-## ✨ Features
+## Features
 
 - 💸 **Real-time cost tracking** - Monitor spend across providers and models as it happens
 - 🤖 **Multi-agent dashboard** - Unified view of all connected agents with live status and session breakdowns
@@ -46,7 +46,7 @@ _Real-time visibility into costs, tokens, sessions, and system health from a sin
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 Pull the images and run:
 
@@ -80,7 +80,7 @@ That's it! Open `http://localhost:5173` to view the dashboard.
 
 ---
 
-## 🐳 Docker Compose
+## Docker Compose
 
 For easier management, use the provided compose file:
 
@@ -99,7 +99,7 @@ docker compose -f infra/docker-compose.cloud.yml --env-file .env.cloud up -d
 
 ---
 
-## 🏠 Self-Hosted Guide
+## Self-Hosted Guide
 
 Want to run everything locally including the Convex backend? This gives you full control but requires more setup.
 
@@ -163,7 +163,7 @@ npx convex dev --once
 
 ---
 
-## ☁️ Convex Cloud Setup
+## Convex Cloud Setup
 
 If you prefer Convex Cloud (recommended for most users):
 
@@ -180,7 +180,7 @@ npx convex deploy --typecheck disable
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 
 ```
 Gateway → Collector → Convex → Dashboard
@@ -192,7 +192,7 @@ The collector connects to your agent gateway via WebSocket, ingests events and c
 
 ---
 
-## 🛠️ Development
+## Development
 
 ```bash
 bun install
@@ -211,7 +211,7 @@ CI: The `test` workflow runs nix-based checks on every push/PR.
 
 ---
 
-## 📚 Stack
+## Stack
 
 - **Frontend**: React 19, TanStack Router, Tailwind CSS 4, Recharts, React Flow
 - **Backend**: Convex (real-time database + API)
@@ -220,6 +220,6 @@ CI: The `test` workflow runs nix-based checks on every push/PR.
 
 ---
 
-## 📄 License
+## License
 
 MIT — do whatever you want with it.
