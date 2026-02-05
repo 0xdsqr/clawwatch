@@ -10,16 +10,17 @@ concurrency:
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
-  biome:
-    name: biome
+  oxlint:
+    name: oxlint
     runs-on: ubuntu-latest
     permissions:
       contents: read
     steps:
       - uses: actions/checkout@v4
+      - uses: DeterminateSystems/nix-installer-action@v12
       - uses: DeterminateSystems/flakehub-cache-action@v2
-      - name: biome check
-        run: nix fmt -- -f biome --ci
+      - name: oxlint
+        run: nix build .#checks.x86_64-linux.lint -L
 
   nixfmt:
     name: nixfmt
@@ -28,9 +29,10 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v4
+      - uses: DeterminateSystems/nix-installer-action@v12
       - uses: DeterminateSystems/flakehub-cache-action@v2
       - name: nixfmt check
-        run: nix fmt -- -f nixfmt --ci
+        run: nix build .#checks.x86_64-linux.nixfmt -L
 
   test:
     name: test
@@ -42,6 +44,7 @@ jobs:
       - name: cleanup nix store
         run: nix-collect-garbage -d
       - uses: actions/checkout@v4
+      - uses: DeterminateSystems/nix-installer-action@v12
       - uses: DeterminateSystems/flakehub-cache-action@v2
       - uses: DeterminateSystems/flake-checker-action@main
         with:
@@ -60,6 +63,7 @@ jobs:
       id-token: write
     steps:
       - uses: actions/checkout@v4
+      - uses: DeterminateSystems/nix-installer-action@v12
       - uses: DeterminateSystems/flakehub-cache-action@v2
       - name: build
         run: nix build .#checks.x86_64-linux.build -L
@@ -69,7 +73,7 @@ jobs:
     runs-on: ubuntu-latest
     if: always()
     needs:
-      - biome
+      - oxlint
       - nixfmt
       - test
       - build

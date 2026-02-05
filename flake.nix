@@ -97,6 +97,15 @@
             mkdir -p $out
           '';
 
+          nixfmt = pkgs.runCommand "nixfmt-check" { src = self; buildInputs = [ pkgs.nixfmt-rfc-style pkgs.findutils ]; } ''
+            cd $src
+            files=$(find . -name "*.nix" -type f)
+            if [ -n "$files" ]; then
+              nixfmt --check $files
+            fi
+            mkdir -p $out
+          '';
+
           tests = pkgs.runCommand "tests" { src = self; } ''
             echo "No test suite configured yet"
             mkdir -p $out
