@@ -41,11 +41,11 @@ jobs:
       contents: read
       id-token: write
     steps:
-      - name: cleanup nix store
-        run: nix-collect-garbage -d
       - uses: actions/checkout@v4
       - uses: DeterminateSystems/nix-installer-action@v12
       - uses: DeterminateSystems/flakehub-cache-action@v2
+      - name: cleanup nix store
+        run: sudo nix-collect-garbage -d || true
       - uses: DeterminateSystems/flake-checker-action@main
         with:
           fail-mode: true
