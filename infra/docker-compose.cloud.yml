@@ -1,0 +1,23 @@
+services:
+  clawwatch-webapp:
+    image: ${DOCKERHUB_NAMESPACE:-clawwatch}/clawwatch-webapp:latest
+    ports:
+      - "5173:3000"
+    environment:
+      - VITE_CONVEX_URL=${VITE_CONVEX_URL}
+    restart: unless-stopped
+
+  clawwatch-collector:
+    image: ${DOCKERHUB_NAMESPACE:-clawwatch}/clawwatch-collector:latest
+    environment:
+      - GATEWAY_URL=${GATEWAY_URL}
+      - GATEWAY_TOKEN=${GATEWAY_TOKEN}
+      - CONVEX_URL=${CONVEX_URL}
+      - SESSIONS_DIR=${SESSIONS_DIR:-/data/sessions}
+      - SESSION_POLL_INTERVAL=${SESSION_POLL_INTERVAL:-60000}
+    volumes:
+      - sessions-data:/data/sessions
+    restart: unless-stopped
+
+volumes:
+  sessions-data:

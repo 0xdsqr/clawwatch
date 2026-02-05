@@ -16,6 +16,14 @@ import { join } from "path";
 import { api } from "../convex/_generated/api.js";
 import { dispatchDiscordNotifications } from "../lib/notifications.ts";
 
+function inferAgentName(sessionKey: string | undefined, fallback = "unknown"): string {
+  if (!sessionKey) return fallback;
+  const parts = sessionKey.split(":").filter(Boolean);
+  if (parts.length >= 3 && parts[0] === "agent") return parts[1] ?? fallback;
+  if (parts.length >= 2) return parts[0] ?? fallback;
+  return sessionKey || fallback;
+}
+
 // Config - all values must be provided via environment variables
 const GATEWAY_URL = Bun.env.GATEWAY_URL;
 const GATEWAY_TOKEN = Bun.env.GATEWAY_TOKEN;
@@ -111,7 +119,7 @@ async function pollSessions(): Promise<void> {
       model: s.model ? String(s.model) : undefined,
       totalTokens: Number(s.totalTokens ?? 0),
       updatedAt: Number(s.updatedAt ?? Date.now()),
-      agentId: String(s.key).split(":")[1] ?? "unknown", // "agent:mimizuku:..." → "mimizuku"
+      agentId: inferAgentName(String(s.key)), // "agent:mimizuku:..." | "mimizuku:main"
     }));
 
     // Ingest into Convex

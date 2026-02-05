@@ -30,7 +30,9 @@ ClawWatch is a local-first monitoring system for agentic AI agents. Connect your
 - 📊 **Token analytics** - Input/output/cache breakdowns with model comparisons
 - 🏠 **Self-hosted or cloud** - Run locally with a self-hosted Convex backend or in Convex Cloud
 
-**Quick Start**
+# Quick Start
+
+name: test
 
 ```bash
 bun install
@@ -67,6 +69,18 @@ CONVEX_URL=https://YOUR_DEPLOYMENT.convex.cloud
 cd packages/core
 npx convex deploy --typecheck disable
 ```
+
+**Cloud (Docker + Convex Cloud)**
+
+```bash
+cp infra/.env.example .env.cloud
+# set VITE_CONVEX_URL, CONVEX_URL, GATEWAY_URL, GATEWAY_TOKEN
+docker compose -f infra/docker-compose.cloud.yml --env-file .env.cloud up -d
+```
+
+Notes:
+- `VITE_CONVEX_URL` is injected at runtime via `/config.js` in the webapp container.
+- Use your Docker Hub namespace by setting `DOCKERHUB_NAMESPACE` in `.env.cloud`.
 
 **Self-Hosting (Docker Compose)**
 

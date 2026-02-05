@@ -31,7 +31,12 @@ export const Route = createFileRoute("/settings")({
 });
 
 function SettingsPage() {
-  const convexUrl = import.meta.env.VITE_CONVEX_URL as string | undefined;
+  const runtimeConfig =
+    typeof window !== "undefined" ? window.__CLAWATCH_CONFIG__?.convexUrl : undefined;
+  const convexUrl =
+    runtimeConfig ??
+    (typeof process !== "undefined" ? process.env.VITE_CONVEX_URL : undefined) ??
+    (import.meta.env.VITE_CONVEX_URL as string | undefined);
   const notificationChannels = useQuery(api.notifications.list);
   const agents = useQuery(api.agents.list, {});
   const discordChannels = useMemo(
@@ -174,6 +179,12 @@ function SettingsPage() {
                     <span className="text-muted-foreground">CONVEX_URL=</span>
                     <span className="text-primary">{convexUrl ?? "Not configured"}</span>
                   </p>
+                  {runtimeConfig && (
+                    <p>
+                      <span className="text-muted-foreground">Runtime config=</span>
+                      <span className="text-primary">/config.js</span>
+                    </p>
+                  )}
                 </div>
               </div>
             </div>

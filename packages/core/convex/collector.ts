@@ -2,6 +2,14 @@ import { v } from "convex/values";
 import type { DatabaseWriter } from "./_generated/server";
 import { mutation } from "./_generated/server";
 
+function inferAgentName(sessionKey: string | undefined, fallback = "unknown"): string {
+  if (!sessionKey) return fallback;
+  const parts = sessionKey.split(":").filter(Boolean);
+  if (parts.length >= 3 && parts[0] === "agent") return parts[1] ?? fallback;
+  if (parts.length >= 2) return parts[0] ?? fallback;
+  return sessionKey || fallback;
+}
+
 // Ingest session data from the Clawdbot gateway
 export const ingestSessions = mutation({
   args: {
@@ -24,7 +32,7 @@ export const ingestSessions = mutation({
 
     for (const session of args.sessions) {
       // Extract agent name from session key
-      const agentName = session.agentId ?? session.key.split(":")[1] ?? "unknown";
+      const agentName = session.agentId ?? inferAgentName(session.key);
 
       // Find or create agent
       let agent = await ctx.db
@@ -71,8 +79,9 @@ export const ingestSessions = mutation({
       // Upsert session
       const existingSession = await ctx.db
         .query("sessions")
-        .withIndex("by_agent", (q) => q.eq("agentId", agent!._id))
-        .filter((q) => q.eq(q.field("sessionKey"), session.key))
+        .withIndex("by_agent_key", (q) =>
+          q.eq("agentId", agent!._id).eq("sessionKey", session.key),
+        )
         .first();
 
       if (existingSession) {

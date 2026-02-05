@@ -115,16 +115,8 @@ const VARIANT_HANDLE_COLOR: Record<XrayNodeVariant, string> = {
   core: "!bg-zinc-400",
 };
 
-const VARIANT_EDGE_COLOR: Record<XrayNodeVariant, string> = {
-  agent: "hsl(270 85% 65%)",
-  gateway: "hsl(160 60% 50%)",
-  channel: "hsl(210 80% 60%)",
-  service: "hsl(200 80% 60%)",
-  ai: "hsl(340 75% 60%)",
-  memory: "hsl(160 60% 50%)",
-  internal: "hsl(40 80% 55%)",
-  core: "hsl(240 5% 50%)",
-};
+const XRAY_EDGE_COLOR = "hsl(270 85% 65%)";
+const XRAY_EDGE_DASH = "3 6";
 
 const MINIMAP_COLOR: Record<XrayNodeVariant, string> = {
   agent: "hsl(270 70% 60%)",
@@ -264,10 +256,10 @@ function makeEdge(
     source,
     target,
     style: {
-      stroke: VARIANT_EDGE_COLOR[variant],
+      stroke: XRAY_EDGE_COLOR,
       strokeWidth: edgeThickness(count),
-      ...(stale ? { strokeDasharray: "6 8", opacity: 0.4 } : {}),
-      ...(!stale && !active ? { strokeDasharray: "4 6" } : {}),
+      strokeDasharray: XRAY_EDGE_DASH,
+      ...(stale ? { opacity: 0.4 } : {}),
     },
     animated: active,
   };
@@ -603,9 +595,9 @@ function buildLayout(data: AgentXrayData): {
       source: "agent",
       target: "core-tools",
       style: {
-        stroke: VARIANT_EDGE_COLOR.core,
+        stroke: XRAY_EDGE_COLOR,
         strokeWidth: edgeThickness(totalCoreCalls),
-        strokeDasharray: "4 6",
+        strokeDasharray: XRAY_EDGE_DASH,
       },
     });
   }
@@ -628,9 +620,9 @@ function buildLayout(data: AgentXrayData): {
       source: "agent",
       target: "gateway",
       style: {
-        stroke: VARIANT_EDGE_COLOR.gateway,
+        stroke: XRAY_EDGE_COLOR,
         strokeWidth: 1.5,
-        strokeDasharray: "4 6",
+        strokeDasharray: XRAY_EDGE_DASH,
       },
     });
   }

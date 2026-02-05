@@ -12,6 +12,16 @@ import appCss from "../styles.css?url";
 // when the Convex URL is local (localhost/127/100/192).
 // Uses /_convex prefix because TanStack Start/Nitro intercepts /api.
 // SSR: direct connection to Convex backend via VITE_CONVEX_URL.
+function readRuntimeConvexUrl(): string | undefined {
+  if (typeof window === "undefined") return undefined;
+  return window.__CLAWATCH_CONFIG__?.convexUrl;
+}
+
+function readServerConvexUrl(): string | undefined {
+  if (typeof process === "undefined") return undefined;
+  return process.env.VITE_CONVEX_URL;
+}
+
 function isLocalConvexUrl(value: string | undefined): boolean {
   if (!value) return false;
   try {
@@ -28,10 +38,10 @@ function isLocalConvexUrl(value: string | undefined): boolean {
 }
 
 function getConvexUrl(): string {
-  const envUrl = import.meta.env.VITE_CONVEX_URL as string | undefined;
-  if (!envUrl) {
-    throw new Error("VITE_CONVEX_URL is required");
-  }
+  const runtimeUrl = readRuntimeConvexUrl();
+  const envUrl =
+    runtimeUrl ?? readServerConvexUrl() ?? (import.meta.env.VITE_CONVEX_URL as string | undefined);
+  if (!envUrl) throw new Error("VITE_CONVEX_URL is required");
   if (typeof window !== "undefined") {
     return isLocalConvexUrl(envUrl) ? `${window.location.origin}/_convex` : envUrl;
   }
@@ -66,6 +76,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
     <html lang="en" className="dark">
       <head>
         <HeadContent />
+        <script src="/config.js" />
       </head>
       <body className="font-sans antialiased">
         {children}

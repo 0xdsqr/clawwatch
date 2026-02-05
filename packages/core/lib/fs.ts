@@ -1,12 +1,49 @@
 /**
- * File system utilities using Bun-native APIs.
+ * File system utilities that work in Bun and Node runtimes.
  *
- * All file output in ClawWatch should use these helpers (or Bun.write()
- * directly) rather than Node.js fs.writeFile / fs.appendFile.
- *
- * Bun.write() is significantly faster than Node.js equivalents and
- * supports strings, Blobs, ArrayBuffers, and Response objects natively.
+ * Prefer Bun APIs when available for performance, but fall back to
+ * Node's fs/promises in environments where Bun is unavailable.
  */
+
+import { readFile, writeFile } from "node:fs/promises";
+
+const bun = (globalThis as {
+  Bun?: {
+    file: (path: string) => { exists?: () => Promise<boolean>; text: () => Promise<string> };
+    write: (path: string, content: string) => Promise<number>;
+  };
+}).Bun;
+
+const encoder = new TextEncoder();
+
+async function readExisting(path: string): Promise<string> {
+  if (bun) {
+    const file = bun.file(path);
+    if (file.exists) {
+      if (!(await file.exists())) return "";
+    }
+    try {
+      return await file.text();
+    } catch {
+      return "";
+    }
+  }
+
+  try {
+    return await readFile(path, "utf-8");
+  } catch (err) {
+    if (err && typeof err === "object" && "code" in err && err.code === "ENOENT") {
+      return "";
+    }
+    throw err;
+  }
+}
+
+async function writeContent(path: string, content: string): Promise<number> {
+  if (bun) return bun.write(path, content);
+  await writeFile(path, content, "utf-8");
+  return encoder.encode(content).length;
+}
 
 /**
  * Write JSON data to a file atomically.
@@ -16,7 +53,7 @@
  */
 export async function writeJSON(path: string, data: unknown, pretty = true): Promise<number> {
   const content = JSON.stringify(data, null, pretty ? 2 : undefined) + "\n";
-  return Bun.write(path, content);
+  return writeContent(path, content);
 }
 
 /**
@@ -26,7 +63,7 @@ export async function writeJSON(path: string, data: unknown, pretty = true): Pro
  * await writeText("output.log", "Hello, world!\n");
  */
 export async function writeText(path: string, content: string): Promise<number> {
-  return Bun.write(path, content);
+  return writeContent(path, content);
 }
 
 /**
@@ -38,8 +75,7 @@ export async function writeText(path: string, content: string): Promise<number> 
  * await appendLine("events.jsonl", JSON.stringify(event));
  */
 export async function appendLine(path: string, line: string): Promise<number> {
-  const file = Bun.file(path);
-  const existing = (await file.exists()) ? await file.text() : "";
+  const existing = await readExisting(path);
   const content = existing + line + "\n";
-  return Bun.write(path, content);
+  return writeContent(path, content);
 }

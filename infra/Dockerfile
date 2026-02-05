@@ -12,7 +12,7 @@ RUN bun install --frozen-lockfile
 
 COPY . .
 
-ARG VITE_CONVEX_URL=http://127.0.0.1:3210
+ARG VITE_CONVEX_URL=""
 ENV VITE_CONVEX_URL=$VITE_CONVEX_URL
 
 # Build frontend (codegen should be run locally before Docker build)
@@ -29,8 +29,13 @@ RUN groupadd --system --gid 1001 clawwatch && \
 # Copy built TanStack Start app (Nitro server)
 COPY --from=builder --chown=clawwatch:clawwatch /app/apps/clawwatch/.output ./.output
 
+# Runtime config entrypoint (writes /config.js)
+COPY --chown=clawwatch:clawwatch infra/entrypoint-web.sh /app/entrypoint-web.sh
+RUN chmod +x /app/entrypoint-web.sh
+
 USER clawwatch
 
 EXPOSE 3000
 
+ENTRYPOINT ["/app/entrypoint-web.sh"]
 CMD ["bun", "run", ".output/server/index.mjs"]
