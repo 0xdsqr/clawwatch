@@ -7,12 +7,7 @@
     flake-compat.flake = false;
   };
 
-  outputs =
-    {
-      self,
-      nixpkgs,
-      ...
-    }:
+  outputs = { self, nixpkgs, ... }:
     let
       systems = [
         "x86_64-linux"
@@ -97,7 +92,10 @@
             mkdir -p $out
           '';
 
-          nixfmt = pkgs.runCommand "nixfmt-check" { src = self; buildInputs = [ pkgs.nixfmt-rfc-style pkgs.findutils ]; } ''
+          nixfmt = pkgs.runCommand "nixfmt-check" {
+            src = self;
+            buildInputs = [ pkgs.nixfmt-rfc-style pkgs.findutils ];
+          } ''
             cd $src
             files=$(find . -name "*.nix" -type f)
             if [ -n "$files" ]; then
